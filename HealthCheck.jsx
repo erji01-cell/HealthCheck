@@ -1,0 +1,469 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Printer, Save, Calendar, User, Phone, ClipboardCheck, 
+  CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight, 
+  ListTodo, Info
+} from 'lucide-react';
+
+export default function App() {
+  // 表示モードの管理 ('form' or 'calendar')
+  const [viewMode, setViewMode] = useState('form');
+  
+  // カレンダーの表示月管理
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1)); // 2026年3月
+
+  // 初期状態の定義（PDFの内容をベースに）
+  const initialState = {
+    date: '2026-03-25',
+    dayOfWeek: '水曜日',
+    yurigana: 'さまお',
+    id: 'ID-12345',
+    name: '樣男',
+    birthDate: '1997-09-22',
+    age: 28,
+    contact: '090-0000-0000',
+    purpose: '就職',
+    hasHospitalForm: '無(当院用紙を使用)',
+    items: {
+      basic: true,
+      xRay: true,
+      ecg: true,
+      blood: true,
+      stool: true,
+      endoscopy: false
+    },
+    deadlineType: '無',
+    deadlineDate: '',
+    payment: '10700',
+    paymentType: '後日',
+    others: '入職前の健診'
+  };
+
+  const [formData, setFormData] = useState(initialState);
+
+  // 生年月日から年齢を計算
+  useEffect(() => {
+    if (formData.birthDate) {
+      const birth = new Date(formData.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      setFormData(prev => ({ ...prev, age }));
+    }
+  }, [formData.birthDate]);
+
+  // 曜日計算
+  useEffect(() => {
+    if (formData.date) {
+      const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+      const day = days[new Date(formData.date).getDay()];
+      setFormData(prev => ({ ...prev, dayOfWeek: day }));
+    }
+  }, [formData.date]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox' && name.startsWith('item_')) {
+      const itemName = name.replace('item_', '');
+      setFormData(prev => ({
+        ...prev,
+        items: { ...prev.items, [itemName]: checked }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleReset = () => {
+    setFormData(initialState);
+  };
+
+  // カレンダー生成ロジック
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+  const renderCalendar = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
+    const days = [];
+
+    // 先月の空白
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-20 border-b border-r bg-slate-50/50"></div>);
+    }
+
+    // 今月の日付
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isSelected = formData.date === dateString;
+      const isToday = new Date().toISOString().split('T')[0] === dateString;
+
+      days.push(
+        <div 
+          key={d} 
+          onClick={() => {
+            setFormData(prev => ({ ...prev, date: dateString }));
+            setViewMode('form');
+          }}
+          className={`h-20 border-b border-r p-1 cursor-pointer transition-colors hover:bg-blue-50 relative ${isSelected ? 'bg-blue-100' : 'bg-white'}`}
+        >
+          <span className={`text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${isSelected ? 'bg-blue-600 text-white' : isToday ? 'bg-red-500 text-white' : 'text-slate-600'}`}>
+            {d}
+          </span>
+          {isSelected && (
+            <div className="mt-1 bg-blue-600 text-white text-[9px] p-1 rounded shadow-sm truncate">
+              {formData.name || '新規予約'}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return days;
+  };
+
+  const changeMonth = (offset) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center">
+      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
+        
+        {/* 左セクション: 操作エリア */}
+        <div className="flex-1 space-y-4">
+          
+          {/* モード切替 */}
+          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => setViewMode('form')}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <ListTodo size={16} /> 入力フォーム
+            </button>
+            <button 
+              onClick={() => setViewMode('calendar')}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <Calendar size={16} /> カレンダー選択
+            </button>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px]">
+            {viewMode === 'form' ? (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between border-b pb-4">
+                  <div className="flex items-center gap-2">
+                    <PlusCircle className="text-blue-600" size={20} />
+                    <h2 className="text-lg font-bold">予約詳細入力</h2>
+                  </div>
+                  <button onClick={handleReset} className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-xs">
+                    <RotateCcw size={14} /> リセット
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">健診希望日</label>
+                    <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">カルテID (任意)</label>
+                    <input type="text" name="id" value={formData.id} onChange={handleChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">よみがな</label>
+                    <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">氏名</label>
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日</label>
+                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
+                    <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
+                  <div className="flex gap-6">
+                    {['就職', '進学', 'その他'].map(p => (
+                      <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">検査項目チェック</label>
+                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', stool: '便潜血', endoscopy: '胃内視鏡' }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">提出期限</label>
+                    <div className="flex items-center gap-2">
+                      <select name="deadlineType" value={formData.deadlineType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
+                        <option value="無">無</option>
+                        <option value="有">有</option>
+                      </select>
+                      {formData.deadlineType === '有' && (
+                        <input type="date" name="deadlineDate" value={formData.deadlineDate} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-xs" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">費用・支払</label>
+                    <div className="flex gap-2">
+                      <input type="number" name="payment" value={formData.payment} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-sm font-bold" />
+                      <select name="paymentType" value={formData.paymentType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
+                        <option value="当日">当日</option>
+                        <option value="後日">後日</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">備考事項</label>
+                  <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+                <button onClick={() => window.alert("Supabase連携待機中")} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                  <Save size={18} /> 予約データを保存
+                </button>
+              </div>
+            ) : (
+              <div className="animate-in fade-in duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Calendar size={20} className="text-blue-600" />
+                    {currentMonth.getFullYear()}年 {currentMonth.getMonth() + 1}月
+                  </h2>
+                  <div className="flex border rounded-lg overflow-hidden">
+                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-50 border-r"><ChevronLeft size={20} /></button>
+                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-50"><ChevronRight size={20} /></button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 border-t border-l rounded-lg overflow-hidden text-[11px]">
+                  {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
+                    <div key={d} className={`p-2 font-bold text-center border-r border-b bg-slate-50 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-slate-500'}`}>
+                      {d}
+                    </div>
+                  ))}
+                  {renderCalendar()}
+                </div>
+
+                <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100 flex gap-3 items-start">
+                  <Info className="text-amber-500 mt-0.5" size={18} />
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    カレンダーから予約日を選択すると、その日が「健診日」としてフォームに自動入力されます。青く塗られている日が現在選択中の日付です。
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 右セクション: PDF風プレビュー */}
+        <div className="w-full lg:w-[595px] shrink-0">
+          <div className="sticky top-6">
+            <div className="flex justify-between items-center mb-4 px-2">
+              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Document Preview</span>
+              <button 
+                onClick={() => window.print()}
+                className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all"
+              >
+                <Printer size={14} /> 用紙を印刷
+              </button>
+            </div>
+
+            {/* A4帳票再現 */}
+            <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
+              <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
+              <p className="text-right text-[10px] mb-1 font-bold">受付窓口控え</p>
+              
+              <h1 className="text-2xl font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
+
+              <div className="border-[1.5px] border-black text-sm">
+                {/* 行: 健診日 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">健診日</div>
+                  <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
+                    {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
+                    <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
+                  </div>
+                  <div className="w-[120px] p-2 flex flex-col justify-center">
+                    <div className="text-[8px] border-b mb-1">よみがな: {formData.yurigana}</div>
+                    <div className="text-[10px] font-mono tracking-tighter">ID: {formData.id || '----------'}</div>
+                  </div>
+                </div>
+
+                {/* 行: 氏名 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">氏名</div>
+                  <div className="flex-1 p-5 text-2xl font-bold flex items-baseline gap-4">
+                    <span className="min-w-[150px]">{formData.name}</span>
+                    <span className="text-sm font-normal">様</span>
+                  </div>
+                </div>
+
+                {/* 行: 生年月日 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
+                  <div className="flex-1 p-2 flex justify-between items-center pr-10">
+                    <span className="text-lg">{formData.birthDate ? formData.birthDate.replace(/-/g, '/') : '　　　/　/　'}</span>
+                    <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
+                  </div>
+                </div>
+
+                {/* 行: 連絡先 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">連絡先</div>
+                  <div className="flex-1 p-2 font-mono">{formData.contact || '　　-　　　-　　　'}</div>
+                </div>
+
+                {/* 行: 目的 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診目的</div>
+                  <div className="flex-1 p-2 flex gap-8">
+                    {['就職', '進学', 'その他'].map(p => (
+                      <span key={p} className={`px-2 py-0.5 border ${formData.purpose === p ? "border-black bg-slate-200 font-bold" : "border-transparent text-slate-300"}`}>
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 行: 項目 */}
+                <div className="flex border-b-[1.5px] border-black min-h-[120px]">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex flex-col items-center justify-center text-[10px]">
+                    <span>記録用紙</span>
+                    <div className="w-full border-t border-slate-300 my-2"></div>
+                    <span>健診項目</span>
+                  </div>
+                  <div className="flex-1 p-4">
+                    <div className="flex gap-4 mb-4 items-center">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 border border-black ${formData.hasHospitalForm === '無(当院用紙を使用)' ? 'bg-black' : ''}`}></span>
+                        <span className="text-[11px]">無(当院用紙)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 border border-black ${formData.hasHospitalForm === '有' ? 'bg-black' : ''}`}></span>
+                        <span className="text-[11px]">有(持参)</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', stool: '便潜血', endoscopy: '胃内視鏡' }).map(([key, label]) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <span className={`w-3 h-3 border border-black ${formData.items[key] ? 'bg-black' : ''}`}></span>
+                          <span className={`text-[10px] ${formData.items[key] ? 'font-bold' : 'text-slate-200'}`}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: 期限 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">提出期限</div>
+                  <div className="flex-1 p-2 flex items-center gap-10">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '無' ? 'bg-black' : ''}`}></span>
+                      <span>無</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-1">
+                      <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '有' ? 'bg-black' : ''}`}></span>
+                      <span>有</span>
+                      <span className="ml-2 border-b border-black flex-1 text-center font-mono h-5">
+                        {formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate.replace(/-/g, '/') : '　　/　/　'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: 支払い */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
+                  <div className="flex-1 p-2 flex justify-between items-center pr-10">
+                    <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
+                      ¥ {parseInt(formData.payment || 0).toLocaleString()} -
+                    </span>
+                    <div className="flex gap-4">
+                      {['当日', '後日'].map(type => (
+                        <span key={type} className={`px-2 py-0.5 border ${formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: その他 */}
+                <div className="flex min-h-[180px]">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">その他</div>
+                  <div className="flex-1 p-4 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
+                    {formData.others}
+                  </div>
+                </div>
+              </div>
+
+              {/* 下部 */}
+              <div className="mt-auto flex justify-between items-end pt-10 border-t border-slate-100">
+                <div className="text-[9px] text-slate-400 font-mono italic tracking-wider">RESERVATION_SYS_GEN_2.5</div>
+                <div className="text-right">
+                  <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">〇〇総合病院 健診センター</div>
+                  <div className="text-[10px] text-slate-500">〒000-0000 〇〇県〇〇市〇〇町123-45</div>
+                  <div className="text-[11px] font-bold tracking-tight">窓口電話: 012-3456-7890 (内線 112)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 0; }
+          body { background: white !important; margin: 0; padding: 0; }
+          body > div { padding: 0 !important; }
+          .min-h-screen, .max-w-\\[1400px\\] { max-width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
+          .flex-1, .inline-flex, .text-slate-400, button, h3, .sticky > div:first-child { display: none !important; }
+          .w-full.lg\\:w-\\[595px\\] { width: 100% !important; margin: 0 !important; }
+          .bg-white.shadow-2xl { 
+            box-shadow: none !important; 
+            border: none !important; 
+            margin: 0 auto !important; 
+            width: 210mm !important; 
+            min-height: 297mm !important; 
+            padding: 20mm !important;
+            visibility: visible !important;
+          }
+          .bg-slate-100 { -webkit-print-color-adjust: exact; background-color: #f1f5f9 !important; }
+          * { visibility: hidden; }
+          #printable, #printable * { visibility: visible !important; }
+          #printable { position: absolute; left: 0; top: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
