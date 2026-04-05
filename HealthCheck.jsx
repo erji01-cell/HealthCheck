@@ -1,27 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Printer, Save, Calendar, User, Phone, ClipboardCheck, 
-  CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight, 
-  ListTodo, Info
+import React, { useState, useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import {
+  Printer, Save, Calendar, User, Phone, ClipboardCheck,
+  CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
+  ListTodo, Info, Search, LogIn, LogOut
 } from 'lucide-react';
 
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+);
+
 export default function App() {
+  // 認証状態
+  const [session, setSession] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // 表示モードの管理 ('form' or 'calendar')
   const [viewMode, setViewMode] = useState('form');
-  
-  // カレンダーの表示月管理
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1)); // 2026年3月
 
-  // 初期状態の定義（PDFの内容をベースに）
+  // カレンダーの表示月管理
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1));
+
+  // 患者検索
+  const [patientQuery, setPatientQuery] = useState('');
+  const [patientSuggestions, setPatientSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
+
+  // 初期状態の定義
   const initialState = {
     date: '2026-03-25',
     dayOfWeek: '水曜日',
-    yurigana: 'さまお',
-    id: 'ID-12345',
-    name: '樣男',
-    birthDate: '1997-09-22',
-    age: 28,
-    contact: '090-0000-0000',
+    yurigana: '',
+    id: '',
+    name: '',
+    birthDate: '',
+    age: '',
+    contact: '',
+    companyName: '',
     purpose: '就職',
     hasHospitalForm: '無(当院用紙を使用)',
     items: {
@@ -34,12 +54,24 @@ export default function App() {
     },
     deadlineType: '無',
     deadlineDate: '',
-    payment: '10700',
+    hasDedicatedForm: false,
+    payment: '',
     paymentType: '後日',
-    others: '入職前の健診'
+    others: ''
   };
 
   const [formData, setFormData] = useState(initialState);
+
+  // セッション監視
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // 生年月日から年齢を計算
   useEffect(() => {
@@ -48,9 +80,7 @@ export default function App() {
       const today = new Date();
       let age = today.getFullYear() - birth.getFullYear();
       const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
       setFormData(prev => ({ ...prev, age }));
     }
   }, [formData.birthDate]);
@@ -63,6 +93,69 @@ export default function App() {
       setFormData(prev => ({ ...prev, dayOfWeek: day }));
     }
   }, [formData.date]);
+
+  // 患者検索
+  useEffect(() => {
+    if (!session || patientQuery.length < 1) {
+      setPatientSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const q = patientQuery.trim();
+      const { data, error } = await supabase
+        .from('patients')
+        .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender')
+        .or(`patient_name.ilike.%${q}%,patient_name_kana.ilike.%${q}%,patient_id.ilike.%${q}%`)
+        .limit(10);
+      if (!error && data) {
+        setPatientSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [patientQuery, session]);
+
+  // 外側クリックで候補を閉じる
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const handleSelectPatient = (patient) => {
+    setFormData(prev => ({
+      ...prev,
+      id: patient.patient_id || '',
+      name: patient.patient_name || '',
+      yurigana: patient.patient_name_kana || '',
+      birthDate: patient.patient_dob || '',
+    }));
+    setPatientQuery(patient.patient_name || '');
+    setShowSuggestions(false);
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+    if (error) setLoginError('ログインに失敗しました');
+    setLoginLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setPatientQuery('');
+    setPatientSuggestions([]);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -79,6 +172,7 @@ export default function App() {
 
   const handleReset = () => {
     setFormData(initialState);
+    setPatientQuery('');
   };
 
   // カレンダー生成ロジック
@@ -92,20 +186,18 @@ export default function App() {
     const firstDay = getFirstDayOfMonth(year, month);
     const days = [];
 
-    // 先月の空白
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-20 border-b border-r bg-slate-50/50"></div>);
     }
 
-    // 今月の日付
     for (let d = 1; d <= daysInMonth; d++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const isSelected = formData.date === dateString;
       const isToday = new Date().toISOString().split('T')[0] === dateString;
 
       days.push(
-        <div 
-          key={d} 
+        <div
+          key={d}
           onClick={() => {
             setFormData(prev => ({ ...prev, date: dateString }));
             setViewMode('form');
@@ -131,26 +223,78 @@ export default function App() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
   };
 
+  // ログイン画面
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 w-full max-w-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <LogIn className="text-blue-600" size={22} />
+            <h1 className="text-lg font-bold">健康診断システム ログイン</h1>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400 uppercase">メールアドレス</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400 uppercase">パスワード</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={e => setLoginPassword(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            {loginError && <p className="text-red-500 text-xs">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+            >
+              {loginLoading ? 'ログイン中...' : 'ログイン'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center">
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
-        
+
         {/* 左セクション: 操作エリア */}
         <div className="flex-1 space-y-4">
-          
-          {/* モード切替 */}
-          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-            <button 
-              onClick={() => setViewMode('form')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+
+          {/* モード切替 + ログアウト */}
+          <div className="flex items-center justify-between">
+            <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+              <button
+                onClick={() => setViewMode('form')}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                <ListTodo size={16} /> 入力フォーム
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                <Calendar size={16} /> カレンダー選択
+              </button>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
-              <ListTodo size={16} /> 入力フォーム
-            </button>
-            <button 
-              onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Calendar size={16} /> カレンダー選択
+              <LogOut size={14} /> ログアウト
             </button>
           </div>
 
@@ -165,6 +309,39 @@ export default function App() {
                   <button onClick={handleReset} className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-xs">
                     <RotateCcw size={14} /> リセット
                   </button>
+                </div>
+
+                {/* 患者検索 */}
+                <div className="space-y-1" ref={searchRef}>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・よみがな・ID）</label>
+                  <div className="relative">
+                    <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={patientQuery}
+                      onChange={e => setPatientQuery(e.target.value)}
+                      placeholder="氏名・よみがな・IDで検索..."
+                      className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"
+                    />
+                    {showSuggestions && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {patientSuggestions.map(p => (
+                          <div
+                            key={p.patient_id}
+                            onMouseDown={() => handleSelectPatient(p)}
+                            className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                          >
+                            <div className="font-bold text-sm">{p.patient_name}</div>
+                            <div className="text-xs text-slate-500 flex gap-3">
+                              <span>{p.patient_name_kana}</span>
+                              <span>ID: {p.patient_id}</span>
+                              {p.patient_dob && <span>{p.patient_dob.replace(/-/g, '/')}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,12 +369,16 @@ export default function App() {
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
+                    <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
                   <div className="flex gap-6">
-                    {['就職', '進学', 'その他'].map(p => (
+                    {['就職', '進学', '企業健診', '特定健診', '長寿健診', '入園児', 'その他'].map(p => (
                       <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                         <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
                       </label>
@@ -229,7 +410,23 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex flex-col justify-end">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
+                      <input
+                        type="checkbox"
+                        name="hasDedicatedForm"
+                        checked={formData.hasDedicatedForm}
+                        onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                      />
+                      {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 col-span-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">費用・支払</label>
                     <div className="flex gap-2">
                       <input type="number" name="payment" value={formData.payment} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-sm font-bold" />
@@ -240,6 +437,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">備考事項</label>
@@ -288,7 +486,7 @@ export default function App() {
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2">
               <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Document Preview</span>
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all"
               >
@@ -300,7 +498,7 @@ export default function App() {
             <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
               <p className="text-right text-[10px] mb-1 font-bold">受付窓口控え</p>
-              
+
               <h1 className="text-2xl font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm">
@@ -341,11 +539,17 @@ export default function App() {
                   <div className="flex-1 p-2 font-mono">{formData.contact || '　　-　　　-　　　'}</div>
                 </div>
 
+                {/* 行: 会社名 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">会社名</div>
+                  <div className="flex-1 p-2">{formData.companyName || '　'}</div>
+                </div>
+
                 {/* 行: 目的 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診目的</div>
                   <div className="flex-1 p-2 flex gap-8">
-                    {['就職', '進学', 'その他'].map(p => (
+                    {['就職', '進学', '企業健診', '特定健診', '長寿健診', '入園児', 'その他'].map(p => (
                       <span key={p} className={`px-2 py-0.5 border ${formData.purpose === p ? "border-black bg-slate-200 font-bold" : "border-transparent text-slate-300"}`}>
                         {p}
                       </span>
@@ -400,6 +604,21 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* 行: 専用診断用紙 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">専用用紙</div>
+                  <div className="flex-1 p-2 flex items-center gap-10">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-3.5 h-3.5 border border-black ${!formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span>無</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-3.5 h-3.5 border border-black ${formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span>有（持参あり）</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 行: 支払い */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
@@ -449,12 +668,12 @@ export default function App() {
           .min-h-screen, .max-w-\\[1400px\\] { max-width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
           .flex-1, .inline-flex, .text-slate-400, button, h3, .sticky > div:first-child { display: none !important; }
           .w-full.lg\\:w-\\[595px\\] { width: 100% !important; margin: 0 !important; }
-          .bg-white.shadow-2xl { 
-            box-shadow: none !important; 
-            border: none !important; 
-            margin: 0 auto !important; 
-            width: 210mm !important; 
-            min-height: 297mm !important; 
+          .bg-white.shadow-2xl {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 auto !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
             padding: 20mm !important;
             visibility: visible !important;
           }
