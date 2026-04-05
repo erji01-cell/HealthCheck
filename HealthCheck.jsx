@@ -105,7 +105,7 @@ export default function App() {
       const q = patientQuery.trim();
       const { data, error } = await supabase
         .from('patients')
-        .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender')
+        .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
         .or(`patient_name.ilike.%${q}%,patient_name_kana.ilike.%${q}%,patient_id.ilike.%${q}%`)
         .limit(10);
       if (!error && data) {
@@ -127,13 +127,59 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  const formatDobDisplay = (isoDate) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    let eraName, eraYear;
+    if (year >= 2019)      { eraName = 'R'; eraYear = year - 2018; }
+    else if (year >= 1989) { eraName = 'H'; eraYear = year - 1988; }
+    else if (year >= 1926) { eraName = 'S'; eraYear = year - 1925; }
+    else if (year >= 1912) { eraName = 'T'; eraYear = year - 1911; }
+    else                   { eraName = 'M'; eraYear = year - 1867; }
+    return `${year}(${eraName}${eraYear})年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日`;
+  };
+
+  const parseDobToISO = (dob) => {
+    if (!dob) return '';
+    // Already ISO format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) return dob;
+    // Try wareki conversion
+    const s = dob.replace(/[\/\.\-]/g, ' ').replace(/年/g, ' ').replace(/[月日]/g, ' ').trim();
+    const eras = [
+      { re: /^(r|令和?|れいわ)\s*(\d{1,2})/i,      base: 2018 },
+      { re: /^(h|平成?|へいせい)\s*(\d{1,2})/i,    base: 1988 },
+      { re: /^(s|昭和?|しょうわ)\s*(\d{1,2})/i,    base: 1925 },
+      { re: /^(t|大正?|たいしょう)\s*(\d{1,2})/i,  base: 1911 },
+      { re: /^(m|明治?|めいじ)\s*(\d{1,2})/i,      base: 1867 },
+    ];
+    for (const era of eras) {
+      const match = s.match(era.re);
+      if (match) {
+        const year = era.base + parseInt(match[2]);
+        const rest = s.slice(match[0].length).trim().split(/\s+/);
+        const month = rest[0] ? rest[0].padStart(2, '0') : '01';
+        const day = rest[1] ? rest[1].padStart(2, '0') : '01';
+        return `${year}-${month}-${day}`;
+      }
+    }
+    // Try plain YYYYMMDD or YYYY/MM/DD etc.
+    const nums = dob.replace(/\D/g, '');
+    if (nums.length === 8) {
+      return `${nums.slice(0,4)}-${nums.slice(4,6)}-${nums.slice(6,8)}`;
+    }
+    return '';
+  };
+
   const handleSelectPatient = (patient) => {
     setFormData(prev => ({
       ...prev,
       id: patient.patient_id || '',
       name: patient.patient_name || '',
       yurigana: patient.patient_name_kana || '',
-      birthDate: patient.patient_dob || '',
+      birthDate: parseDobToISO(patient.patient_dob),
+      companyName: patient.company_name || '',
+      contact: patient.phone_number || '',
     }));
     setPatientQuery(patient.patient_name || '');
     setShowSuggestions(false);
@@ -237,6 +283,7 @@ export default function App() {
               <label className="text-[11px] font-bold text-slate-400 uppercase">メールアドレス</label>
               <input
                 type="email"
+                autoComplete="email"
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -247,6 +294,7 @@ export default function App() {
               <label className="text-[11px] font-bold text-slate-400 uppercase">パスワード</label>
               <input
                 type="password"
+                autoComplete="current-password"
                 value={loginPassword}
                 onChange={e => setLoginPassword(e.target.value)}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -363,7 +411,10 @@ export default function App() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日</label>
-                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <div className="w-full p-2 border rounded-lg bg-white min-h-[42px] text-sm">
+                      {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
+                    </div>
+                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-1 border rounded text-xs text-slate-500 outline-none focus:ring-1 focus:ring-blue-300" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
@@ -502,25 +553,30 @@ export default function App() {
               <h1 className="text-2xl font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm">
-                {/* 行: 健診日 */}
+                {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">健診日</div>
                   <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
                     {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
                     <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
                   </div>
-                  <div className="w-[120px] p-2 flex flex-col justify-center">
-                    <div className="text-[8px] border-b mb-1">よみがな: {formData.yurigana}</div>
-                    <div className="text-[10px] font-mono tracking-tighter">ID: {formData.id || '----------'}</div>
+                  <div className="w-[140px] bg-slate-100 p-2 border-l-[1.5px] border-black flex items-center justify-center font-bold text-sm">
+                    {formData.purpose || ''}
                   </div>
                 </div>
 
-                {/* 行: 氏名 */}
+                {/* 行: 氏名（読み仮名上・ID右） */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">氏名</div>
-                  <div className="flex-1 p-5 text-2xl font-bold flex items-baseline gap-4">
-                    <span className="min-w-[150px]">{formData.name}</span>
-                    <span className="text-sm font-normal">様</span>
+                  <div className="flex-1 px-4 py-2 flex flex-col justify-center border-r-[1.5px] border-black">
+                    <span className="text-xs text-slate-500 leading-tight">{formData.yurigana}</span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xl font-bold">{formData.name}</span>
+                      <span className="text-sm font-normal">様</span>
+                    </div>
+                  </div>
+                  <div className="w-[140px] p-2 flex items-center justify-center text-sm font-mono">
+                    {formData.id ? `ID: ${formData.id}` : ''}
                   </div>
                 </div>
 
@@ -528,7 +584,7 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    <span className="text-lg">{formData.birthDate ? formData.birthDate.replace(/-/g, '/') : '　　　/　/　'}</span>
+                    <span className="text-lg">{formData.birthDate ? formatDobDisplay(formData.birthDate) : '　　　年　月　日'}</span>
                     <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
                   </div>
                 </div>
@@ -545,17 +601,6 @@ export default function App() {
                   <div className="flex-1 p-2">{formData.companyName || '　'}</div>
                 </div>
 
-                {/* 行: 目的 */}
-                <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診目的</div>
-                  <div className="flex-1 p-2 flex gap-8">
-                    {['就職', '進学', '企業健診', '特定健診', '長寿健診', '入園児', 'その他'].map(p => (
-                      <span key={p} className={`px-2 py-0.5 border ${formData.purpose === p ? "border-black bg-slate-200 font-bold" : "border-transparent text-slate-300"}`}>
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </div>
 
                 {/* 行: 項目 */}
                 <div className="flex border-b-[1.5px] border-black min-h-[120px]">
