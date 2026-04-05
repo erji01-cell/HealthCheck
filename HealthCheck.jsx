@@ -57,7 +57,14 @@ export default function App() {
     hasDedicatedForm: false,
     payment: '',
     paymentType: '後日',
-    others: ''
+    others: '',
+    bp1Sys: '', bp1Dia: '',
+    bp2Sys: '', bp2Dia: '',
+    pulse: '',
+    height: '', weight: '', bmi: '', waist: '', chest: '',
+    visionR: '', visionL: '',
+    hearingR: '', hearingL: '',
+    colorVision: ''
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -93,6 +100,16 @@ export default function App() {
       setFormData(prev => ({ ...prev, dayOfWeek: day }));
     }
   }, [formData.date]);
+
+  // BMI自動計算
+  useEffect(() => {
+    const h = parseFloat(formData.height);
+    const w = parseFloat(formData.weight);
+    if (h > 0 && w > 0) {
+      const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+      setFormData(prev => ({ ...prev, bmi }));
+    }
+  }, [formData.height, formData.weight]);
 
   // 患者検索
   useEffect(() => {
@@ -601,6 +618,62 @@ export default function App() {
                   <div className="flex-1 p-2">{formData.companyName || '　'}</div>
                 </div>
 
+                {/* 行: 血圧・脈拍 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">血圧・脈拍</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">血圧1回目</div>
+                      <div className="font-mono text-sm">{formData.bp1Sys || '___'} / {formData.bp1Dia || '___'}</div>
+                    </div>
+                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">血圧2回目</div>
+                      <div className="font-mono text-sm">{formData.bp2Sys || '___'} / {formData.bp2Dia || '___'}</div>
+                    </div>
+                    <div className="w-[100px] p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">脈拍</div>
+                      <div className="font-mono text-sm">{formData.pulse || '___'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: 身長・体重・BMI・腹囲・胸囲 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">身長・体重<br/>BMI・腹囲・胸囲</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    {[
+                      { label: '身長', value: formData.height, unit: 'cm' },
+                      { label: '体重', value: formData.weight, unit: 'kg' },
+                      { label: 'BMI', value: formData.bmi, unit: '' },
+                      { label: '腹囲', value: formData.waist, unit: 'cm' },
+                      { label: '胸囲', value: formData.chest, unit: 'cm' },
+                    ].map(({ label, value, unit }) => (
+                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
+                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
+                        <div className="font-mono text-sm">{value || '___'}<span className="text-[9px] text-slate-400">{value && unit}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 行: 視力・聴力・色神 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力<br/>色神</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    {[
+                      { label: '視力 右', value: formData.visionR },
+                      { label: '視力 左', value: formData.visionL },
+                      { label: '聴力 右', value: formData.hearingR },
+                      { label: '聴力 左', value: formData.hearingL },
+                      { label: '色神', value: formData.colorVision },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
+                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
+                        <div className="text-sm">{value || '___'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* 行: 項目 */}
                 <div className="flex border-b-[1.5px] border-black min-h-[120px]">
