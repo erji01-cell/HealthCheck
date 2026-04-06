@@ -1,27 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Printer, Save, Calendar, User, Phone, ClipboardCheck, 
-  CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight, 
-  ListTodo, Info
+import React, { useState, useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import {
+  Printer, Save, Calendar, User, Phone, ClipboardCheck,
+  CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
+  ListTodo, Info, Search, LogIn, LogOut
 } from 'lucide-react';
 
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+);
+
 export default function App() {
+  // 認証状態
+  const [session, setSession] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // 表示モードの管理 ('form' or 'calendar')
   const [viewMode, setViewMode] = useState('form');
-  
-  // カレンダーの表示月管理
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1)); // 2026年3月
 
-  // 初期状態の定義（PDFの内容をベースに）
+  // カレンダーの表示月管理
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1));
+
+  // 患者検索
+  const [patientQuery, setPatientQuery] = useState('');
+  const [patientSuggestions, setPatientSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
+
+  // 初期状態の定義
   const initialState = {
     date: '2026-03-25',
     dayOfWeek: '水曜日',
-    yurigana: 'さまお',
-    id: 'ID-12345',
-    name: '樣男',
-    birthDate: '1997-09-22',
-    age: 28,
-    contact: '090-0000-0000',
+    yurigana: '',
+    id: '',
+    name: '',
+    birthDate: '',
+    age: '',
+    contact: '',
+    companyName: '',
     purpose: '就職',
     hasHospitalForm: '無(当院用紙を使用)',
     items: {
@@ -34,12 +54,31 @@ export default function App() {
     },
     deadlineType: '無',
     deadlineDate: '',
-    payment: '10700',
+    hasDedicatedForm: false,
+    payment: '',
     paymentType: '後日',
-    others: '入職前の健診'
+    others: '',
+    bp1Sys: '', bp1Dia: '',
+    bp2Sys: '', bp2Dia: '',
+    pulse: '',
+    height: '', weight: '', bmi: '', waist: '', chest: '',
+    visionR: '', visionL: '',
+    hearingR: '', hearingL: '',
+    colorVision: ''
   };
 
   const [formData, setFormData] = useState(initialState);
+
+  // セッション監視
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // 生年月日から年齢を計算
   useEffect(() => {
@@ -48,9 +87,7 @@ export default function App() {
       const today = new Date();
       let age = today.getFullYear() - birth.getFullYear();
       const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
       setFormData(prev => ({ ...prev, age }));
     }
   }, [formData.birthDate]);
@@ -63,6 +100,125 @@ export default function App() {
       setFormData(prev => ({ ...prev, dayOfWeek: day }));
     }
   }, [formData.date]);
+
+  // BMI自動計算
+  useEffect(() => {
+    const h = parseFloat(formData.height);
+    const w = parseFloat(formData.weight);
+    if (h > 0 && w > 0) {
+      const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+      setFormData(prev => ({ ...prev, bmi }));
+    }
+  }, [formData.height, formData.weight]);
+
+  // 患者検索
+  useEffect(() => {
+    if (!session || patientQuery.length < 1) {
+      setPatientSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const q = patientQuery.trim();
+      const { data, error } = await supabase
+        .from('patients')
+        .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
+        .or(`patient_name.ilike.%${q}%,patient_name_kana.ilike.%${q}%,patient_id.ilike.%${q}%`)
+        .limit(10);
+      if (!error && data) {
+        setPatientSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [patientQuery, session]);
+
+  // 外側クリックで候補を閉じる
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const formatDobDisplay = (isoDate) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    let eraName, eraYear;
+    if (year >= 2019)      { eraName = 'R'; eraYear = year - 2018; }
+    else if (year >= 1989) { eraName = 'H'; eraYear = year - 1988; }
+    else if (year >= 1926) { eraName = 'S'; eraYear = year - 1925; }
+    else if (year >= 1912) { eraName = 'T'; eraYear = year - 1911; }
+    else                   { eraName = 'M'; eraYear = year - 1867; }
+    return `${year}(${eraName}${eraYear})年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日`;
+  };
+
+  const parseDobToISO = (dob) => {
+    if (!dob) return '';
+    // Already ISO format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) return dob;
+    // Try wareki conversion
+    const s = dob.replace(/[\/\.\-]/g, ' ').replace(/年/g, ' ').replace(/[月日]/g, ' ').trim();
+    const eras = [
+      { re: /^(r|令和?|れいわ)\s*(\d{1,2})/i,      base: 2018 },
+      { re: /^(h|平成?|へいせい)\s*(\d{1,2})/i,    base: 1988 },
+      { re: /^(s|昭和?|しょうわ)\s*(\d{1,2})/i,    base: 1925 },
+      { re: /^(t|大正?|たいしょう)\s*(\d{1,2})/i,  base: 1911 },
+      { re: /^(m|明治?|めいじ)\s*(\d{1,2})/i,      base: 1867 },
+    ];
+    for (const era of eras) {
+      const match = s.match(era.re);
+      if (match) {
+        const year = era.base + parseInt(match[2]);
+        const rest = s.slice(match[0].length).trim().split(/\s+/);
+        const month = rest[0] ? rest[0].padStart(2, '0') : '01';
+        const day = rest[1] ? rest[1].padStart(2, '0') : '01';
+        return `${year}-${month}-${day}`;
+      }
+    }
+    // Try plain YYYYMMDD or YYYY/MM/DD etc.
+    const nums = dob.replace(/\D/g, '');
+    if (nums.length === 8) {
+      return `${nums.slice(0,4)}-${nums.slice(4,6)}-${nums.slice(6,8)}`;
+    }
+    return '';
+  };
+
+  const handleSelectPatient = (patient) => {
+    setFormData(prev => ({
+      ...prev,
+      id: patient.patient_id || '',
+      name: patient.patient_name || '',
+      yurigana: patient.patient_name_kana || '',
+      birthDate: parseDobToISO(patient.patient_dob),
+      companyName: patient.company_name || '',
+      contact: patient.phone_number || '',
+    }));
+    setPatientQuery(patient.patient_name || '');
+    setShowSuggestions(false);
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+    if (error) setLoginError('ログインに失敗しました');
+    setLoginLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setPatientQuery('');
+    setPatientSuggestions([]);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -79,6 +235,7 @@ export default function App() {
 
   const handleReset = () => {
     setFormData(initialState);
+    setPatientQuery('');
   };
 
   // カレンダー生成ロジック
@@ -92,20 +249,18 @@ export default function App() {
     const firstDay = getFirstDayOfMonth(year, month);
     const days = [];
 
-    // 先月の空白
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-20 border-b border-r bg-slate-50/50"></div>);
     }
 
-    // 今月の日付
     for (let d = 1; d <= daysInMonth; d++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const isSelected = formData.date === dateString;
       const isToday = new Date().toISOString().split('T')[0] === dateString;
 
       days.push(
-        <div 
-          key={d} 
+        <div
+          key={d}
           onClick={() => {
             setFormData(prev => ({ ...prev, date: dateString }));
             setViewMode('form');
@@ -131,26 +286,80 @@ export default function App() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
   };
 
+  // ログイン画面
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 w-full max-w-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <LogIn className="text-blue-600" size={22} />
+            <h1 className="text-lg font-bold">健康診断システム ログイン</h1>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400 uppercase">メールアドレス</label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400 uppercase">パスワード</label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={e => setLoginPassword(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+            {loginError && <p className="text-red-500 text-xs">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+            >
+              {loginLoading ? 'ログイン中...' : 'ログイン'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center">
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
-        
+
         {/* 左セクション: 操作エリア */}
         <div className="flex-1 space-y-4">
-          
-          {/* モード切替 */}
-          <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-            <button 
-              onClick={() => setViewMode('form')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+
+          {/* モード切替 + ログアウト */}
+          <div className="flex items-center justify-between">
+            <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+              <button
+                onClick={() => setViewMode('form')}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                <ListTodo size={16} /> 入力フォーム
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                <Calendar size={16} /> カレンダー選択
+              </button>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
-              <ListTodo size={16} /> 入力フォーム
-            </button>
-            <button 
-              onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-            >
-              <Calendar size={16} /> カレンダー選択
+              <LogOut size={14} /> ログアウト
             </button>
           </div>
 
@@ -165,6 +374,39 @@ export default function App() {
                   <button onClick={handleReset} className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-xs">
                     <RotateCcw size={14} /> リセット
                   </button>
+                </div>
+
+                {/* 患者検索 */}
+                <div className="space-y-1" ref={searchRef}>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・よみがな・ID）</label>
+                  <div className="relative">
+                    <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={patientQuery}
+                      onChange={e => setPatientQuery(e.target.value)}
+                      placeholder="氏名・よみがな・IDで検索..."
+                      className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"
+                    />
+                    {showSuggestions && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {patientSuggestions.map(p => (
+                          <div
+                            key={p.patient_id}
+                            onMouseDown={() => handleSelectPatient(p)}
+                            className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                          >
+                            <div className="font-bold text-sm">{p.patient_name}</div>
+                            <div className="text-xs text-slate-500 flex gap-3">
+                              <span>{p.patient_name_kana}</span>
+                              <span>ID: {p.patient_id}</span>
+                              {p.patient_dob && <span>{p.patient_dob.replace(/-/g, '/')}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,18 +428,25 @@ export default function App() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日</label>
-                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <div className="w-full p-2 border rounded-lg bg-white min-h-[42px] text-sm">
+                      {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
+                    </div>
+                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-1 border rounded text-xs text-slate-500 outline-none focus:ring-1 focus:ring-blue-300" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
+                    <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
                   <div className="flex gap-6">
-                    {['就職', '進学', 'その他'].map(p => (
+                    {['就職', '進学', '企業健診', '特定健診', '長寿健診', '入園児', 'その他'].map(p => (
                       <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                         <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
                       </label>
@@ -229,7 +478,23 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex flex-col justify-end">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
+                      <input
+                        type="checkbox"
+                        name="hasDedicatedForm"
+                        checked={formData.hasDedicatedForm}
+                        onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                      />
+                      {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 col-span-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">費用・支払</label>
                     <div className="flex gap-2">
                       <input type="number" name="payment" value={formData.payment} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-sm font-bold" />
@@ -240,6 +505,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">備考事項</label>
@@ -288,7 +554,7 @@ export default function App() {
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2">
               <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Document Preview</span>
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all"
               >
@@ -300,29 +566,34 @@ export default function App() {
             <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
               <p className="text-right text-[10px] mb-1 font-bold">受付窓口控え</p>
-              
+
               <h1 className="text-2xl font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm">
-                {/* 行: 健診日 */}
+                {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">健診日</div>
                   <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
                     {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
                     <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
                   </div>
-                  <div className="w-[120px] p-2 flex flex-col justify-center">
-                    <div className="text-[8px] border-b mb-1">よみがな: {formData.yurigana}</div>
-                    <div className="text-[10px] font-mono tracking-tighter">ID: {formData.id || '----------'}</div>
+                  <div className="w-[140px] bg-slate-100 p-2 border-l-[1.5px] border-black flex items-center justify-center font-bold text-sm">
+                    {formData.purpose || ''}
                   </div>
                 </div>
 
-                {/* 行: 氏名 */}
+                {/* 行: 氏名（読み仮名上・ID右） */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">氏名</div>
-                  <div className="flex-1 p-5 text-2xl font-bold flex items-baseline gap-4">
-                    <span className="min-w-[150px]">{formData.name}</span>
-                    <span className="text-sm font-normal">様</span>
+                  <div className="flex-1 px-4 py-2 flex flex-col justify-center border-r-[1.5px] border-black">
+                    <span className="text-xs text-slate-500 leading-tight">{formData.yurigana}</span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xl font-bold">{formData.name}</span>
+                      <span className="text-sm font-normal">様</span>
+                    </div>
+                  </div>
+                  <div className="w-[140px] p-2 flex items-center justify-center text-sm font-mono">
+                    {formData.id ? `ID: ${formData.id}` : ''}
                   </div>
                 </div>
 
@@ -330,7 +601,7 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    <span className="text-lg">{formData.birthDate ? formData.birthDate.replace(/-/g, '/') : '　　　/　/　'}</span>
+                    <span className="text-lg">{formData.birthDate ? formatDobDisplay(formData.birthDate) : '　　　年　月　日'}</span>
                     <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
                   </div>
                 </div>
@@ -341,14 +612,65 @@ export default function App() {
                   <div className="flex-1 p-2 font-mono">{formData.contact || '　　-　　　-　　　'}</div>
                 </div>
 
-                {/* 行: 目的 */}
+                {/* 行: 会社名 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診目的</div>
-                  <div className="flex-1 p-2 flex gap-8">
-                    {['就職', '進学', 'その他'].map(p => (
-                      <span key={p} className={`px-2 py-0.5 border ${formData.purpose === p ? "border-black bg-slate-200 font-bold" : "border-transparent text-slate-300"}`}>
-                        {p}
-                      </span>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">会社名</div>
+                  <div className="flex-1 p-2">{formData.companyName || '　'}</div>
+                </div>
+
+                {/* 行: 血圧・脈拍 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">血圧・脈拍</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">血圧1回目</div>
+                      <div className="font-mono text-sm">{formData.bp1Sys || '___'} / {formData.bp1Dia || '___'}</div>
+                    </div>
+                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">血圧2回目</div>
+                      <div className="font-mono text-sm">{formData.bp2Sys || '___'} / {formData.bp2Dia || '___'}</div>
+                    </div>
+                    <div className="w-[100px] p-2 flex flex-col items-center justify-center">
+                      <div className="text-[9px] text-slate-400 mb-0.5">脈拍</div>
+                      <div className="font-mono text-sm">{formData.pulse || '___'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: 身長・体重・BMI・腹囲・胸囲 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">身長・体重<br/>BMI・腹囲・胸囲</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    {[
+                      { label: '身長', value: formData.height, unit: 'cm' },
+                      { label: '体重', value: formData.weight, unit: 'kg' },
+                      { label: 'BMI', value: formData.bmi, unit: '' },
+                      { label: '腹囲', value: formData.waist, unit: 'cm' },
+                      { label: '胸囲', value: formData.chest, unit: 'cm' },
+                    ].map(({ label, value, unit }) => (
+                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
+                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
+                        <div className="font-mono text-sm">{value || '___'}<span className="text-[9px] text-slate-400">{value && unit}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 行: 視力・聴力・色神 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力<br/>色神</div>
+                  <div className="flex-1 flex divide-x-[1.5px] divide-black">
+                    {[
+                      { label: '視力 右', value: formData.visionR },
+                      { label: '視力 左', value: formData.visionL },
+                      { label: '聴力 右', value: formData.hearingR },
+                      { label: '聴力 左', value: formData.hearingL },
+                      { label: '色神', value: formData.colorVision },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
+                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
+                        <div className="text-sm">{value || '___'}</div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -396,6 +718,21 @@ export default function App() {
                       <span className="ml-2 border-b border-black flex-1 text-center font-mono h-5">
                         {formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate.replace(/-/g, '/') : '　　/　/　'}
                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 行: 専用診断用紙 */}
+                <div className="flex border-b-[1.5px] border-black text-xs">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">専用用紙</div>
+                  <div className="flex-1 p-2 flex items-center gap-10">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-3.5 h-3.5 border border-black ${!formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span>無</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-3.5 h-3.5 border border-black ${formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span>有（持参あり）</span>
                     </div>
                   </div>
                 </div>
@@ -449,12 +786,12 @@ export default function App() {
           .min-h-screen, .max-w-\\[1400px\\] { max-width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
           .flex-1, .inline-flex, .text-slate-400, button, h3, .sticky > div:first-child { display: none !important; }
           .w-full.lg\\:w-\\[595px\\] { width: 100% !important; margin: 0 !important; }
-          .bg-white.shadow-2xl { 
-            box-shadow: none !important; 
-            border: none !important; 
-            margin: 0 auto !important; 
-            width: 210mm !important; 
-            min-height: 297mm !important; 
+          .bg-white.shadow-2xl {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 auto !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
             padding: 20mm !important;
             visibility: visible !important;
           }
