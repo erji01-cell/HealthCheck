@@ -101,6 +101,26 @@ export default function App() {
     }
   }, [formData.date]);
 
+  // 料金計算（料金表に基づくパッケージ制）
+  const calcFee = (items) => {
+    const { basic, xRay, ecg, blood, stool, endoscopy } = items;
+    if (!basic) return null;
+
+    // メインパッケージ（基本+組み合わせ）
+    let base = 0;
+    if (xRay && ecg && blood)     base = 10700;
+    else if (xRay && ecg)         base = 5300;
+    else if (xRay && blood)       base = 9400;
+    else if (ecg && blood)        base = 9200;
+    else if (blood)               base = 7900;
+    else if (xRay)                base = 4000;
+    else                          base = 2400;
+
+    const endoscopyFee = endoscopy ? 13800 : 0;
+    const stoolFee     = stool     ?  1500 : 0;
+    return base + endoscopyFee + stoolFee;
+  };
+
   // BMI自動計算
   useEffect(() => {
     const h = parseFloat(formData.height);
@@ -463,6 +483,15 @@ export default function App() {
                       </label>
                     ))}
                   </div>
+                  {(() => {
+                    const fee = calcFee(formData.items);
+                    return fee !== null ? (
+                      <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                        <span className="text-xs text-blue-500 font-bold">概算料金</span>
+                        <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -677,22 +706,10 @@ export default function App() {
 
                 {/* 行: 項目 */}
                 <div className="flex border-b-[1.5px] border-black min-h-[120px]">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex flex-col items-center justify-center text-[10px]">
-                    <span>記録用紙</span>
-                    <div className="w-full border-t border-slate-300 my-2"></div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px]">
                     <span>健診項目</span>
                   </div>
                   <div className="flex-1 p-4">
-                    <div className="flex gap-4 mb-4 items-center">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-3.5 h-3.5 border border-black ${formData.hasHospitalForm === '無(当院用紙を使用)' ? 'bg-black' : ''}`}></span>
-                        <span className="text-[11px]">無(当院用紙)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-3.5 h-3.5 border border-black ${formData.hasHospitalForm === '有' ? 'bg-black' : ''}`}></span>
-                        <span className="text-[11px]">有(持参)</span>
-                      </div>
-                    </div>
                     <div className="grid grid-cols-4 gap-2">
                       {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', stool: '便潜血', endoscopy: '胃内視鏡' }).map(([key, label]) => (
                         <div key={key} className="flex items-center gap-1.5">
