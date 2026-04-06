@@ -49,8 +49,17 @@ export default function App() {
       xRay: true,
       ecg: true,
       blood: true,
-      stool: true,
-      endoscopy: false
+      endoscopy: false,
+      echo: false,
+      manganese: false,
+      stool: false,
+      norovirus: false,
+      bacteria3: false,
+      bacteria5: false,
+      paratyphoid: false,
+      methanol: false,
+      hexane: false,
+      methylHippuric: false
     },
     deadlineType: '無',
     deadlineDate: '',
@@ -108,17 +117,24 @@ export default function App() {
 
     // メインパッケージ（基本+組み合わせ）
     let base = 0;
-    if (xRay && ecg && blood)     base = 10700;
-    else if (xRay && ecg)         base = 5300;
-    else if (xRay && blood)       base = 9400;
-    else if (ecg && blood)        base = 9200;
-    else if (blood)               base = 7900;
-    else if (xRay)                base = 4000;
-    else                          base = 2400;
+    if (xRay && blood)     base = 9400;
+    else if (blood)        base = 7900;
+    else if (xRay)         base = 4000;
+    else                   base = 2400;
 
-    const endoscopyFee = endoscopy ? 13800 : 0;
-    const stoolFee     = stool     ?  1500 : 0;
-    return base + endoscopyFee + stoolFee;
+    const ecgFee        = ecg                  ?  1300 : 0;
+    const endoscopyFee  = endoscopy            ? 13800 : 0;
+    const echoFee       = items.echo           ?  5300 : 0;
+    const mangFee       = items.manganese      ?   500 : 0;
+    const stoolFee      = items.stool          ?  1500 : 0;
+    const norovirusFee  = items.norovirus      ?  2800 : 0;
+    const bacteria3Fee  = items.bacteria3      ?  2100 : 0;
+    const bacteria5Fee  = items.bacteria5      ?  2300 : 0;
+    const paratyphoidFee   = items.paratyphoid    ?    0 : 0;
+    const methanolFee      = items.methanol       ? 9200 : 0;
+    const hexaneFee        = items.hexane         ? 4800 : 0;
+    const methylHippuricFee = items.methylHippuric ? 3500 : 0;
+    return base + ecgFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee;
   };
 
   // BMI自動計算
@@ -476,8 +492,24 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">検査項目チェック</label>
-                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', stool: '便潜血', endoscopy: '胃内視鏡' }).map(([key, label]) => (
+                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                      </label>
+                    ))}
+                  </div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
+                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '三菌種', bacteria5: '五菌種', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                      </label>
+                    ))}
+                  </div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">有機溶剤</label>
+                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {Object.entries({ methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
                       <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
                         <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                       </label>
@@ -711,7 +743,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-4">
                     <div className="grid grid-cols-4 gap-2">
-                      {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', stool: '便潜血', endoscopy: '胃内視鏡' }).map(([key, label]) => (
+                      {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン', stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '三菌種', bacteria5: '五菌種', paratyphoid: 'パラチフス・腸チフス', methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
                         <div key={key} className="flex items-center gap-1.5">
                           <span className={`w-3 h-3 border border-black ${formData.items[key] ? 'bg-black' : ''}`}></span>
                           <span className={`text-[10px] ${formData.items[key] ? 'font-bold' : 'text-slate-200'}`}>{label}</span>
