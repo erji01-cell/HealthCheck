@@ -101,6 +101,26 @@ export default function App() {
     }
   }, [formData.date]);
 
+  // 料金計算（料金表に基づくパッケージ制）
+  const calcFee = (items) => {
+    const { basic, xRay, ecg, blood, stool, endoscopy } = items;
+    if (!basic) return null;
+
+    // メインパッケージ（基本+組み合わせ）
+    let base = 0;
+    if (xRay && ecg && blood)     base = 10700;
+    else if (xRay && ecg)         base = 5300;
+    else if (xRay && blood)       base = 9400;
+    else if (ecg && blood)        base = 9200;
+    else if (blood)               base = 7900;
+    else if (xRay)                base = 4000;
+    else                          base = 2400;
+
+    const endoscopyFee = endoscopy ? 13800 : 0;
+    const stoolFee     = stool     ?  1500 : 0;
+    return base + endoscopyFee + stoolFee;
+  };
+
   // BMI自動計算
   useEffect(() => {
     const h = parseFloat(formData.height);
@@ -463,6 +483,15 @@ export default function App() {
                       </label>
                     ))}
                   </div>
+                  {(() => {
+                    const fee = calcFee(formData.items);
+                    return fee !== null ? (
+                      <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                        <span className="text-xs text-blue-500 font-bold">概算料金</span>
+                        <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
