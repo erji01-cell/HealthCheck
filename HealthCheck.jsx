@@ -495,31 +495,6 @@ export default function App() {
                     <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
                     <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
-                  <div className="flex gap-4">
-                    <div className="space-y-1 flex-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">提出期限</label>
-                      <div className="flex items-center gap-2">
-                        <select name="deadlineType" value={formData.deadlineType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
-                          <option value="無">無</option>
-                          <option value="有">有</option>
-                        </select>
-                        <input type="date" name="deadlineDate" value={formData.deadlineDate} onChange={handleChange} disabled={formData.deadlineType === '無'} className={`flex-1 p-2 border rounded-lg text-xs ${formData.deadlineType === '無' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`} />
-                      </div>
-                    </div>
-                    <div className="space-y-1 flex flex-col justify-end">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
-                        <input
-                          type="checkbox"
-                          name="hasDedicatedForm"
-                          checked={formData.hasDedicatedForm}
-                          onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600"
-                        />
-                        {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
-                      </label>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -606,7 +581,26 @@ export default function App() {
                           </label>
                         ))}
                       </div>
-                      {feeDisplay}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">提出期限</label>
+                          <div className="flex items-center gap-2">
+                            <select name="deadlineType" value={formData.deadlineType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
+                              <option value="無">無</option>
+                              <option value="有">有</option>
+                            </select>
+                            <input type="date" name="deadlineDate" value={formData.deadlineType === '無' ? '' : formData.deadlineDate} onChange={handleChange} disabled={formData.deadlineType === '無'} className={`flex-1 p-2 border rounded-lg text-xs ${formData.deadlineType === '無' ? 'bg-slate-100 cursor-not-allowed' : ''}`} />
+                          </div>
+                        </div>
+                        <div className="space-y-1 flex flex-col justify-end">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
+                            <input type="checkbox" name="hasDedicatedForm" checked={formData.hasDedicatedForm} onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+                            {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
+                          </label>
+                        </div>
+                      </div>
+                      <div className="mt-6">{feeDisplay}</div>
                     </div>
                   );
                 })()}
