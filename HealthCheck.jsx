@@ -14,6 +14,7 @@ const supabase = createClient(
 export default function App() {
   // 認証状態
   const [session, setSession] = useState(null);
+  const [shahoFee, setShahoFee] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -138,6 +139,21 @@ export default function App() {
     const methylHippuricFee = items.methylHippuric ? 3500 : 0;
     return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee;
   };
+
+  // 健診目的に応じた検査項目の自動チェック
+  useEffect(() => {
+    const allOff = (overrides = {}) =>
+      Object.fromEntries(
+        Object.keys(formData.items).map(k => [k, overrides[k] ?? false])
+      );
+    if (['特定健診(国保)', '長寿健診'].includes(formData.purpose)) {
+      setFormData(prev => ({ ...prev, items: allOff({ basic: true, ecg: true, blood: true }) }));
+    } else if (formData.purpose === '特定健診(社保)') {
+      setFormData(prev => ({ ...prev, items: allOff({ basic: true, blood: true }) }));
+    } else if (formData.purpose === '入園児') {
+      setFormData(prev => ({ ...prev, items: allOff({ basic: true }) }));
+    }
+  }, [formData.purpose]);
 
   // BMI自動計算
   useEffect(() => {
@@ -483,8 +499,8 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
-                  <div className="flex gap-6">
-                    {['就職', '進学', '企業健診', '特定健診', '長寿健診', '入園児', 'その他'].map(p => (
+                  <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+                    {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他'].map(p => (
                       <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                         <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
                       </label>
@@ -492,32 +508,29 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
-                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
-                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
-                      </label>
-                    ))}
-                  </div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
-                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
-                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
-                      </label>
-                    ))}
-                  </div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">有機溶剤</label>
-                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    {Object.entries({ methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600">
-                        <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
-                      </label>
-                    ))}
-                  </div>
-                  {(() => {
+                {(() => {
+                  const isSpecialPurpose = ['特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児'].includes(formData.purpose);
+                  const bloodLabel = ['特定健診(国保)', '長寿健診'].includes(formData.purpose)
+                    ? '採血 セット3'
+                    : formData.purpose === '特定健診(社保)'
+                    ? '採血 セット2'
+                    : '採血 スクリーニング';
+                  const cbClass = isSpecialPurpose
+                    ? 'flex items-center gap-2 text-xs text-slate-600 cursor-not-allowed'
+                    : 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600';
+                  const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                  const feeDisplay = zeroPurposes.includes(formData.purpose) ? (
+                    <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                      <span className="text-xs text-blue-500 font-bold">概算料金</span>
+                      <span className="text-2xl font-black text-blue-700">¥0</span>
+                    </div>
+                  ) : formData.purpose === '特定健診(社保)' ? (
+                    <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                      <span className="text-xs text-blue-500 font-bold">料金</span>
+                      <span className="text-blue-700 font-bold">¥</span>
+                      <input type="text" value={shahoFee} onChange={e => setShahoFee(e.target.value)} placeholder="金額を入力" className="w-36 text-right text-2xl font-black text-blue-700 bg-transparent border-b-2 border-blue-300 outline-none focus:border-blue-500" />
+                    </div>
+                  ) : (() => {
                     const fee = calcFee(formData.items);
                     return fee !== null ? (
                       <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
@@ -525,8 +538,37 @@ export default function App() {
                         <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
                       </div>
                     ) : null;
-                  })()}
-                </div>
+                  })();
+                  return (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
+                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
+                          <label key={key} className={cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
+                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
+                          <label key={key} className={cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">有機溶剤</label>
+                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        {Object.entries({ methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
+                          <label key={key} className={cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                      {feeDisplay}
+                    </div>
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
