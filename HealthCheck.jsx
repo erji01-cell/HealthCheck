@@ -67,7 +67,7 @@ export default function App() {
     deadlineDate: '',
     hasDedicatedForm: false,
     payment: '',
-    paymentType: '後日',
+    paymentType: '後日支払',
     others: '',
     bp1Sys: '', bp1Dia: '',
     bp2Sys: '', bp2Dia: '',
@@ -491,9 +491,34 @@ export default function App() {
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
-                  <div className="space-y-1 md:col-span-2">
+                  <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
                     <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="space-y-1 flex-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">提出期限</label>
+                      <div className="flex items-center gap-2">
+                        <select name="deadlineType" value={formData.deadlineType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
+                          <option value="無">無</option>
+                          <option value="有">有</option>
+                        </select>
+                        <input type="date" name="deadlineDate" value={formData.deadlineDate} onChange={handleChange} disabled={formData.deadlineType === '無'} className={`flex-1 p-2 border rounded-lg text-xs ${formData.deadlineType === '無' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`} />
+                      </div>
+                    </div>
+                    <div className="space-y-1 flex flex-col justify-end">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
+                        <input
+                          type="checkbox"
+                          name="hasDedicatedForm"
+                          checked={formData.hasDedicatedForm}
+                          onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                        />
+                        {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -519,23 +544,39 @@ export default function App() {
                     ? 'flex items-center gap-2 text-xs text-slate-600 cursor-not-allowed'
                     : 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600';
                   const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                  const paymentTypeSelector = (
+                    <select name="paymentType" value={formData.paymentType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm font-bold">
+                      <option value="当日支払">当日支払</option>
+                      <option value="後日支払">後日支払</option>
+                      <option value="会社請求">会社請求</option>
+                    </select>
+                  );
                   const feeDisplay = zeroPurposes.includes(formData.purpose) ? (
-                    <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
-                      <span className="text-xs text-blue-500 font-bold">概算料金</span>
-                      <span className="text-2xl font-black text-blue-700">¥0</span>
+                    <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                      {paymentTypeSelector}
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-blue-500 font-bold">料金</span>
+                        <span className="text-2xl font-black text-blue-700">¥0</span>
+                      </div>
                     </div>
                   ) : formData.purpose === '特定健診(社保)' ? (
-                    <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
-                      <span className="text-xs text-blue-500 font-bold">料金</span>
-                      <span className="text-blue-700 font-bold">¥</span>
-                      <input type="text" value={shahoFee} onChange={e => setShahoFee(e.target.value)} placeholder="金額を入力" className="w-36 text-right text-2xl font-black text-blue-700 bg-transparent border-b-2 border-blue-300 outline-none focus:border-blue-500" />
+                    <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                      {paymentTypeSelector}
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-blue-500 font-bold">料金</span>
+                        <span className="text-blue-700 font-bold">¥</span>
+                        <input type="text" value={shahoFee} onChange={e => setShahoFee(e.target.value)} placeholder="金額を入力" className="w-36 text-right text-2xl font-black text-blue-700 bg-transparent border-b-2 border-blue-300 outline-none focus:border-blue-500" />
+                      </div>
                     </div>
                   ) : (() => {
                     const fee = calcFee(formData.items);
                     return fee !== null ? (
-                      <div className="flex items-center justify-end gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
-                        <span className="text-xs text-blue-500 font-bold">概算料金</span>
-                        <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
+                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                        {paymentTypeSelector}
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-blue-500 font-bold">料金</span>
+                          <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
+                        </div>
                       </div>
                     ) : null;
                   })();
@@ -570,46 +611,7 @@ export default function App() {
                   );
                 })()}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">提出期限</label>
-                    <div className="flex items-center gap-2">
-                      <select name="deadlineType" value={formData.deadlineType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
-                        <option value="無">無</option>
-                        <option value="有">有</option>
-                      </select>
-                      {formData.deadlineType === '有' && (
-                        <input type="date" name="deadlineDate" value={formData.deadlineDate} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-xs" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-1 flex flex-col justify-end">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">専用診断用紙</label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-[38px]">
-                      <input
-                        type="checkbox"
-                        name="hasDedicatedForm"
-                        checked={formData.hasDedicatedForm}
-                        onChange={e => setFormData(prev => ({ ...prev, hasDedicatedForm: e.target.checked }))}
-                        className="w-4 h-4 rounded border-slate-300 text-blue-600"
-                      />
-                      {formData.hasDedicatedForm ? '有（持参あり）' : '無'}
-                    </label>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1 col-span-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">費用・支払</label>
-                    <div className="flex gap-2">
-                      <input type="number" name="payment" value={formData.payment} onChange={handleChange} className="flex-1 p-2 border rounded-lg text-sm font-bold" />
-                      <select name="paymentType" value={formData.paymentType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm">
-                        <option value="当日">当日</option>
-                        <option value="後日">後日</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
 
                 <div className="space-y-1">
@@ -838,7 +840,7 @@ export default function App() {
                       ¥ {parseInt(formData.payment || 0).toLocaleString()} -
                     </span>
                     <div className="flex gap-4">
-                      {['当日', '後日'].map(type => (
+                      {['当日支払', '後日支払', '会社請求'].map(type => (
                         <span key={type} className={`px-2 py-0.5 border ${formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
                           {type}
                         </span>
