@@ -831,7 +831,13 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
                     <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
-                      ¥ {parseInt(formData.payment || 0).toLocaleString()} -
+                      ¥ {(() => {
+                        const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                        if (zeroPurposes.includes(formData.purpose)) return '0';
+                        if (formData.purpose === '特定健診(社保)') return parseInt(shahoFee || 0).toLocaleString();
+                        const fee = calcFee(formData.items);
+                        return fee !== null ? fee.toLocaleString() : '0';
+                      })()} -
                     </span>
                     <div className="flex gap-4">
                       {['当日支払', '後日支払', '会社請求'].map(type => (
