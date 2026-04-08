@@ -121,14 +121,18 @@ export default function App() {
   // 料金計算（料金表に基づくパッケージ制）
   const calcFee = (items) => {
     const { basic, xRay, ecg, blood, stool, endoscopy } = items;
-    if (!basic) return null;
 
     // メインパッケージ（基本+組み合わせ）
     let base = 0;
-    if (xRay && blood)     base = 9400;
-    else if (blood)        base = 7900;
-    else if (xRay)         base = 4000;
-    else                   base = 2400;
+    if (basic) {
+      if (xRay && blood)   base = 9400;
+      else if (blood)      base = 7900;
+      else if (xRay)       base = 4000;
+      else                 base = 2400;
+    } else {
+      if (xRay)  base += 2100;
+      if (blood) base += 5500;
+    }
 
     const ecgFee        = ecg                  ?  1300 : 0;
     const hba1cFee      = items.hba1c         ?   490 : 0;
@@ -559,7 +563,7 @@ export default function App() {
                     </div>
                   ) : (() => {
                     const fee = calcFee(formData.items);
-                    return fee !== null ? (
+                    return (
                       <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
                         {paymentTypeSelector}
                         <div className="flex items-center gap-3">
@@ -567,7 +571,7 @@ export default function App() {
                           <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
                         </div>
                       </div>
-                    ) : null;
+                    );
                   })();
                   return (
                     <div className="space-y-2">
@@ -747,33 +751,32 @@ export default function App() {
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-center justify-center">
                       <div className="text-[9px] text-slate-400 mb-0.5">血圧1回目</div>
-                      <div className="font-mono text-sm">{formData.bp1Sys || '___'} / {formData.bp1Dia || '___'}</div>
+                      <div className="font-mono text-sm">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
                     </div>
                     <div className="flex-1 p-2 flex flex-col items-center justify-center">
                       <div className="text-[9px] text-slate-400 mb-0.5">血圧2回目</div>
-                      <div className="font-mono text-sm">{formData.bp2Sys || '___'} / {formData.bp2Dia || '___'}</div>
+                      <div className="font-mono text-sm">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-center justify-center">
                       <div className="text-[9px] text-slate-400 mb-0.5">脈拍</div>
-                      <div className="font-mono text-sm">{formData.pulse || '___'}</div>
+                      <div className="font-mono text-sm">{formData.pulse || ''}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* 行: 身長・体重・BMI・腹囲・胸囲 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">身長・体重<br/>BMI・腹囲・胸囲</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">身長・体重<br/>BMI・腹囲</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
                       { label: '身長', value: formData.height, unit: 'cm' },
                       { label: '体重', value: formData.weight, unit: 'kg' },
                       { label: 'BMI', value: formData.bmi, unit: '' },
                       { label: '腹囲', value: formData.waist, unit: 'cm' },
-                      { label: '胸囲', value: formData.chest, unit: 'cm' },
                     ].map(({ label, value, unit }) => (
                       <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
                         <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
-                        <div className="font-mono text-sm">{value || '___'}<span className="text-[9px] text-slate-400">{value && unit}</span></div>
+                        <div className="font-mono text-sm">{value || ''}<span className="text-[9px] text-slate-400">{value && unit}</span></div>
                       </div>
                     ))}
                   </div>
@@ -792,9 +795,9 @@ export default function App() {
                     ].map(({ label, value, value2 }) => (
                       <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center gap-1">
                         <div className="text-[9px] text-slate-400">{label}</div>
-                        <div className="text-sm">{value || '___'}</div>
+                        <div className="text-sm">{value || ''}</div>
                         {value2 !== undefined && (
-                          <div className="text-sm border-t border-dashed border-slate-300 pt-1 w-full text-center">{value2 || '___'}</div>
+                          <div className="text-sm border-t border-dashed border-slate-300 pt-1 w-full text-center">{value2 || ''}</div>
                         )}
                       </div>
                     ))}
@@ -806,15 +809,25 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px]">
                     <span>健診項目</span>
                   </div>
-                  <div className="flex-1 p-4">
-                    <div className="grid grid-cols-4 gap-2">
-                      {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン', stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス', methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                          <span className={`w-3 h-3 border border-black ${formData.items[key] ? 'bg-black' : ''}`}></span>
-                          <span className={`text-[10px] ${formData.items[key] ? 'font-bold' : 'text-slate-200'}`}>{label}</span>
+                  <div className="flex-1 p-3 space-y-2">
+                    {[
+                      { label: '一般健診', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
+                      { label: '検便', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
+                      { label: '有機溶剤', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
+                      { label: 'その他採血', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
+                    ].map(({ label, entries }) => (
+                      <div key={label}>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">{label}</div>
+                        <div className="grid grid-cols-4 gap-x-2 gap-y-1">
+                          {Object.entries(entries).map(([key, lbl]) => (
+                            <div key={key} className="flex items-center gap-1.5">
+                              <span className={`w-3 h-3 border border-black flex-shrink-0 ${formData.items[key] ? 'bg-black' : ''}`}></span>
+                              <span className={`text-[10px] ${formData.items[key] ? 'font-bold' : 'text-slate-200'}`}>{lbl}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
