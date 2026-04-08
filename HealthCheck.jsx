@@ -73,8 +73,8 @@ export default function App() {
     bp2Sys: '', bp2Dia: '',
     pulse: '',
     height: '', weight: '', bmi: '', waist: '', chest: '',
-    visionR: '', visionL: '',
-    hearingR: '', hearingL: '',
+    visionR: '', visionL: '', visionR2: '', visionL2: '',
+    hearingR: '', hearingL: '', hearingR2: '', hearingL2: '',
     colorVision: ''
   };
 
@@ -762,15 +762,18 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力<br/>色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
-                      { label: '視力 右', value: formData.visionR },
-                      { label: '視力 左', value: formData.visionL },
-                      { label: '聴力 右', value: formData.hearingR },
-                      { label: '聴力 左', value: formData.hearingL },
+                      { label: '視力 右', value: formData.visionR, value2: formData.visionR2 },
+                      { label: '視力 左', value: formData.visionL, value2: formData.visionL2 },
+                      { label: '聴力 右', value: formData.hearingR, value2: formData.hearingR2 },
+                      { label: '聴力 左', value: formData.hearingL, value2: formData.hearingL2 },
                       { label: '色神', value: formData.colorVision },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
-                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
+                    ].map(({ label, value, value2 }) => (
+                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center gap-1">
+                        <div className="text-[9px] text-slate-400">{label}</div>
                         <div className="text-sm">{value || '___'}</div>
+                        {value2 !== undefined && (
+                          <div className="text-sm border-t border-dashed border-slate-300 pt-1 w-full text-center">{value2 || '___'}</div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -831,7 +834,13 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
                     <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
-                      ¥ {parseInt(formData.payment || 0).toLocaleString()} -
+                      ¥ {(() => {
+                        const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                        if (zeroPurposes.includes(formData.purpose)) return '0';
+                        if (formData.purpose === '特定健診(社保)') return parseInt(shahoFee || 0).toLocaleString();
+                        const fee = calcFee(formData.items);
+                        return fee !== null ? fee.toLocaleString() : '0';
+                      })()} -
                     </span>
                     <div className="flex gap-4">
                       {['当日支払', '後日支払', '会社請求'].map(type => (
