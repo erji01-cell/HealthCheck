@@ -61,7 +61,13 @@ export default function App() {
       paratyphoid: false,
       methanol: false,
       hexane: false,
-      methylHippuric: false
+      methylHippuric: false,
+      psa: false,
+      hbsAg: false,
+      hbsAb: false,
+      hcvAb: false,
+      syphilis: false,
+      mrsa: false
     },
     deadlineType: '無',
     deadlineDate: '',
@@ -137,7 +143,15 @@ export default function App() {
     const methanolFee      = items.methanol       ? 9200 : 0;
     const hexaneFee        = items.hexane         ? 4800 : 0;
     const methylHippuricFee = items.methylHippuric ? 3500 : 0;
-    return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee;
+    const psaFee       = items.psa      ? 2650 : 0;
+    const hbsAgFee     = items.hbsAg   ? 1730 : 0;
+    const hbsAbFee     = items.hbsAb   ? 1840 : 0;
+    const hcvAbFee     = items.hcvAb   ? 2460 : 0;
+    const syphilisFee  = items.syphilis ? 1780 : 0;
+    const mrsaFee      = items.mrsa     ? 3750 : 0;
+    const otherBloodItems = [items.psa, items.hbsAg, items.hbsAb, items.hcvAb, items.syphilis];
+    const bloodBaseFee = !blood && otherBloodItems.some(Boolean) ? 400 : 0;
+    return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee + psaFee + hbsAgFee + hbsAbFee + hcvAbFee + syphilisFee + mrsaFee + bloodBaseFee;
   };
 
   // 健診目的に応じた検査項目の自動チェック
@@ -576,6 +590,14 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">有機溶剤</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' }).map(([key, label]) => (
+                          <label key={key} className={cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他採血項目</label>
+                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        {Object.entries({ psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
