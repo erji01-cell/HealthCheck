@@ -694,9 +694,7 @@ export default function App() {
             {/* A4帳票再現 */}
             <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
-              <p className="text-right text-[10px] mb-1 font-bold">受付窓口控え</p>
-
-              <h1 className="text-2xl font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
+              <h1 className="text-[22px] font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm">
                 {/* 行: 健診日 + 健診目的 */}
@@ -721,7 +719,7 @@ export default function App() {
                       <span className="text-sm font-normal">様</span>
                     </div>
                   </div>
-                  <div className="w-[140px] p-2 flex items-center justify-center text-sm font-mono">
+                  <div className="print-id w-[140px] p-2 flex items-center justify-center text-sm font-mono">
                     {formData.id ? `ID: ${formData.id}` : ''}
                   </div>
                 </div>
@@ -798,13 +796,13 @@ export default function App() {
                         { label: '裸眼', r: formData.visionR, l: formData.visionL },
                         { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
                       ].map(({ label, r, l }) => (
-                        <div key={label} className="flex items-center gap-1 px-2 py-[9px]">
+                        <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
                           <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
                           <span className="text-[9px] text-black">右(</span>
-                          <span className="text-xs min-w-[28px] text-center text-black">{r || ''}</span>
+                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                           <span className="text-[9px] text-black">左(</span>
-                          <span className="text-xs min-w-[28px] text-center text-black">{l || ''}</span>
+                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
@@ -815,13 +813,13 @@ export default function App() {
                         { label: '1000Hz', r: formData.hearingR, l: formData.hearingL },
                         { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
                       ].map(({ label, r, l }) => (
-                        <div key={label} className="flex items-center gap-1 px-2 py-[9px]">
-                          <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
+                        <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
+                          <span className="hearing-label text-[9px] text-black w-8 shrink-0">{label}</span>
                           <span className="text-[9px] text-black">右(</span>
-                          <span className="text-xs min-w-[28px] text-center text-black">{r || ''}</span>
+                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                           <span className="text-[9px] text-black">左(</span>
-                          <span className="text-xs min-w-[28px] text-center text-black">{l || ''}</span>
+                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
@@ -977,10 +975,14 @@ export default function App() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          #printable h1 { font-size: 16px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
+          #printable h1 { font-size: 24px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
           #printable p { margin-bottom: 2px !important; }
           .bg-slate-100 { background-color: #f1f5f9 !important; }
           .bg-white { background-color: white !important; }
+          .vision-hearing-item span { font-size: 12px !important; }
+          .vision-hearing-val { min-width: 42px !important; font-size: 16px !important; }
+          .hearing-label { min-width: 48px !important; width: auto !important; }
+          .print-id { font-size: 21px !important; }
         }
       `}</style>
     </div>
