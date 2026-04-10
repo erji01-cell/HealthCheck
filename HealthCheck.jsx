@@ -11,6 +11,25 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_KEY
 );
 
+// 祝日・休日リスト（2025〜2027）
+const HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
+  '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06',
+  '2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23',
+  '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  // 2026
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
+  '2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+  '2026-10-12','2026-11-03','2026-11-23',
+  // 2027
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
+  '2027-03-21','2027-04-29','2027-05-03','2027-05-04','2027-05-05',
+  '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
+  '2027-10-11','2027-11-03','2027-11-23',
+]);
+
 export default function App() {
   // 認証状態
   const [session, setSession] = useState(null);
@@ -33,9 +52,14 @@ export default function App() {
   const searchRef = useRef(null);
 
   // 初期状態の定義
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+
   const initialState = {
-    date: '2026-03-25',
-    dayOfWeek: '水曜日',
+    date: tomorrowStr,
+    dayOfWeek: days[tomorrow.getDay()],
     yurigana: '',
     id: '',
     name: '',
@@ -88,7 +112,7 @@ export default function App() {
 
   const [formData, setFormData] = useState(initialState);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
-  const [rightTab, setRightTab] = useState('preview'); // 'preview' | 'calendar'
+  const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
@@ -97,9 +121,11 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) fetchCalendarData();
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchCalendarData();
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -843,15 +869,22 @@ export default function App() {
                               const isToday = dateStr === new Date().toISOString().split('T')[0];
                               const isSun = idx % 7 === 0;
                               const isSat = idx % 7 === 6;
+                              const isHoliday = dateStr ? HOLIDAYS.has(dateStr) : false;
+                              const isDisabled = isSun || isHoliday;
                               return (
                                 <div
                                   key={idx}
-                                  onClick={() => day && reservations.length > 0 && setSelectedCalendarDate(dateStr)}
-                                  className={`bg-white min-h-[52px] p-1 text-[10px] ${day && reservations.length > 0 ? 'cursor-pointer hover:bg-blue-50' : ''} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+                                  onClick={() => {
+                                    if (!day || isDisabled) return;
+                                    setFormData(prev => ({ ...prev, date: dateStr }));
+                                    setRightTab('preview');
+                                    if (reservations.length > 0) setSelectedCalendarDate(dateStr);
+                                  }}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
                                 >
                                   {day && (
                                     <>
-                                      <div className={`font-bold mb-0.5 ${isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
+                                      <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
                                       {reservations.map((r, ri) => (
                                         <div key={ri} className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate">{r.patient_name}</div>
                                       ))}
@@ -916,7 +949,7 @@ export default function App() {
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
               <h1 className="text-[22px] font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
-              <div className="border-[1.5px] border-black text-sm">
+              <div className="border-[1.5px] border-black text-sm print-table">
                 {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
@@ -967,7 +1000,7 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[8px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
+                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[6px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
                       <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
@@ -1171,7 +1204,7 @@ export default function App() {
 
       <style>{`
         @media print {
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 portrait; margin: 5mm 0 0 0; }
           html, body {
             height: 297mm !important;
             max-height: 297mm !important;
@@ -1205,6 +1238,9 @@ export default function App() {
           .hearing-label { min-width: 48px !important; width: auto !important; }
           .print-id { font-size: 21px !important; }
           .bp-title { font-size: 12px !important; }
+          .print-table { border: 1.5px solid black !important; }
+          .print-table > div { border-bottom: 1.5px solid black !important; }
+          .print-table > div > div:first-child { border-right: 1.5px solid black !important; }
         }
       `}</style>
     </div>
