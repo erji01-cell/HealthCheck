@@ -74,6 +74,8 @@ export default function App() {
     hasDedicatedForm: false,
     payment: '',
     paymentType: '後日支払',
+    medicalHistory: '',
+    findings: '',
     others: '',
     bp1Sys: '', bp1Dia: '',
     bp2Sys: '', bp2Dia: '',
@@ -761,6 +763,10 @@ export default function App() {
                       <div className="text-[9px] text-slate-400 mb-0.5">脈拍</div>
                       <div className="font-mono text-sm">{formData.pulse || ''}</div>
                     </div>
+                    <div className="w-[100px] p-2 flex flex-col items-center justify-center border-l-[1.5px] border-black">
+                      <div className="text-[9px] text-slate-400 mb-0.5">色神</div>
+                      <div className="text-sm">{formData.colorVision || ''}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -784,14 +790,13 @@ export default function App() {
 
                 {/* 行: 視力・聴力・色神 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力<br/>色神</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
                       { label: '視力 右', value: formData.visionR, value2: formData.visionR2 },
                       { label: '視力 左', value: formData.visionL, value2: formData.visionL2 },
                       { label: '聴力 右', value: formData.hearingR, value2: formData.hearingR2 },
                       { label: '聴力 左', value: formData.hearingL, value2: formData.hearingL2 },
-                      { label: '色神', value: formData.colorVision },
                     ].map(({ label, value, value2 }) => (
                       <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center gap-1">
                         <div className="text-[9px] text-slate-400">{label}</div>
@@ -811,7 +816,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-3 space-y-2">
                     {[
-                      { label: '一般健診', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: '採血', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
+                      { label: '一般健診', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリーニング', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
                       { label: '検便', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
@@ -887,10 +892,26 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* 行: 既往歴 */}
+                <div className="flex border-b-[1.5px] border-black min-h-[40px]">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">既往歴</div>
+                  <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
+                    {formData.medicalHistory}
+                  </div>
+                </div>
+
+                {/* 行: 所見 */}
+                <div className="flex border-b-[1.5px] border-black min-h-[40px]">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">所見</div>
+                  <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
+                    {formData.findings}
+                  </div>
+                </div>
+
                 {/* 行: その他 */}
-                <div className="flex min-h-[180px]">
+                <div className="flex min-h-[90px]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">その他</div>
-                  <div className="flex-1 p-4 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
+                  <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
                     {formData.others}
                   </div>
                 </div>
