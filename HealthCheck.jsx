@@ -788,24 +788,44 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 行: 視力・聴力・色神 */}
+                {/* 行: 視力・聴力 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
-                    {[
-                      { label: '視力 右', value: formData.visionR, value2: formData.visionR2 },
-                      { label: '視力 左', value: formData.visionL, value2: formData.visionL2 },
-                      { label: '聴力 右', value: formData.hearingR, value2: formData.hearingR2 },
-                      { label: '聴力 左', value: formData.hearingL, value2: formData.hearingL2 },
-                    ].map(({ label, value, value2 }) => (
-                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center gap-1">
-                        <div className="text-[9px] text-slate-400">{label}</div>
-                        <div className="text-sm">{value || ''}</div>
-                        {value2 !== undefined && (
-                          <div className="text-sm border-t border-dashed border-slate-300 pt-1 w-full text-center">{value2 || ''}</div>
-                        )}
-                      </div>
-                    ))}
+                    {/* 視力 */}
+                    <div className="flex-1 flex flex-col divide-y-[1.5px] divide-black">
+                      {[
+                        { label: '裸眼', r: formData.visionR, l: formData.visionL },
+                        { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
+                      ].map(({ label, r, l }) => (
+                        <div key={label} className="flex items-center gap-2 px-3 py-1.5">
+                          <span className="text-[9px] text-slate-400 w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-slate-400">右(</span>
+                          <span className="text-sm min-w-[30px] text-center">{r || ''}</span>
+                          <span className="text-[9px] text-slate-400">)</span>
+                          <span className="text-[9px] text-slate-400">左(</span>
+                          <span className="text-sm min-w-[30px] text-center">{l || ''}</span>
+                          <span className="text-[9px] text-slate-400">)</span>
+                        </div>
+                      ))}
+                    </div>
+                    {/* 聴力 */}
+                    <div className="flex-1 flex flex-col divide-y-[1.5px] divide-black">
+                      {[
+                        { label: '1000Hz', r: formData.hearingR, l: formData.hearingL },
+                        { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
+                      ].map(({ label, r, l }) => (
+                        <div key={label} className="flex items-center gap-2 px-3 py-1.5">
+                          <span className="text-[9px] text-slate-400 w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-slate-400">右(</span>
+                          <span className="text-sm min-w-[30px] text-center">{r || ''}</span>
+                          <span className="text-[9px] text-slate-400">)</span>
+                          <span className="text-[9px] text-slate-400">左(</span>
+                          <span className="text-sm min-w-[30px] text-center">{l || ''}</span>
+                          <span className="text-[9px] text-slate-400">)</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
