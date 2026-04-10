@@ -752,20 +752,20 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">血圧・脈拍</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-400 mb-0.5">血圧1回目</div>
-                      <div className="font-mono text-sm">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
+                      <div className="text-[9px] text-slate-500 mb-0.5">血圧1回目</div>
+                      <div className="font-mono text-sm font-bold text-slate-800">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
                     </div>
                     <div className="flex-1 p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-400 mb-0.5">血圧2回目</div>
-                      <div className="font-mono text-sm">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
+                      <div className="text-[9px] text-slate-500 mb-0.5">血圧2回目</div>
+                      <div className="font-mono text-sm font-bold text-slate-800">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-400 mb-0.5">脈拍</div>
-                      <div className="font-mono text-sm">{formData.pulse || ''}</div>
+                      <div className="text-[9px] text-slate-500 mb-0.5">脈拍</div>
+                      <div className="font-mono text-sm font-bold text-slate-800">{formData.pulse || ''}</div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-center justify-center border-l-[1.5px] border-black">
-                      <div className="text-[9px] text-slate-400 mb-0.5">色神</div>
-                      <div className="text-sm">{formData.colorVision || ''}</div>
+                      <div className="text-[9px] text-slate-500 mb-0.5">色神</div>
+                      <div className="text-sm font-bold text-slate-800">{formData.colorVision || ''}</div>
                     </div>
                   </div>
                 </div>
@@ -781,8 +781,8 @@ export default function App() {
                       { label: '腹囲', value: formData.waist, unit: 'cm' },
                     ].map(({ label, value, unit }) => (
                       <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
-                        <div className="text-[9px] text-slate-400 mb-0.5">{label}</div>
-                        <div className="font-mono text-sm">{value || ''}<span className="text-[9px] text-slate-400">{value && unit}</span></div>
+                        <div className="text-[9px] text-slate-500 mb-0.5">{label}</div>
+                        <div className="font-mono text-sm font-bold text-slate-800">{value || ''}<span className="text-[9px] text-slate-500 font-normal">{value && unit}</span></div>
                       </div>
                     ))}
                   </div>
@@ -799,13 +799,13 @@ export default function App() {
                         { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
                       ].map(({ label, r, l }) => (
                         <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-slate-400 w-10 shrink-0">{label}</span>
-                          <span className="text-[9px] text-slate-400">右(</span>
-                          <span className="text-sm min-w-[30px] text-center">{r || ''}</span>
-                          <span className="text-[9px] text-slate-400">)</span>
-                          <span className="text-[9px] text-slate-400">左(</span>
-                          <span className="text-sm min-w-[30px] text-center">{l || ''}</span>
-                          <span className="text-[9px] text-slate-400">)</span>
+                          <span className="text-[9px] text-slate-500 w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-slate-500">右(</span>
+                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{r || ''}</span>
+                          <span className="text-[9px] text-slate-500">)</span>
+                          <span className="text-[9px] text-slate-500">左(</span>
+                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{l || ''}</span>
+                          <span className="text-[9px] text-slate-500">)</span>
                         </div>
                       ))}
                     </div>
@@ -816,13 +816,13 @@ export default function App() {
                         { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
                       ].map(({ label, r, l }) => (
                         <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-slate-400 w-10 shrink-0">{label}</span>
-                          <span className="text-[9px] text-slate-400">右(</span>
-                          <span className="text-sm min-w-[30px] text-center">{r || ''}</span>
-                          <span className="text-[9px] text-slate-400">)</span>
-                          <span className="text-[9px] text-slate-400">左(</span>
-                          <span className="text-sm min-w-[30px] text-center">{l || ''}</span>
-                          <span className="text-[9px] text-slate-400">)</span>
+                          <span className="text-[9px] text-slate-500 w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-slate-500">右(</span>
+                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{r || ''}</span>
+                          <span className="text-[9px] text-slate-500">)</span>
+                          <span className="text-[9px] text-slate-500">左(</span>
+                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{l || ''}</span>
+                          <span className="text-[9px] text-slate-500">)</span>
                         </div>
                       ))}
                     </div>
@@ -830,24 +830,24 @@ export default function App() {
                 </div>
 
                 {/* 行: 項目 */}
-                <div className="flex border-b-[1.5px] border-black min-h-[120px]">
+                <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px]">
                     <span>健診項目</span>
                   </div>
-                  <div className="flex-1 p-3 space-y-2">
+                  <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリーニング', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
-                      { label: '検便', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
-                      { label: '有機溶剤', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
-                      { label: 'その他採血', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
-                    ].map(({ label, entries }) => (
-                      <div key={label}>
-                        <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">{label}</div>
-                        <div className="grid grid-cols-4 gap-x-2 gap-y-1">
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリーニング', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
+                      { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
+                      { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
+                      { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
+                    ].map(({ label, bg, border, labelColor, entries }) => (
+                      <div key={label} className={`${bg} border ${border} rounded px-2 py-1`}>
+                        <div className={`text-[9px] font-bold ${labelColor} mb-1`}>{label}</div>
+                        <div className="grid grid-cols-4 gap-x-2 gap-y-0.5">
                           {Object.entries(entries).map(([key, lbl]) => (
-                            <div key={key} className="flex items-center gap-1.5">
+                            <div key={key} className="flex items-center gap-1">
                               <span className={`w-3 h-3 border border-black flex-shrink-0 ${formData.items[key] ? 'bg-black' : ''}`}></span>
-                              <span className={`text-[10px] ${formData.items[key] ? 'font-bold' : 'text-slate-200'}`}>{lbl}</span>
+                              <span className={`text-[10px] ${formData.items[key] ? 'font-bold text-slate-800' : 'text-slate-400'}`}>{lbl}</span>
                             </div>
                           ))}
                         </div>
@@ -938,12 +938,10 @@ export default function App() {
               </div>
 
               {/* 下部 */}
-              <div className="mt-auto flex justify-between items-end pt-10 border-t border-slate-100">
+              <div className="mt-auto flex justify-between items-end pt-4 border-t border-slate-100">
                 <div className="text-[9px] text-slate-400 font-mono italic tracking-wider">RESERVATION_SYS_GEN_2.5</div>
                 <div className="text-right">
-                  <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">〇〇総合病院 健診センター</div>
-                  <div className="text-[10px] text-slate-500">〒000-0000 〇〇県〇〇市〇〇町123-45</div>
-                  <div className="text-[11px] font-bold tracking-tight">窓口電話: 012-3456-7890 (内線 112)</div>
+                  <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">陽春堂内科診療所</div>
                 </div>
               </div>
             </div>
@@ -954,25 +952,35 @@ export default function App() {
 
       <style>{`
         @media print {
-          @page { size: A4; margin: 0; }
-          body { background: white !important; margin: 0; padding: 0; }
-          body > div { padding: 0 !important; }
-          .min-h-screen, .max-w-\\[1400px\\] { max-width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
-          .flex-1, .inline-flex, .text-slate-400, button, h3, .sticky > div:first-child { display: none !important; }
-          .w-full.lg\\:w-\\[595px\\] { width: 100% !important; margin: 0 !important; }
-          .bg-white.shadow-2xl {
+          @page { size: A4 portrait; margin: 0; }
+          html, body {
+            height: 297mm !important;
+            max-height: 297mm !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          * { visibility: hidden !important; }
+          #printable, #printable * { visibility: visible !important; }
+          #printable {
+            position: fixed !important;
+            left: 0 !important; top: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            padding: 4mm 6mm !important;
+            margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
-            margin: 0 auto !important;
-            width: 210mm !important;
-            min-height: 297mm !important;
-            padding: 20mm !important;
-            visibility: visible !important;
+            border-radius: 0 !important;
+            overflow: hidden !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          .bg-slate-100 { -webkit-print-color-adjust: exact; background-color: #f1f5f9 !important; }
-          * { visibility: hidden; }
-          #printable, #printable * { visibility: visible !important; }
-          #printable { position: absolute; left: 0; top: 0; }
+          #printable h1 { font-size: 16px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
+          #printable p { margin-bottom: 2px !important; }
+          .bg-slate-100 { background-color: #f1f5f9 !important; }
+          .bg-white { background-color: white !important; }
         }
       `}</style>
     </div>
