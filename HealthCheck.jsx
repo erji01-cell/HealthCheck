@@ -706,7 +706,7 @@ export default function App() {
                     {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
                     <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
                   </div>
-                  <div className="w-[140px] bg-slate-100 p-2 border-l-[1.5px] border-black flex items-center justify-center font-bold text-sm">
+                  <div className="w-[140px] bg-slate-100 p-2 flex items-center justify-center font-bold text-sm">
                     {formData.purpose || ''}
                   </div>
                 </div>
@@ -751,21 +751,21 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black text-xs">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">血圧・脈拍</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
-                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-500 mb-0.5">血圧1回目</div>
-                      <div className="font-mono text-sm font-bold text-slate-800">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
+                    <div className="flex-1 p-2 flex flex-col items-start justify-start">
+                      <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
+                      <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
                     </div>
-                    <div className="flex-1 p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-500 mb-0.5">血圧2回目</div>
-                      <div className="font-mono text-sm font-bold text-slate-800">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
+                    <div className="flex-1 p-2 flex flex-col items-start justify-start">
+                      <div className="text-[9px] text-black mb-0.5">血圧2回目</div>
+                      <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
                     </div>
-                    <div className="w-[100px] p-2 flex flex-col items-center justify-center">
-                      <div className="text-[9px] text-slate-500 mb-0.5">脈拍</div>
-                      <div className="font-mono text-sm font-bold text-slate-800">{formData.pulse || ''}</div>
+                    <div className="w-[100px] p-2 flex flex-col items-start justify-start">
+                      <div className="text-[9px] text-black mb-0.5">脈拍</div>
+                      <div className="font-mono text-sm font-bold text-black">{formData.pulse || ''}</div>
                     </div>
-                    <div className="w-[100px] p-2 flex flex-col items-center justify-center border-l-[1.5px] border-black">
-                      <div className="text-[9px] text-slate-500 mb-0.5">色神</div>
-                      <div className="text-sm font-bold text-slate-800">{formData.colorVision || ''}</div>
+                    <div className="w-[100px] p-2 flex flex-col items-start justify-start">
+                      <div className="text-[9px] text-black mb-0.5">色神</div>
+                      <div className="text-sm font-bold text-black">{formData.colorVision || ''}</div>
                     </div>
                   </div>
                 </div>
@@ -780,9 +780,9 @@ export default function App() {
                       { label: 'BMI', value: formData.bmi, unit: '' },
                       { label: '腹囲', value: formData.waist, unit: 'cm' },
                     ].map(({ label, value, unit }) => (
-                      <div key={label} className="flex-1 p-2 flex flex-col items-center justify-center">
-                        <div className="text-[9px] text-slate-500 mb-0.5">{label}</div>
-                        <div className="font-mono text-sm font-bold text-slate-800">{value || ''}<span className="text-[9px] text-slate-500 font-normal">{value && unit}</span></div>
+                      <div key={label} className="flex-1 p-2 flex flex-col items-start justify-start">
+                        <div className="text-[9px] text-black mb-0.5">{label}</div>
+                        <div className="font-mono text-sm font-bold text-black">{value || ''}<span className="text-[9px] text-black font-normal">{value && unit}</span></div>
                       </div>
                     ))}
                   </div>
@@ -799,13 +799,13 @@ export default function App() {
                         { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
                       ].map(({ label, r, l }) => (
                         <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-slate-500 w-10 shrink-0">{label}</span>
-                          <span className="text-[9px] text-slate-500">右(</span>
-                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{r || ''}</span>
-                          <span className="text-[9px] text-slate-500">)</span>
-                          <span className="text-[9px] text-slate-500">左(</span>
-                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{l || ''}</span>
-                          <span className="text-[9px] text-slate-500">)</span>
+                          <span className="text-[9px] text-black w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-black">右(</span>
+                          <span className="text-sm min-w-[45px] text-center text-black">{r || ''}</span>
+                          <span className="text-[9px] text-black">)</span>
+                          <span className="text-[9px] text-black">左(</span>
+                          <span className="text-sm min-w-[45px] text-center text-black">{l || ''}</span>
+                          <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
                     </div>
@@ -816,13 +816,13 @@ export default function App() {
                         { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
                       ].map(({ label, r, l }) => (
                         <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-slate-500 w-10 shrink-0">{label}</span>
-                          <span className="text-[9px] text-slate-500">右(</span>
-                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{r || ''}</span>
-                          <span className="text-[9px] text-slate-500">)</span>
-                          <span className="text-[9px] text-slate-500">左(</span>
-                          <span className="text-sm min-w-[30px] text-center font-bold text-slate-800">{l || ''}</span>
-                          <span className="text-[9px] text-slate-500">)</span>
+                          <span className="text-[9px] text-black w-10 shrink-0">{label}</span>
+                          <span className="text-[9px] text-black">右(</span>
+                          <span className="text-sm min-w-[45px] text-center text-black">{r || ''}</span>
+                          <span className="text-[9px] text-black">)</span>
+                          <span className="text-[9px] text-black">左(</span>
+                          <span className="text-sm min-w-[45px] text-center text-black">{l || ''}</span>
+                          <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
                     </div>
