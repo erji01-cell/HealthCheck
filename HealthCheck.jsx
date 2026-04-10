@@ -1058,6 +1058,7 @@ export default function App() {
                           <span className="text-[9px] text-black">左(</span>
                           <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
+                          {label === '矯正' && <span className="text-[9px] text-black ml-1">眼鏡・コン</span>}
                         </div>
                       ))}
                     </div>
@@ -1219,7 +1220,7 @@ export default function App() {
             left: 0 !important; top: 0 !important;
             width: 210mm !important;
             height: 297mm !important;
-            padding: 4mm 6mm !important;
+            padding: 4mm 11mm !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
