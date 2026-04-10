@@ -747,7 +747,7 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[8px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
+                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[8px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
                       <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
@@ -778,9 +778,10 @@ export default function App() {
                       { label: 'BMI', value: formData.bmi, unit: '' },
                       { label: '腹囲', value: formData.waist, unit: 'cm' },
                     ].map(({ label, value, unit }) => (
-                      <div key={label} className="flex-1 p-2 flex flex-col items-start justify-start">
+                      <div key={label} className="flex-1 p-2 flex flex-col items-start justify-start relative">
                         <div className="text-[9px] text-black mb-0.5">{label}</div>
-                        <div className="font-mono text-sm font-bold text-black">{value || ''}<span className="text-[9px] text-black font-normal">{value && unit}</span></div>
+                        <div className="font-mono text-sm font-bold text-black">{value || ''}</div>
+                        {unit && <span className="absolute bottom-1 right-1 text-[9px] text-black">{unit}</span>}
                       </div>
                     ))}
                   </div>
@@ -983,6 +984,7 @@ export default function App() {
           .vision-hearing-val { min-width: 63px !important; font-size: 16px !important; }
           .hearing-label { min-width: 48px !important; width: auto !important; }
           .print-id { font-size: 21px !important; }
+          .bp-title { font-size: 12px !important; }
         }
       `}</style>
     </div>
