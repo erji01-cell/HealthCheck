@@ -87,6 +87,7 @@ export default function App() {
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
 
   // セッション監視
   useEffect(() => {
@@ -158,6 +159,77 @@ export default function App() {
     const otherBloodItems = [items.psa, items.hbsAg, items.hbsAb, items.hcvAb, items.syphilis];
     const bloodBaseFee = !blood && otherBloodItems.some(Boolean) ? 400 : 0;
     return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee + psaFee + hbsAgFee + hbsAbFee + hcvAbFee + syphilisFee + mrsaFee + bloodBaseFee;
+  };
+
+  // 予約データ保存
+  const handleSave = async () => {
+    setSaveStatus('saving');
+    const { items } = formData;
+    const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+    let fee = null;
+    if (zeroPurposes.includes(formData.purpose)) fee = 0;
+    else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
+    else fee = calcFee(items);
+
+    const record = {
+      date: formData.date || null,
+      day_of_week: formData.dayOfWeek,
+      patient_id: formData.id,
+      patient_name: formData.name,
+      patient_name_kana: formData.yurigana,
+      birth_date: formData.birthDate || null,
+      age: formData.age,
+      contact: formData.contact,
+      company_name: formData.companyName,
+      purpose: formData.purpose,
+      item_basic: items.basic,
+      item_x_ray: items.xRay,
+      item_ecg: items.ecg,
+      item_blood: items.blood,
+      item_hba1c: items.hba1c,
+      item_endoscopy: items.endoscopy,
+      item_echo: items.echo,
+      item_manganese: items.manganese,
+      item_stool: items.stool,
+      item_norovirus: items.norovirus,
+      item_bacteria3: items.bacteria3,
+      item_bacteria5: items.bacteria5,
+      item_paratyphoid: items.paratyphoid,
+      item_methanol: items.methanol,
+      item_hexane: items.hexane,
+      item_methyl_hippuric: items.methylHippuric,
+      item_psa: items.psa,
+      item_hbs_ag: items.hbsAg,
+      item_hbs_ab: items.hbsAb,
+      item_hcv_ab: items.hcvAb,
+      item_syphilis: items.syphilis,
+      item_mrsa: items.mrsa,
+      deadline_type: formData.deadlineType,
+      deadline_date: formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate : null,
+      has_dedicated_form: formData.hasDedicatedForm,
+      payment_type: formData.paymentType,
+      fee: fee,
+      bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
+      bp2_sys: formData.bp2Sys, bp2_dia: formData.bp2Dia,
+      pulse: formData.pulse,
+      height: formData.height, weight: formData.weight, bmi: formData.bmi, waist: formData.waist,
+      vision_r: formData.visionR, vision_l: formData.visionL,
+      vision_r2: formData.visionR2, vision_l2: formData.visionL2,
+      hearing_r: formData.hearingR, hearing_l: formData.hearingL,
+      hearing_r2: formData.hearingR2, hearing_l2: formData.hearingL2,
+      color_vision: formData.colorVision,
+      user_id: session?.user?.id,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('health_reserv').insert(record);
+    if (error) {
+      console.error(error);
+      setSaveStatus('error');
+    } else {
+      setSaveStatus('saved');
+    }
+    setTimeout(() => setSaveStatus(''), 3000);
   };
 
   // 健診目的に応じた検査項目の自動チェック
@@ -641,8 +713,18 @@ export default function App() {
                   <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
-                <button onClick={() => window.alert("Supabase連携待機中")} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
-                  <Save size={18} /> 予約データを保存
+                <button
+                  onClick={handleSave}
+                  disabled={saveStatus === 'saving'}
+                  className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    saveStatus === 'saved' ? 'bg-green-600 text-white' :
+                    saveStatus === 'error' ? 'bg-red-600 text-white' :
+                    saveStatus === 'saving' ? 'bg-blue-400 text-white cursor-not-allowed' :
+                    'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <Save size={18} />
+                  {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : '予約データを保存'}
                 </button>
               </div>
             ) : (
