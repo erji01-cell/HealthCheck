@@ -11,6 +11,25 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_KEY
 );
 
+// 祝日・休日リスト（2025〜2027）
+const HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
+  '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06',
+  '2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23',
+  '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  // 2026
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
+  '2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+  '2026-10-12','2026-11-03','2026-11-23',
+  // 2027
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
+  '2027-03-21','2027-04-29','2027-05-03','2027-05-04','2027-05-05',
+  '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
+  '2027-10-11','2027-11-03','2027-11-23',
+]);
+
 export default function App() {
   // 認証状態
   const [session, setSession] = useState(null);
@@ -33,9 +52,14 @@ export default function App() {
   const searchRef = useRef(null);
 
   // 初期状態の定義
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+
   const initialState = {
-    date: '2026-03-25',
-    dayOfWeek: '水曜日',
+    date: tomorrowStr,
+    dayOfWeek: days[tomorrow.getDay()],
     yurigana: '',
     id: '',
     name: '',
@@ -88,14 +112,20 @@ export default function App() {
 
   const [formData, setFormData] = useState(initialState);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
+  const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
+  const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
 
   // セッション監視
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) fetchCalendarData();
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchCalendarData();
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -161,8 +191,35 @@ export default function App() {
     return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee + psaFee + hbsAgFee + hbsAbFee + hcvAbFee + syphilisFee + mrsaFee + bloodBaseFee;
   };
 
+  // カレンダーデータ取得
+  const fetchCalendarData = async () => {
+    setCalendarLoading(true);
+    const today = new Date();
+    const start = today.toISOString().split('T')[0];
+    const end = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()).toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('id, date, patient_name, patient_name_kana, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .gte('date', start)
+      .lte('date', end)
+      .order('date', { ascending: true });
+    if (!error && data) {
+      const grouped = {};
+      data.forEach(r => {
+        if (!grouped[r.date]) grouped[r.date] = [];
+        grouped[r.date].push(r);
+      });
+      setCalendarData(grouped);
+    }
+    setCalendarLoading(false);
+  };
+
   // 予約データ保存
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      alert('氏名を入力してください。');
+      return;
+    }
     setSaveStatus('saving');
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
@@ -760,25 +817,139 @@ export default function App() {
           </div>
         </div>
 
-        {/* 右セクション: PDF風プレビュー */}
+        {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[595px] shrink-0">
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2">
-              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Document Preview</span>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all"
-              >
-                <Printer size={14} /> 用紙を印刷
-              </button>
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                <button onClick={() => setRightTab('preview')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${rightTab === 'preview' ? 'bg-white shadow text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}>プレビュー</button>
+                <button onClick={() => { setRightTab('calendar'); fetchCalendarData(); }} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${rightTab === 'calendar' ? 'bg-white shadow text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}>カレンダー</button>
+              </div>
+              {rightTab === 'preview' && (
+                <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
+                  <Printer size={14} /> 用紙を印刷
+                </button>
+              )}
             </div>
 
+            {/* カレンダービュー */}
+            {rightTab === 'calendar' && (
+              <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4 max-h-[841px] overflow-y-auto">
+                {calendarLoading ? (
+                  <div className="text-center text-slate-400 py-10">読み込み中...</div>
+                ) : (
+                  <div className="space-y-6">
+                    {Array.from({ length: 6 }, (_, i) => {
+                      const d = new Date();
+                      const year = new Date(d.getFullYear(), d.getMonth() + i, 1).getFullYear();
+                      const month = new Date(d.getFullYear(), d.getMonth() + i, 1).getMonth();
+                      const firstDay = new Date(year, month, 1).getDay();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+                      const weeks = [];
+                      let day = 1 - firstDay;
+                      while (day <= daysInMonth) {
+                        const week = [];
+                        for (let w = 0; w < 7; w++, day++) {
+                          week.push(day >= 1 && day <= daysInMonth ? day : null);
+                        }
+                        weeks.push(week);
+                      }
+                      return (
+                        <div key={`${year}-${month}`}>
+                          <div className="text-sm font-black text-slate-700 mb-2">{year}年{month + 1}月</div>
+                          <div className="grid grid-cols-7 text-center text-[10px] font-bold mb-1">
+                            {['日','月','火','水','木','金','土'].map((d, i) => (
+                              <div key={d} className={i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'}>{d}</div>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-lg overflow-hidden">
+                            {weeks.flat().map((day, idx) => {
+                              const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
+                              const reservations = dateStr ? (calendarData[dateStr] || []) : [];
+                              const isToday = dateStr === new Date().toISOString().split('T')[0];
+                              const isSun = idx % 7 === 0;
+                              const isSat = idx % 7 === 6;
+                              const isHoliday = dateStr ? HOLIDAYS.has(dateStr) : false;
+                              const isDisabled = isSun || isHoliday;
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={() => {
+                                    if (!day || isDisabled) return;
+                                    setFormData(prev => ({ ...prev, date: dateStr }));
+                                    setRightTab('preview');
+                                    if (reservations.length > 0) setSelectedCalendarDate(dateStr);
+                                  }}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+                                >
+                                  {day && (
+                                    <>
+                                      <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
+                                      {reservations.map((r, ri) => (
+                                        <div key={ri} className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate">{r.patient_name}</div>
+                                      ))}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 詳細モーダル */}
+            {selectedCalendarDate && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCalendarDate(null)}>
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-black text-lg">{selectedCalendarDate.replace(/-/g, '/')} の予約</h2>
+                    <button onClick={() => setSelectedCalendarDate(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+                  </div>
+                  {(calendarData[selectedCalendarDate] || []).map((r, i) => {
+                    const checkedItems = [
+                      r.item_basic && '基本', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血',
+                      r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
+                      r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
+                      r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
+                      r.item_psa && 'PSA', r.item_hbs_ag && 'HBs抗原', r.item_hbs_ab && 'HBs抗体', r.item_hcv_ab && 'HCV抗体', r.item_syphilis && '梅毒STS', r.item_mrsa && 'MRSA',
+                    ].filter(Boolean);
+                    return (
+                      <div key={i} className="border border-slate-200 rounded-xl p-4 mb-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
+                            <div className="font-black text-lg">{r.patient_name}</div>
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            <div>{r.purpose}</div>
+                            <div className="font-bold text-blue-600">{r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} {r.payment_type}</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {checkedItems.map(item => (
+                            <span key={item} className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{item}</span>
+                          ))}
+                        </div>
+                        {r.has_dedicated_form && <div className="mt-2 text-[10px] text-orange-600 font-bold">専用診断用紙あり</div>}
+                        {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* A4帳票再現 */}
-            <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
+            {rightTab === 'preview' && <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
               <h1 className="text-[22px] font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
-              <div className="border-[1.5px] border-black text-sm">
+              <div className="border-[1.5px] border-black text-sm print-table">
                 {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
@@ -829,7 +1000,7 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[8px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
+                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[6px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
                       <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
@@ -1025,7 +1196,7 @@ export default function App() {
                   <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">陽春堂内科診療所</div>
                 </div>
               </div>
-            </div>
+            </div>}
           </div>
         </div>
 
@@ -1033,7 +1204,7 @@ export default function App() {
 
       <style>{`
         @media print {
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 portrait; margin: 5mm 0 0 0; }
           html, body {
             height: 297mm !important;
             max-height: 297mm !important;
@@ -1067,6 +1238,9 @@ export default function App() {
           .hearing-label { min-width: 48px !important; width: auto !important; }
           .print-id { font-size: 21px !important; }
           .bp-title { font-size: 12px !important; }
+          .print-table { border: 1.5px solid black !important; }
+          .print-table > div { border-bottom: 1.5px solid black !important; }
+          .print-table > div > div:first-child { border-right: 1.5px solid black !important; }
         }
       `}</style>
     </div>
