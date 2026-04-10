@@ -701,7 +701,7 @@ export default function App() {
               <div className="border-[1.5px] border-black text-sm">
                 {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">健診日</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
                   <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
                     {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
                     <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
@@ -713,7 +713,7 @@ export default function App() {
 
                 {/* 行: 氏名（読み仮名上・ID右） */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">氏名</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">氏名</div>
                   <div className="flex-1 px-4 py-2 flex flex-col justify-center border-r-[1.5px] border-black">
                     <span className="text-xs text-slate-500 leading-tight">{formData.yurigana}</span>
                     <div className="flex items-baseline gap-3">
@@ -749,7 +749,7 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">血圧・脈拍</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[8px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
                       <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
@@ -790,7 +790,7 @@ export default function App() {
 
                 {/* 行: 視力・聴力 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">視力・聴力</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs text-center leading-tight shrink-0">視力・聴力</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {/* 視力 */}
                     <div className="flex-1 flex flex-col divide-y-[1.5px] divide-black">
@@ -798,13 +798,13 @@ export default function App() {
                         { label: '裸眼', r: formData.visionR, l: formData.visionL },
                         { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
                       ].map(({ label, r, l }) => (
-                        <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-black w-10 shrink-0">{label}</span>
+                        <div key={label} className="flex items-center gap-1 px-2 py-[9px]">
+                          <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
                           <span className="text-[9px] text-black">右(</span>
-                          <span className="text-sm min-w-[45px] text-center text-black">{r || ''}</span>
+                          <span className="text-xs min-w-[28px] text-center text-black">{r || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                           <span className="text-[9px] text-black">左(</span>
-                          <span className="text-sm min-w-[45px] text-center text-black">{l || ''}</span>
+                          <span className="text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
@@ -815,13 +815,13 @@ export default function App() {
                         { label: '1000Hz', r: formData.hearingR, l: formData.hearingL },
                         { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
                       ].map(({ label, r, l }) => (
-                        <div key={label} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] text-black w-10 shrink-0">{label}</span>
+                        <div key={label} className="flex items-center gap-1 px-2 py-[9px]">
+                          <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
                           <span className="text-[9px] text-black">右(</span>
-                          <span className="text-sm min-w-[45px] text-center text-black">{r || ''}</span>
+                          <span className="text-xs min-w-[28px] text-center text-black">{r || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                           <span className="text-[9px] text-black">左(</span>
-                          <span className="text-sm min-w-[45px] text-center text-black">{l || ''}</span>
+                          <span className="text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
                         </div>
                       ))}
@@ -831,7 +831,7 @@ export default function App() {
 
                 {/* 行: 項目 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px]">
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">
                     <span>健診項目</span>
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
@@ -858,7 +858,7 @@ export default function App() {
 
                 {/* 行: 期限 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">提出期限</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">提出期限</div>
                   <div className="flex-1 p-2 flex items-center gap-10">
                     <div className="flex items-center gap-1.5">
                       <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '無' ? 'bg-black' : ''}`}></span>
@@ -867,7 +867,7 @@ export default function App() {
                     <div className="flex items-center gap-1.5 flex-1">
                       <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '有' ? 'bg-black' : ''}`}></span>
                       <span>有</span>
-                      <span className="ml-2 border-b border-black flex-1 text-center font-mono h-5">
+                      <span className="ml-2 flex-1 text-center font-mono h-5">
                         {formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate.replace(/-/g, '/') : '　　/　/　'}
                       </span>
                     </div>
@@ -876,7 +876,7 @@ export default function App() {
 
                 {/* 行: 専用診断用紙 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center">専用用紙</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">専用用紙</div>
                   <div className="flex-1 p-2 flex items-center gap-10">
                     <div className="flex items-center gap-1.5">
                       <span className={`w-3.5 h-3.5 border border-black ${!formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
