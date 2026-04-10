@@ -980,7 +980,7 @@ export default function App() {
           .bg-slate-100 { background-color: #f1f5f9 !important; }
           .bg-white { background-color: white !important; }
           .vision-hearing-item span { font-size: 12px !important; }
-          .vision-hearing-val { min-width: 42px !important; font-size: 16px !important; }
+          .vision-hearing-val { min-width: 63px !important; font-size: 16px !important; }
           .hearing-label { min-width: 48px !important; width: auto !important; }
           .print-id { font-size: 21px !important; }
         }
