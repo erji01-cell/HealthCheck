@@ -819,7 +819,7 @@ export default function App() {
                               <div key={d} className={i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'}>{d}</div>
                             ))}
                           </div>
-                          <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-lg overflow-hidden">
+                          <div className="grid grid-cols-7 gap-px bg-slate-400 border border-slate-400 rounded-lg overflow-hidden">
                             {weeks.flat().map((day, idx) => {
                               const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
                               const reservations = dateStr ? (calendarData[dateStr] || []) : [];
@@ -834,23 +834,29 @@ export default function App() {
                                   onClick={() => {
                                     if (!day || isDisabled) return;
                                     setFormData(prev => ({ ...prev, date: dateStr }));
-                                    setRightTab('preview');
                                   }}
                                   className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-400' : ''}`}
                                 >
                                   {day && (
                                     <>
                                       <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
-                                      {reservations.map((r, ri) => (
+                                      {reservations.slice(0, 2).map((r, ri) => (
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
                                           className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
-                                          {r.purpose && <span className="text-blue-500 ml-0.5">({r.purpose})</span>}
                                         </div>
                                       ))}
+                                      {reservations.length > 2 && (
+                                        <div
+                                          onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
+                                          className="text-[9px] text-blue-500 px-0.5 cursor-pointer hover:text-blue-700"
+                                        >
+                                          他{reservations.length - 2}名
+                                        </div>
+                                      )}
                                     </>
                                   )}
                                 </div>
