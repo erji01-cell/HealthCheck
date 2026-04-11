@@ -128,17 +128,19 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 生年月日から年齢を計算
+  // 生年月日と健診希望日から年齢を計算
   useEffect(() => {
-    if (formData.birthDate) {
+    if (formData.birthDate && formData.date) {
       const birth = new Date(formData.birthDate);
-      const today = new Date();
-      let age = today.getFullYear() - birth.getFullYear();
-      const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-      setFormData(prev => ({ ...prev, age }));
+      const target = new Date(formData.date);
+      let age = target.getFullYear() - birth.getFullYear();
+      const m = target.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) age--;
+      setFormData(prev => ({ ...prev, age: age >= 0 ? age : '' }));
+    } else {
+      setFormData(prev => ({ ...prev, age: '' }));
     }
-  }, [formData.birthDate]);
+  }, [formData.birthDate, formData.date]);
 
   // 曜日計算
   useEffect(() => {
@@ -581,7 +583,7 @@ export default function App() {
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
 
         {/* 左セクション: 操作エリア */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-4 print-hide">
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
@@ -662,6 +664,12 @@ export default function App() {
                       {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
                     </div>
                     <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-1 border rounded text-xs text-slate-500 outline-none focus:ring-1 focus:ring-blue-300" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
+                    <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
+                      {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">生年月日・健診希望日を入力</span>}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
@@ -815,9 +823,9 @@ export default function App() {
           </div>
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[595px] shrink-0">
+        <div className="w-full lg:w-[595px] shrink-0 print-right">
           <div className="sticky top-6">
-            <div className="flex justify-between items-center mb-4 px-2">
+            <div className="flex justify-between items-center mb-4 px-2 print-hide">
               <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
                 <button
                   onClick={() => setRightTab('preview')}
@@ -1039,22 +1047,22 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[6px] text-center leading-tight shrink-0">血圧・脈拍・色神</div>
+                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[5px] text-center leading-tight shrink-0">血圧・脈拍<br/>色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
-                      <div className="text-[9px] text-black mb-0.5">血圧1回目</div>
+                      <div className="text-[10px] text-black mb-0.5">血圧1回目</div>
                       <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
                     </div>
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
-                      <div className="text-[9px] text-black mb-0.5">血圧2回目</div>
+                      <div className="text-[10px] text-black mb-0.5">血圧2回目</div>
                       <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-start justify-start">
-                      <div className="text-[9px] text-black mb-0.5">脈拍</div>
+                      <div className="text-[10px] text-black mb-0.5">脈拍</div>
                       <div className="font-mono text-sm font-bold text-black">{formData.pulse || ''}</div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-start justify-start">
-                      <div className="text-[9px] text-black mb-0.5">色神</div>
+                      <div className="text-[10px] text-black mb-0.5">色神</div>
                       <div className="text-sm font-bold text-black">{formData.colorVision || ''}</div>
                     </div>
                   </div>
@@ -1062,7 +1070,7 @@ export default function App() {
 
                 {/* 行: 身長・体重・BMI・腹囲・胸囲 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[10px] text-center leading-tight">身長・体重<br/>BMI・腹囲</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[12px] text-center leading-tight">身長・体重<br/>BMI・腹囲</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
                       { label: '身長', value: formData.height, unit: 'cm' },
@@ -1071,9 +1079,9 @@ export default function App() {
                       { label: '腹囲', value: formData.waist, unit: 'cm' },
                     ].map(({ label, value, unit }) => (
                       <div key={label} className="flex-1 p-2 flex flex-col items-start justify-start relative">
-                        <div className="text-[9px] text-black mb-0.5">{label}</div>
+                        <div className="text-[10px] text-black mb-0.5">{label}</div>
                         <div className="font-mono text-sm font-bold text-black">{value || ''}</div>
-                        {unit && <span className="absolute bottom-1 right-1 text-[9px] text-black">{unit}</span>}
+                        {unit && <span className="absolute bottom-1 right-1 text-[10px] text-black">{unit}</span>}
                       </div>
                     ))}
                   </div>
@@ -1246,28 +1254,27 @@ export default function App() {
         @media print {
           @page { size: A4 portrait; margin: 5mm 0 0 0; }
           html, body {
-            height: 297mm !important;
-            max-height: 297mm !important;
-            overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: white !important;
           }
-          * { visibility: hidden !important; }
-          #printable, #printable * { visibility: visible !important; }
+          body > div { padding: 0 !important; background: white !important; }
+          .print-hide { display: none !important; }
+          .print-right { width: 210mm !important; max-width: 210mm !important; flex: none !important; }
+          .print-right .sticky { position: static !important; top: auto !important; }
           #printable {
-            position: fixed !important;
-            left: 0 !important; top: 0 !important;
             width: 210mm !important;
-            height: 297mm !important;
+            min-height: 0 !important;
             padding: 4mm 11mm !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
-            overflow: hidden !important;
             background: white !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
           }
           #printable h1 { font-size: 24px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
           #printable p { margin-bottom: 2px !important; }
