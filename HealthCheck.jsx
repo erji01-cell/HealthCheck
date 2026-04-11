@@ -833,12 +833,8 @@ export default function App() {
                                   key={idx}
                                   onClick={() => {
                                     if (!day || isDisabled) return;
-                                    if (reservations.length > 0) {
-                                      setSelectedCalendarDate(dateStr);
-                                    } else {
-                                      setFormData(prev => ({ ...prev, date: dateStr }));
-                                      setRightTab('preview');
-                                    }
+                                    setFormData(prev => ({ ...prev, date: dateStr }));
+                                    setRightTab('preview');
                                   }}
                                   className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-400' : ''}`}
                                 >
@@ -846,7 +842,11 @@ export default function App() {
                                     <>
                                       <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
                                       {reservations.map((r, ri) => (
-                                        <div key={ri} className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight">
+                                        <div
+                                          key={ri}
+                                          onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
+                                          className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
+                                        >
                                           <span className="font-bold">{r.patient_name}</span>
                                           {r.purpose && <span className="text-blue-500 ml-0.5">({r.purpose})</span>}
                                         </div>
