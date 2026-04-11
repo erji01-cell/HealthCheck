@@ -345,26 +345,50 @@ export default function App() {
   };
 
   // 生年月日検索条件を生成（西暦・和暦対応）
+  // DBはYYYYMMDD形式（例: 19820624）で格納
   const getDobSearchCondition = (input) => {
     const s = input.trim();
-    // 完全な日付（parseDobToISOで変換できる場合）
-    const iso = parseDobToISO(s);
-    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) return `patient_dob.eq.${iso}`;
-    // 西暦年のみ（4桁）
+    // 西暦フル 8桁: 19800115 → eq.19800115
+    if (/^\d{8}$/.test(s)) return `patient_dob.eq.${s}`;
+    // 西暦フル 区切りあり: 1980/01/15, 1980-01-15 → eq.19800115
+    const mFull = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if (mFull) return `patient_dob.eq.${mFull[1]}${mFull[2].padStart(2,'0')}${mFull[3].padStart(2,'0')}`;
+    // 西暦年のみ（4桁）: 1980 → ilike.1980%
     if (/^\d{4}$/.test(s) && parseInt(s) >= 1900 && parseInt(s) <= 2099) return `patient_dob.ilike.${s}%`;
-    // 西暦年月（6桁 YYYYMM）
-    if (/^\d{6}$/.test(s)) return `patient_dob.ilike.${s.slice(0,4)}-${s.slice(4,6)}%`;
-    // 和暦年のみ（例: S55, H5, R3, 昭和55）
-    const eraOnly = [
-      { re: /^(r|令和?|れいわ)\s*(\d{1,2})$/i,     base: 2018 },
-      { re: /^(h|平成?|へいせい)\s*(\d{1,2})$/i,   base: 1988 },
-      { re: /^(s|昭和?|しょうわ)\s*(\d{1,2})$/i,   base: 1925 },
-      { re: /^(t|大正?|たいしょう)\s*(\d{1,2})$/i, base: 1911 },
-      { re: /^(m|明治?|めいじ)\s*(\d{1,2})$/i,     base: 1867 },
+    // 西暦年月（6桁）: 198001 → ilike.198001%
+    if (/^\d{6}$/.test(s)) return `patient_dob.ilike.${s}%`;
+    // 和暦
+    const eras = [
+      { re: /^(r|令和?)\s*/i,  base: 2018 },
+      { re: /^(h|平成?)\s*/i,  base: 1988 },
+      { re: /^(s|昭和?)\s*/i,  base: 1925 },
+      { re: /^(t|大正?)\s*/i,  base: 1911 },
+      { re: /^(m|明治?)\s*/i,  base: 1867 },
     ];
-    for (const era of eraOnly) {
-      const match = s.match(era.re);
-      if (match) return `patient_dob.ilike.${era.base + parseInt(match[2])}%`;
+    for (const era of eras) {
+      const eraMatch = s.match(era.re);
+      if (!eraMatch) continue;
+      const rest = s.slice(eraMatch[0].length);
+      const nums = rest.replace(/\D/g, '');
+      // S550115 形式（元号+2桁年+4桁月日）→ eq.19800115
+      if (/^\d{6}$/.test(nums)) {
+        const y = era.base + parseInt(nums.slice(0,2));
+        return `patient_dob.eq.${y}${nums.slice(2,4)}${nums.slice(4,6)}`;
+      }
+      // 区切りあり: S55/1/15, 昭和55年1月15日 → eq.19800115
+      const parts = rest.replace(/[年月日]/g, ' ').split(/[\s\/\-]+/).filter(Boolean);
+      if (parts.length >= 3) {
+        const y = era.base + parseInt(parts[0]);
+        return `patient_dob.eq.${y}${parts[1].padStart(2,'0')}${parts[2].padStart(2,'0')}`;
+      }
+      if (parts.length === 2) {
+        const y = era.base + parseInt(parts[0]);
+        return `patient_dob.ilike.${y}${parts[1].padStart(2,'0')}%`;
+      }
+      // 年のみ: S55, 昭和55 → ilike.1980%
+      if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
+        return `patient_dob.ilike.${era.base + parseInt(parts[0])}%`;
+      }
     }
     return null;
   };
@@ -382,10 +406,15 @@ export default function App() {
       try {
         const q = patientQuery.trim();
         const variants = getKanaVariants(q);
-        // 半角カタカナを含む生入力ではなく、NFKC正規化済みの値を使用
         const qNorm = variants[0]; // normalize('NFKC')の結果
         const kanaOr = variants.map(v => `patient_name_kana.ilike.%${v}%`).join(',');
-        const orStr = `patient_name.ilike.%${qNorm}%,patient_id.ilike.%${qNorm}%,${kanaOr}`;
+        const dobCond = getDobSearchCondition(q);
+        const orStr = [
+          `patient_name.ilike.%${qNorm}%`,
+          `patient_id.ilike.%${qNorm}%`,
+          kanaOr,
+          ...(dobCond ? [dobCond] : []),
+        ].join(',');
         const { data, error } = await supabase
           .from('patients')
           .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
