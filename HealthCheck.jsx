@@ -583,13 +583,14 @@ export default function App() {
         {/* 左セクション: 操作エリア */}
         <div className="flex-1 space-y-4">
 
-          {/* ログアウト */}
-          <div className="flex items-center justify-end">
+          {/* ヘッダー */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約システム</h1>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 font-bold text-sm rounded-xl border border-red-200 transition-all"
             >
-              <LogOut size={14} /> ログアウト
+              <LogOut size={16} /> ログアウト
             </button>
           </div>
 
@@ -817,9 +818,19 @@ export default function App() {
         <div className="w-full lg:w-[595px] shrink-0">
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2">
-              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-                <button onClick={() => setRightTab('preview')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${rightTab === 'preview' ? 'bg-white shadow text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}>プレビュー</button>
-                <button onClick={() => { setRightTab('calendar'); fetchCalendarData(); }} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${rightTab === 'calendar' ? 'bg-white shadow text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}>カレンダー</button>
+              <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
+                <button
+                  onClick={() => setRightTab('preview')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                >
+                  📋 プレビュー
+                </button>
+                <button
+                  onClick={() => { setRightTab('calendar'); fetchCalendarData(); }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                >
+                  📅 カレンダー
+                </button>
               </div>
               {rightTab === 'preview' && (
                 <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
@@ -874,7 +885,7 @@ export default function App() {
                                     if (!day || isDisabled) return;
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-500' : ''}`}
                                 >
                                   {day && (
                                     <>
