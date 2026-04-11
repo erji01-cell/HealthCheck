@@ -39,11 +39,8 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 表示モードの管理 ('form' or 'calendar')
-  const [viewMode, setViewMode] = useState('form');
-
-  // カレンダーの表示月管理
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 2, 1));
+  // カレンダーの表示月管理（右側カレンダー用）
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // 患者検索
   const [patientQuery, setPatientQuery] = useState('');
@@ -441,53 +438,58 @@ export default function App() {
     setPatientQuery('');
   };
 
-  // カレンダー生成ロジック
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
-
-  const renderCalendar = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    const days = [];
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-20 border-b border-r bg-slate-50/50"></div>);
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const isSelected = formData.date === dateString;
-      const isToday = new Date().toISOString().split('T')[0] === dateString;
-
-      days.push(
-        <div
-          key={d}
-          onClick={() => {
-            setFormData(prev => ({ ...prev, date: dateString }));
-            setViewMode('form');
-          }}
-          className={`h-20 border-b border-r p-1 cursor-pointer transition-colors hover:bg-blue-50 relative ${isSelected ? 'bg-blue-100' : 'bg-white'}`}
-        >
-          <span className={`text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${isSelected ? 'bg-blue-600 text-white' : isToday ? 'bg-red-500 text-white' : 'text-slate-600'}`}>
-            {d}
-          </span>
-          {isSelected && (
-            <div className="mt-1 bg-blue-600 text-white text-[9px] p-1 rounded shadow-sm truncate">
-              {formData.name || '新規予約'}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return days;
+  // カレンダーから予約をフォームに読み込む
+  const handleLoadReservation = async (reservationId) => {
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('*')
+      .eq('id', reservationId)
+      .single();
+    if (error || !data) return;
+    setFormData({
+      date: data.date || tomorrowStr,
+      dayOfWeek: data.day_of_week || '',
+      yurigana: data.patient_name_kana || '',
+      id: data.patient_id || '',
+      name: data.patient_name || '',
+      birthDate: data.birth_date || '',
+      age: data.age || '',
+      contact: data.contact || '',
+      companyName: data.company_name || '',
+      purpose: data.purpose || '就職',
+      hasHospitalForm: data.has_hospital_form || '無(当院用紙を使用)',
+      items: {
+        basic: !!data.item_basic, xRay: !!data.item_x_ray, ecg: !!data.item_ecg,
+        blood: !!data.item_blood, hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
+        echo: !!data.item_echo, manganese: !!data.item_manganese, stool: !!data.item_stool,
+        norovirus: !!data.item_norovirus, bacteria3: !!data.item_bacteria3, bacteria5: !!data.item_bacteria5,
+        paratyphoid: !!data.item_paratyphoid, methanol: !!data.item_methanol, hexane: !!data.item_hexane,
+        methylHippuric: !!data.item_methyl_hippuric, psa: !!data.item_psa, hbsAg: !!data.item_hbs_ag,
+        hbsAb: !!data.item_hbs_ab, hcvAb: !!data.item_hcv_ab, syphilis: !!data.item_syphilis, mrsa: !!data.item_mrsa,
+      },
+      deadlineType: data.deadline_type || '無',
+      deadlineDate: data.deadline_date || '',
+      hasDedicatedForm: !!data.has_dedicated_form,
+      payment: data.fee != null ? String(data.fee) : '',
+      paymentType: data.payment_type || '後日支払',
+      medicalHistory: data.medical_history || '',
+      findings: data.findings || '',
+      others: data.others || '',
+      bp1Sys: data.bp1_sys || '', bp1Dia: data.bp1_dia || '',
+      bp2Sys: data.bp2_sys || '', bp2Dia: data.bp2_dia || '',
+      pulse: data.pulse || '',
+      height: data.height || '', weight: data.weight || '', bmi: data.bmi || '', waist: data.waist || '', chest: data.chest || '',
+      visionR: data.vision_r || '', visionL: data.vision_l || '',
+      visionR2: data.vision_r2 || '', visionL2: data.vision_l2 || '',
+      hearingR: data.hearing_r || '', hearingL: data.hearing_l || '',
+      hearingR2: data.hearing_r2 || '', hearingL2: data.hearing_l2 || '',
+      colorVision: data.color_vision || '',
+    });
+    setPatientQuery(data.patient_name || '');
+    setSelectedCalendarDate(null);
+    setRightTab('preview');
   };
 
-  const changeMonth = (offset) => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
-  };
 
   // ログイン画面
   if (!session) {
@@ -542,22 +544,8 @@ export default function App() {
         {/* 左セクション: 操作エリア */}
         <div className="flex-1 space-y-4">
 
-          {/* モード切替 + ログアウト */}
-          <div className="flex items-center justify-between">
-            <div className="inline-flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-              <button
-                onClick={() => setViewMode('form')}
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'form' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                <ListTodo size={16} /> 入力フォーム
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                <Calendar size={16} /> カレンダー選択
-              </button>
-            </div>
+          {/* ログアウト */}
+          <div className="flex items-center justify-end">
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
@@ -567,8 +555,7 @@ export default function App() {
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px]">
-            {viewMode === 'form' ? (
-              <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-2">
                     <PlusCircle className="text-blue-600" size={20} />
@@ -784,38 +771,8 @@ export default function App() {
                   {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : '予約データを保存'}
                 </button>
               </div>
-            ) : (
-              <div className="animate-in fade-in duration-300">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <Calendar size={20} className="text-blue-600" />
-                    {currentMonth.getFullYear()}年 {currentMonth.getMonth() + 1}月
-                  </h2>
-                  <div className="flex border rounded-lg overflow-hidden">
-                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-50 border-r"><ChevronLeft size={20} /></button>
-                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-50"><ChevronRight size={20} /></button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-7 border-t border-l rounded-lg overflow-hidden text-[11px]">
-                  {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
-                    <div key={d} className={`p-2 font-bold text-center border-r border-b bg-slate-50 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-slate-500'}`}>
-                      {d}
-                    </div>
-                  ))}
-                  {renderCalendar()}
-                </div>
-
-                <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100 flex gap-3 items-start">
-                  <Info className="text-amber-500 mt-0.5" size={18} />
-                  <p className="text-xs text-amber-800 leading-relaxed">
-                    カレンダーから予約日を選択すると、その日が「健診日」としてフォームに自動入力されます。青く塗られている日が現在選択中の日付です。
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[595px] shrink-0">
@@ -876,17 +833,23 @@ export default function App() {
                                   key={idx}
                                   onClick={() => {
                                     if (!day || isDisabled) return;
-                                    setFormData(prev => ({ ...prev, date: dateStr }));
-                                    setRightTab('preview');
-                                    if (reservations.length > 0) setSelectedCalendarDate(dateStr);
+                                    if (reservations.length > 0) {
+                                      setSelectedCalendarDate(dateStr);
+                                    } else {
+                                      setFormData(prev => ({ ...prev, date: dateStr }));
+                                      setRightTab('preview');
+                                    }
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-400' : ''}`}
                                 >
                                   {day && (
                                     <>
                                       <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
                                       {reservations.map((r, ri) => (
-                                        <div key={ri} className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate">{r.patient_name}</div>
+                                        <div key={ri} className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight">
+                                          <span className="font-bold">{r.patient_name}</span>
+                                          {r.purpose && <span className="text-blue-500 ml-0.5">({r.purpose})</span>}
+                                        </div>
                                       ))}
                                     </>
                                   )}
@@ -937,6 +900,12 @@ export default function App() {
                         </div>
                         {r.has_dedicated_form && <div className="mt-2 text-[10px] text-orange-600 font-bold">専用診断用紙あり</div>}
                         {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
+                        <button
+                          onClick={() => handleLoadReservation(r.id)}
+                          className="mt-3 w-full bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
+                        >
+                          フォームに読み込む
+                        </button>
                       </div>
                     );
                   })}
