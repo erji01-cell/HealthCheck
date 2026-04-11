@@ -894,7 +894,7 @@ export default function App() {
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
+                                          className="text-[11px] bg-blue-100 text-slate-600 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
