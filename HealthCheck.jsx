@@ -590,7 +590,7 @@ export default function App() {
             <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約システム</h1>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 font-bold text-sm rounded-xl border border-red-200 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-pink-100 hover:bg-pink-200 text-red-500 hover:text-red-700 font-bold text-sm rounded-xl border border-pink-200 transition-all"
             >
               <LogOut size={16} /> ログアウト
             </button>
@@ -829,7 +829,7 @@ export default function App() {
               <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
                 <button
                   onClick={() => setRightTab('preview')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-green-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                 >
                   📋 プレビュー
                 </button>
@@ -1136,7 +1136,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリーニング', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
@@ -1147,7 +1147,9 @@ export default function App() {
                           {Object.entries(entries).map(([key, lbl]) => (
                             <div key={key} className="flex items-center gap-1">
                               <span className={`w-3 h-3 border border-black flex-shrink-0 ${formData.items[key] ? 'bg-black' : ''}`}></span>
-                              <span className={`text-[10px] ${formData.items[key] ? 'font-bold text-slate-800' : 'text-slate-400'}`}>{lbl}</span>
+                              <span className={`text-[10px] ${formData.items[key] ? 'font-bold text-slate-800' : 'text-slate-400'}`}>
+                                {lbl}{key === 'manganese' && <span className="print-only"> 右(  　　)左( 　　)</span>}{key === 'blood' && lbl === '採血 スクリ' && <span className="print-only">ーニング</span>}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -1167,7 +1169,7 @@ export default function App() {
                     <div className="flex items-center gap-1.5 flex-1">
                       <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '有' ? 'bg-black' : ''}`}></span>
                       <span>有</span>
-                      <span className="ml-2 flex-1 text-center font-mono h-5">
+                      <span className="font-mono h-5 text-sm" style={{marginLeft: '10mm', marginTop: '1mm', fontSize: '14px'}}>
                         {formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate.replace(/-/g, '/') : '　　/　/　'}
                       </span>
                     </div>
@@ -1251,7 +1253,9 @@ export default function App() {
       </div>
 
       <style>{`
+        .print-only { display: none; }
         @media print {
+          .print-only { display: inline !important; }
           @page { size: A4 portrait; margin: 5mm 0 0 0; }
           html, body {
             margin: 0 !important;
