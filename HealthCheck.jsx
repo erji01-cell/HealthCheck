@@ -34,10 +34,11 @@ export default function App() {
   // 認証状態
   const [session, setSession] = useState(null);
   const [shahoFee, setShahoFee] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('rememberedEmail') || '');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem('rememberedEmail'));
 
   // カレンダーの表示月管理（右側カレンダー用）
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -510,7 +511,15 @@ export default function App() {
       email: loginEmail,
       password: loginPassword,
     });
-    if (error) setLoginError('ログインに失敗しました');
+    if (error) {
+      setLoginError('ログインに失敗しました');
+    } else {
+      if (rememberEmail) {
+        localStorage.setItem('rememberedEmail', loginEmail);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+    }
     setLoginLoading(false);
   };
 
@@ -628,7 +637,7 @@ export default function App() {
               <label className="text-[11px] font-bold text-slate-400 uppercase">メールアドレス</label>
               <input
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -639,13 +648,22 @@ export default function App() {
               <label className="text-[11px] font-bold text-slate-400 uppercase">パスワード</label>
               <input
                 type="password"
-                autoComplete="current-password"
+                autoComplete="off"
                 value={loginPassword}
                 onChange={e => setLoginPassword(e.target.value)}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 required
               />
             </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={e => setRememberEmail(e.target.checked)}
+                className="w-4 h-4 accent-blue-600"
+              />
+              メールアドレスを記憶する
+            </label>
             {loginError && <p className="text-red-500 text-xs">{loginError}</p>}
             <button
               type="submit"
@@ -672,7 +690,7 @@ export default function App() {
             <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約システム</h1>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-pink-100 hover:bg-pink-200 text-red-500 hover:text-red-700 font-bold text-sm rounded-xl border border-pink-200 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all"
             >
               <LogOut size={16} /> ログアウト
             </button>
@@ -692,14 +710,14 @@ export default function App() {
 
                 {/* 患者検索 */}
                 <div className="space-y-1" ref={searchRef}>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・よみがな・ID）</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
                   <div className="relative">
                     <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       value={patientQuery}
                       onChange={e => setPatientQuery(e.target.value)}
-                      placeholder="氏名・よみがな・IDで検索..."
+                      placeholder="氏名・ヨミガナ・ID・生年月日で検索..."
                       className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"
                     />
                     {patientSearching && patientQuery.length > 0 && (
@@ -736,7 +754,7 @@ export default function App() {
                     <input type="text" name="id" value={formData.id} onChange={handleChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">よみがな</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
                     <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
