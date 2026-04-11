@@ -46,6 +46,7 @@ export default function App() {
   const [patientQuery, setPatientQuery] = useState('');
   const [patientSuggestions, setPatientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [patientSearching, setPatientSearching] = useState(false);
   const searchRef = useRef(null);
 
   // 初期状態の定義
@@ -329,23 +330,75 @@ export default function App() {
     }
   }, [formData.height, formData.weight]);
 
+  // ひらがな・全角カタカナ・半角カタカナ の相互変換バリアント生成
+  const getKanaVariants = (input) => {
+    // 半角カタカナ → 全角カタカナ（NFKC正規化）
+    const normalized = input.normalize('NFKC');
+    // 全角カタカナ → ひらがな
+    const hira = normalized.replace(/[\u30A1-\u30F6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+    // ひらがな → 全角カタカナ
+    const kata = hira.replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+    // 全角カタカナ → 半角カタカナ
+    const z2h = {'ア':'ｱ','イ':'ｲ','ウ':'ｳ','エ':'ｴ','オ':'ｵ','カ':'ｶ','キ':'ｷ','ク':'ｸ','ケ':'ｹ','コ':'ｺ','サ':'ｻ','シ':'ｼ','ス':'ｽ','セ':'ｾ','ソ':'ｿ','タ':'ﾀ','チ':'ﾁ','ツ':'ﾂ','テ':'ﾃ','ト':'ﾄ','ナ':'ﾅ','ニ':'ﾆ','ヌ':'ﾇ','ネ':'ﾈ','ノ':'ﾉ','ハ':'ﾊ','ヒ':'ﾋ','フ':'ﾌ','ヘ':'ﾍ','ホ':'ﾎ','マ':'ﾏ','ミ':'ﾐ','ム':'ﾑ','メ':'ﾒ','モ':'ﾓ','ヤ':'ﾔ','ユ':'ﾕ','ヨ':'ﾖ','ラ':'ﾗ','リ':'ﾘ','ル':'ﾙ','レ':'ﾚ','ロ':'ﾛ','ワ':'ﾜ','ヲ':'ｦ','ン':'ﾝ','ァ':'ｧ','ィ':'ｨ','ゥ':'ｩ','ェ':'ｪ','ォ':'ｫ','ッ':'ｯ','ャ':'ｬ','ュ':'ｭ','ョ':'ｮ','ー':'ｰ','ガ':'ｶﾞ','ギ':'ｷﾞ','グ':'ｸﾞ','ゲ':'ｹﾞ','ゴ':'ｺﾞ','ザ':'ｻﾞ','ジ':'ｼﾞ','ズ':'ｽﾞ','ゼ':'ｾﾞ','ゾ':'ｿﾞ','ダ':'ﾀﾞ','ヂ':'ﾁﾞ','ヅ':'ﾂﾞ','デ':'ﾃﾞ','ド':'ﾄﾞ','バ':'ﾊﾞ','ビ':'ﾋﾞ','ブ':'ﾌﾞ','ベ':'ﾍﾞ','ボ':'ﾎﾞ','パ':'ﾊﾟ','ピ':'ﾋﾟ','プ':'ﾌﾟ','ペ':'ﾍﾟ','ポ':'ﾎﾟ','ヴ':'ｳﾞ'};
+    const hankaku = kata.split('').map(c => z2h[c] || c).join('');
+    return [...new Set([normalized, hira, kata, hankaku])];
+  };
+
+  // 生年月日検索条件を生成（西暦・和暦対応）
+  const getDobSearchCondition = (input) => {
+    const s = input.trim();
+    // 完全な日付（parseDobToISOで変換できる場合）
+    const iso = parseDobToISO(s);
+    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) return `patient_dob.eq.${iso}`;
+    // 西暦年のみ（4桁）
+    if (/^\d{4}$/.test(s) && parseInt(s) >= 1900 && parseInt(s) <= 2099) return `patient_dob.ilike.${s}%`;
+    // 西暦年月（6桁 YYYYMM）
+    if (/^\d{6}$/.test(s)) return `patient_dob.ilike.${s.slice(0,4)}-${s.slice(4,6)}%`;
+    // 和暦年のみ（例: S55, H5, R3, 昭和55）
+    const eraOnly = [
+      { re: /^(r|令和?|れいわ)\s*(\d{1,2})$/i,     base: 2018 },
+      { re: /^(h|平成?|へいせい)\s*(\d{1,2})$/i,   base: 1988 },
+      { re: /^(s|昭和?|しょうわ)\s*(\d{1,2})$/i,   base: 1925 },
+      { re: /^(t|大正?|たいしょう)\s*(\d{1,2})$/i, base: 1911 },
+      { re: /^(m|明治?|めいじ)\s*(\d{1,2})$/i,     base: 1867 },
+    ];
+    for (const era of eraOnly) {
+      const match = s.match(era.re);
+      if (match) return `patient_dob.ilike.${era.base + parseInt(match[2])}%`;
+    }
+    return null;
+  };
+
   // 患者検索
   useEffect(() => {
     if (!session || patientQuery.length < 1) {
       setPatientSuggestions([]);
       setShowSuggestions(false);
+      setPatientSearching(false);
       return;
     }
+    setPatientSearching(true);
     const timer = setTimeout(async () => {
-      const q = patientQuery.trim();
-      const { data, error } = await supabase
-        .from('patients')
-        .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
-        .or(`patient_name.ilike.%${q}%,patient_name_kana.ilike.%${q}%,patient_id.ilike.%${q}%`)
-        .limit(10);
-      if (!error && data) {
-        setPatientSuggestions(data);
-        setShowSuggestions(data.length > 0);
+      try {
+        const q = patientQuery.trim();
+        const variants = getKanaVariants(q);
+        // 半角カタカナを含む生入力ではなく、NFKC正規化済みの値を使用
+        const qNorm = variants[0]; // normalize('NFKC')の結果
+        const kanaOr = variants.map(v => `patient_name_kana.ilike.%${v}%`).join(',');
+        const orStr = `patient_name.ilike.%${qNorm}%,patient_id.ilike.%${qNorm}%,${kanaOr}`;
+        const { data, error } = await supabase
+          .from('patients')
+          .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
+          .or(orStr)
+          .limit(100);
+        if (error) console.error('patient search error:', error);
+        const list = (!error && data) ? data : [];
+        setPatientSuggestions(list);
+        setShowSuggestions(list.length > 0);
+      } catch (e) {
+        console.error('patient search exception:', e);
+      } finally {
+        setPatientSearching(false);
       }
     }, 200);
     return () => clearTimeout(timer);
@@ -620,7 +673,10 @@ export default function App() {
                       placeholder="氏名・よみがな・IDで検索..."
                       className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"
                     />
-                    {showSuggestions && (
+                    {patientSearching && patientQuery.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-xs text-slate-400">検索中...</div>
+                    )}
+                    {showSuggestions && !patientSearching && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                         {patientSuggestions.map(p => (
                           <div
