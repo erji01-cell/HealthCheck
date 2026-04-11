@@ -894,7 +894,7 @@ export default function App() {
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[9px] bg-blue-100 text-blue-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
+                                          className="text-[11px] bg-blue-100 text-slate-600 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
@@ -902,7 +902,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[9px] text-blue-500 px-0.5 cursor-pointer hover:text-blue-700"
+                                          className="text-[10px] text-slate-600 px-0.5 cursor-pointer hover:text-slate-800"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
@@ -1097,7 +1097,7 @@ export default function App() {
                           <span className="text-[9px] text-black">左(</span>
                           <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
                           <span className="text-[9px] text-black">)</span>
-                          {label === '矯正' && <span className="text-[9px] text-black ml-1">眼鏡・コン</span>}
+                          {label === '矯正' && <span className="text-[9px] text-black ml-1">眼鏡 ・ CL</span>}
                         </div>
                       ))}
                     </div>
