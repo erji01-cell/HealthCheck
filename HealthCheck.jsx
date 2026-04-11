@@ -109,6 +109,7 @@ export default function App() {
 
   const [formData, setFormData] = useState(initialState);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
+  const [editingReservationId, setEditingReservationId] = useState(null);
   const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
@@ -217,6 +218,18 @@ export default function App() {
       alert('氏名を入力してください。');
       return;
     }
+    if (!editingReservationId && formData.id && formData.date) {
+      const { data: existing } = await supabase
+        .from('health_reserv')
+        .select('id')
+        .eq('date', formData.date)
+        .eq('patient_id', formData.id)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        alert(`${formData.date} にはすでに同じ患者ID（${formData.id}）の予約が登録されています。`);
+        return;
+      }
+    }
     setSaveStatus('saving');
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
@@ -276,12 +289,15 @@ export default function App() {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('health_reserv').insert(record);
+    const { error } = editingReservationId
+      ? await supabase.from('health_reserv').update(record).eq('id', editingReservationId)
+      : await supabase.from('health_reserv').insert(record);
     if (error) {
       console.error(error);
       setSaveStatus('error');
     } else {
       setSaveStatus('saved');
+      if (editingReservationId) setEditingReservationId(null);
     }
     setTimeout(() => setSaveStatus(''), 3000);
   };
@@ -436,10 +452,32 @@ export default function App() {
   const handleReset = () => {
     setFormData(initialState);
     setPatientQuery('');
+    setEditingReservationId(null);
   };
 
-  // カレンダーから予約をフォームに読み込む
-  const handleLoadReservation = async (reservationId) => {
+  // カレンダーから予約を削除
+  const handleDeleteReservation = async (reservationId, patientName) => {
+    if (!window.confirm(`「${patientName}」の予約を削除しますか？`)) return;
+    const { error } = await supabase.from('health_reserv').delete().eq('id', reservationId);
+    if (error) {
+      alert('削除に失敗しました。');
+    } else {
+      setCalendarData(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(date => {
+          updated[date] = updated[date].filter(r => r.id !== reservationId);
+          if (updated[date].length === 0) delete updated[date];
+        });
+        if (!updated[selectedCalendarDate] || updated[selectedCalendarDate].length === 0) {
+          setSelectedCalendarDate(null);
+        }
+        return updated;
+      });
+    }
+  };
+
+  // カレンダーから予約をフォームに読み込む（editMode=true: 修正、false: プレビューのみ）
+  const handleLoadReservation = async (reservationId, editMode = true) => {
     const { data, error } = await supabase
       .from('health_reserv')
       .select('*')
@@ -486,6 +524,7 @@ export default function App() {
       colorVision: data.color_vision || '',
     });
     setPatientQuery(data.patient_name || '');
+    setEditingReservationId(editMode ? reservationId : null);
     setSelectedCalendarDate(null);
     setRightTab('preview');
   };
@@ -768,7 +807,7 @@ export default function App() {
                   }`}
                 >
                   <Save size={18} />
-                  {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : '予約データを保存'}
+                  {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '予約データを保存'}
                 </button>
               </div>
             </div>
@@ -906,12 +945,26 @@ export default function App() {
                         </div>
                         {r.has_dedicated_form && <div className="mt-2 text-[10px] text-orange-600 font-bold">専用診断用紙あり</div>}
                         {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
-                        <button
-                          onClick={() => handleLoadReservation(r.id)}
-                          className="mt-3 w-full bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
-                        >
-                          フォームに読み込む
-                        </button>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => handleLoadReservation(r.id, true)}
+                            className="flex-1 bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
+                          >
+                            修正
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReservation(r.id, r.patient_name)}
+                            className="flex-1 bg-red-500 text-white text-xs font-bold py-2 rounded-lg hover:bg-red-600 transition-all"
+                          >
+                            削除
+                          </button>
+                          <button
+                            onClick={() => handleLoadReservation(r.id, false)}
+                            className="flex-1 bg-slate-500 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-600 transition-all"
+                          >
+                            プレビュー
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
