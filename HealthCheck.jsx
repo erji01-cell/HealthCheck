@@ -974,17 +974,19 @@ export default function App() {
                       }
                       return (
                         <div key={`${year}-${month}`}>
-                          <div className="text-sm font-black text-slate-700 mb-2">{year}年{month + 1}月</div>
+                          <div className="text-sm font-black text-indigo-700 mb-2">{year}年{month + 1}月</div>
                           <div className="grid grid-cols-7 text-center text-[10px] font-bold mb-1">
                             {['日','月','火','水','木','金','土'].map((d, i) => (
-                              <div key={d} className={i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'}>{d}</div>
+                              <div key={d} className={i === 0 ? 'text-rose-500' : i === 6 ? 'text-sky-500' : 'text-slate-500'}>{d}</div>
                             ))}
                           </div>
                           <div className="grid grid-cols-7 gap-px bg-slate-400 border border-slate-400 rounded-lg overflow-hidden">
                             {weeks.flat().map((day, idx) => {
                               const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
                               const reservations = dateStr ? (calendarData[dateStr] || []) : [];
-                              const isToday = dateStr === new Date().toISOString().split('T')[0];
+                              const now = new Date();
+                              const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                              const isToday = dateStr === todayStr;
                               const isSun = idx % 7 === 0;
                               const isSat = idx % 7 === 6;
                               const isHoliday = dateStr ? HOLIDAYS.has(dateStr) : false;
@@ -996,16 +998,16 @@ export default function App() {
                                     if (!day || isDisabled) return;
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-white' : isDisabled ? 'bg-red-50 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-blue-50'} ${dateStr === formData.date ? 'ring-2 ring-inset ring-blue-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-black' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
-                                      <div className={`font-bold mb-0.5 ${isDisabled ? 'text-red-300' : isSat ? 'text-blue-400' : 'text-slate-600'}`}>{day}</div>
+                                      <div className={`font-bold mb-0.5 ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</div>
                                       {reservations.slice(0, 2).map((r, ri) => (
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] bg-blue-100 text-slate-600 rounded px-0.5 mb-px truncate leading-tight hover:bg-blue-200 cursor-pointer"
+                                          className="text-[11px] bg-indigo-100 text-indigo-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-indigo-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
@@ -1013,7 +1015,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[10px] text-slate-600 px-0.5 cursor-pointer hover:text-slate-800"
+                                          className="text-[11px] text-indigo-700 px-0.5 cursor-pointer hover:text-indigo-900"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
