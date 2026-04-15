@@ -302,6 +302,7 @@ export default function App() {
     } else {
       setSaveStatus('saved');
       if (editingReservationId) setEditingReservationId(null);
+      await fetchCalendarData();
     }
     setTimeout(() => setSaveStatus(''), 3000);
   };
@@ -762,16 +763,16 @@ export default function App() {
                     <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日</label>
-                    <div className="w-full p-2 border rounded-lg bg-white min-h-[42px] text-sm">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（昭和55.1.1）</label>
+                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div className="text-sm text-blue-600 pl-2">
                       {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
                     </div>
-                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-1 border rounded text-xs text-slate-500 outline-none focus:ring-1 focus:ring-blue-300" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
                     <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
-                      {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">生年月日・健診希望日を入力</span>}
+                      {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1099,7 +1100,7 @@ export default function App() {
             {/* A4帳票再現 */}
             {rightTab === 'preview' && <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
-              <h1 className="text-[22px] font-bold text-center mb-10 border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
+              <h1 className="text-[22px] font-bold text-center mb-[5mm] border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm print-table">
                 {/* 行: 健診日 + 健診目的 */}
@@ -1152,7 +1153,7 @@ export default function App() {
 
                 {/* 行: 血圧・脈拍 */}
                 <div className="flex border-b-[1.5px] border-black text-xs">
-                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[5px] text-center leading-tight shrink-0">血圧・脈拍<br/>色神</div>
+                  <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs text-center leading-tight shrink-0">血圧・脈拍<br/>色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     <div className="flex-1 p-2 flex flex-col items-start justify-start">
                       <div className="text-[10px] text-black mb-0.5">血圧1回目</div>
