@@ -1092,7 +1092,7 @@ export default function App() {
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] bg-indigo-100 text-black rounded px-0.5 mb-px truncate leading-tight hover:bg-indigo-200 cursor-pointer"
+                                          className="text-[11px] bg-slate-100 text-black rounded px-0.5 mb-px truncate leading-tight hover:bg-slate-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
@@ -1100,7 +1100,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] text-black px-0.5 cursor-pointer hover:text-slate-600"
+                                          className="text-[11px] text-black px-0.5 cursor-pointer hover:text-slate-600 bg-slate-100 rounded"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
