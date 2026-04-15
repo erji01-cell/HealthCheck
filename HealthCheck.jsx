@@ -868,8 +868,8 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">性別</label>
                       <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">未選択</option>
-                        <option value="男性">男性</option>
-                        <option value="女性">女性</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
                         <option value="その他">その他</option>
                       </select>
                     </div>
