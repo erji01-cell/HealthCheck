@@ -65,6 +65,7 @@ export default function App() {
     name: '',
     birthDate: '',
     age: '',
+    gender: '',
     contact: '',
     companyName: '',
     purpose: '就職',
@@ -203,7 +204,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_name_kana, patient_gender, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -234,6 +235,7 @@ export default function App() {
       patient_id: formData.id,
       patient_name: formData.name,
       patient_name_kana: formData.yurigana,
+      patient_gender: formData.gender,
       birth_date: formData.birthDate ? formData.birthDate.replace(/-/g, '') : null,
       age: formData.age,
       contact: formData.contact,
@@ -532,6 +534,7 @@ export default function App() {
       name: patient.patient_name || '',
       yurigana: patient.patient_name_kana || '',
       birthDate: iso,
+      gender: patient.patient_gender || '',
       companyName: patient.company_name || '',
       contact: patient.phone_number || '',
     }));
@@ -661,6 +664,7 @@ export default function App() {
       yurigana: data.patient_name_kana || '',
       id: data.patient_id || '',
       name: data.patient_name || '',
+      gender: data.patient_gender || '',
       birthDate: data.birth_date ? parseDobToISO(data.birth_date) : '',
       age: data.age || '',
       contact: data.contact || '',
@@ -853,10 +857,21 @@ export default function App() {
                       {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
-                    <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
-                      {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
+                      <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
+                        {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">性別</label>
+                      <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">未選択</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                        <option value="その他">その他</option>
+                      </select>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1083,7 +1098,7 @@ export default function App() {
                                     if (!day || isDisabled) return;
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-black' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
@@ -1100,7 +1115,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] text-black px-0.5 cursor-pointer hover:text-slate-600 bg-slate-100 rounded"
+                                          className="text-[11px] text-black px-0.5 cursor-pointer bg-slate-100 rounded hover:bg-slate-200"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
