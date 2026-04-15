@@ -1083,7 +1083,7 @@ export default function App() {
                                     if (!day || isDisabled) return;
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-black' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
@@ -1100,7 +1100,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] text-black px-0.5 cursor-pointer hover:text-slate-600 bg-slate-100 rounded"
+                                          className="text-[11px] text-black px-0.5 cursor-pointer bg-slate-100 rounded hover:bg-slate-200"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
