@@ -48,6 +48,7 @@ export default function App() {
   const [patientSuggestions, setPatientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [patientSearching, setPatientSearching] = useState(false);
+  const [birthDateInput, setBirthDateInput] = useState('');
   const searchRef = useRef(null);
 
   // 初期状態の定義
@@ -96,7 +97,7 @@ export default function App() {
     deadlineDate: '',
     hasDedicatedForm: false,
     payment: '',
-    paymentType: '後日支払',
+    paymentType: '当日支払',
     medicalHistory: '',
     findings: '',
     others: '',
@@ -116,6 +117,7 @@ export default function App() {
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
 
   // セッション監視
   useEffect(() => {
@@ -216,24 +218,8 @@ export default function App() {
     setCalendarLoading(false);
   };
 
-  // 予約データ保存
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      alert('氏名を入力してください。');
-      return;
-    }
-    if (!editingReservationId && formData.id && formData.date) {
-      const { data: existing } = await supabase
-        .from('health_reserv')
-        .select('id')
-        .eq('date', formData.date)
-        .eq('patient_id', formData.id)
-        .limit(1);
-      if (existing && existing.length > 0) {
-        alert(`${formData.date} にはすでに同じ患者ID（${formData.id}）の予約が登録されています。`);
-        return;
-      }
-    }
+  // 実際の保存処理
+  const performSave = async () => {
     setSaveStatus('saving');
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
@@ -248,7 +234,7 @@ export default function App() {
       patient_id: formData.id,
       patient_name: formData.name,
       patient_name_kana: formData.yurigana,
-      birth_date: formData.birthDate || null,
+      birth_date: formData.birthDate ? formData.birthDate.replace(/-/g, '') : null,
       age: formData.age,
       contact: formData.contact,
       company_name: formData.companyName,
@@ -303,8 +289,56 @@ export default function App() {
       setSaveStatus('saved');
       if (editingReservationId) setEditingReservationId(null);
       await fetchCalendarData();
+      // patients テーブルへの自動同期（患者IDがある場合のみ）
+      if (formData.id) {
+        const { data: existing } = await supabase
+          .from('patients')
+          .select('patient_id')
+          .eq('patient_id', formData.id)
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          await supabase.from('patients').insert({
+            patient_id: formData.id,
+            patient_name: formData.name || '',
+            patient_name_kana: formData.yurigana || '',
+            patient_dob: formData.birthDate ? formData.birthDate.replace(/-/g, '') : '',
+            company_name: formData.companyName || '',
+            phone_number: formData.contact || '',
+          });
+        }
+      }
     }
     setTimeout(() => setSaveStatus(''), 3000);
+  };
+
+  // 予約データ保存
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      alert('氏名を入力してください。');
+      return;
+    }
+    if (!editingReservationId && formData.id && formData.date) {
+      const { data: existing } = await supabase
+        .from('health_reserv')
+        .select('id')
+        .eq('date', formData.date)
+        .eq('patient_id', formData.id)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        setConfirmDialog({
+          show: true,
+          message: `${formData.date} にはすでに患者ID（${formData.id}）${formData.name}の予約が登録されています。\n更新してよろしいですか？`,
+          onConfirm: async () => {
+            setConfirmDialog({ show: false, message: '', onConfirm: null });
+            // 既存予約を削除してから新規保存
+            await supabase.from('health_reserv').delete().eq('id', existing[0].id);
+            await performSave();
+          }
+        });
+        return;
+      }
+    }
+    await performSave();
   };
 
   // 健診目的に応じた検査項目の自動チェック
@@ -491,15 +525,17 @@ export default function App() {
   };
 
   const handleSelectPatient = (patient) => {
+    const iso = parseDobToISO(patient.patient_dob);
     setFormData(prev => ({
       ...prev,
       id: patient.patient_id || '',
       name: patient.patient_name || '',
       yurigana: patient.patient_name_kana || '',
-      birthDate: parseDobToISO(patient.patient_dob),
+      birthDate: iso,
       companyName: patient.company_name || '',
       contact: patient.phone_number || '',
     }));
+    setBirthDateInput(iso);
     setPatientQuery(patient.patient_name || '');
     setShowSuggestions(false);
   };
@@ -530,6 +566,39 @@ export default function App() {
     setPatientSuggestions([]);
   };
 
+  // 柔軟な日付パース（複数形式対応）
+  const parseDateFlexible = (input) => {
+    if (!input) return '';
+    const s = input.trim();
+
+    // 和暦コンパクト: s420125, S420125（era1字 + 2桁年 + 2桁月 + 2桁日）
+    const compactEra = s.match(/^([sShHrRtTmM])(\d{2})(\d{2})(\d{2})$/);
+    if (compactEra) {
+      const eraMap = { s: 1925, h: 1988, r: 2018, t: 1911, m: 1867 };
+      const base = eraMap[compactEra[1].toLowerCase()];
+      if (base) {
+        const year = base + parseInt(compactEra[2]);
+        const month = parseInt(compactEra[3]);
+        const day = parseInt(compactEra[4]);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31)
+          return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      }
+    }
+
+    // 西暦 区切りあり（1桁月日対応）: 1967/1/25, 1967.1.25
+    const yyyySep = s.match(/^(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})$/);
+    if (yyyySep) {
+      const year = parseInt(yyyySep[1]);
+      const month = parseInt(yyyySep[2]);
+      const day = parseInt(yyyySep[3]);
+      if (year >= 1900 && year <= 2099 && month >= 1 && month <= 12 && day >= 1 && day <= 31)
+        return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+
+    // その他（西暦8桁・和暦区切りあり等）→ parseDobToISO に委譲
+    return parseDobToISO(s);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox' && name.startsWith('item_')) {
@@ -543,9 +612,17 @@ export default function App() {
     }
   };
 
+  // 生年月日フィールドからフォーカスが外れたときにパース
+  const handleBirthDateBlur = () => {
+    const iso = parseDateFlexible(birthDateInput);
+    setFormData(prev => ({ ...prev, birthDate: iso }));
+    if (iso) setBirthDateInput(iso);
+  };
+
   const handleReset = () => {
     setFormData(initialState);
     setPatientQuery('');
+    setBirthDateInput('');
     setEditingReservationId(null);
   };
 
@@ -584,7 +661,7 @@ export default function App() {
       yurigana: data.patient_name_kana || '',
       id: data.patient_id || '',
       name: data.patient_name || '',
-      birthDate: data.birth_date || '',
+      birthDate: data.birth_date ? parseDobToISO(data.birth_date) : '',
       age: data.age || '',
       contact: data.contact || '',
       companyName: data.company_name || '',
@@ -603,7 +680,7 @@ export default function App() {
       deadlineDate: data.deadline_date || '',
       hasDedicatedForm: !!data.has_dedicated_form,
       payment: data.fee != null ? String(data.fee) : '',
-      paymentType: data.payment_type || '後日支払',
+      paymentType: data.payment_type || '当日支払',
       medicalHistory: data.medical_history || '',
       findings: data.findings || '',
       others: data.others || '',
@@ -763,8 +840,15 @@ export default function App() {
                     <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（昭和55.1.1）</label>
-                    <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（例: S42.1.25）</label>
+                    <input
+                      type="text"
+                      placeholder="S420125 / 19670125 / S42.1.25"
+                      value={birthDateInput}
+                      onChange={e => setBirthDateInput(e.target.value)}
+                      onBlur={handleBirthDateBlur}
+                      className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <div className="text-sm text-blue-600 pl-2">
                       {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
                     </div>
@@ -1008,7 +1092,7 @@ export default function App() {
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] bg-indigo-100 text-indigo-700 rounded px-0.5 mb-px truncate leading-tight hover:bg-indigo-200 cursor-pointer"
+                                          className="text-[11px] bg-indigo-100 text-black rounded px-0.5 mb-px truncate leading-tight hover:bg-indigo-200 cursor-pointer"
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
@@ -1016,7 +1100,7 @@ export default function App() {
                                       {reservations.length > 2 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] text-indigo-700 px-0.5 cursor-pointer hover:text-indigo-900"
+                                          className="text-[11px] text-black px-0.5 cursor-pointer hover:text-slate-600"
                                         >
                                           他{reservations.length - 2}名
                                         </div>
@@ -1032,6 +1116,29 @@ export default function App() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 確認ダイアログ */}
+            {confirmDialog.show && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
+                  <p className="text-slate-700 mb-6 whitespace-pre-line">{confirmDialog.message}</p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setConfirmDialog({ show: false, message: '', onConfirm: null })}
+                      className="px-6 py-2 border-2 border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={confirmDialog.onConfirm}
+                      className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
