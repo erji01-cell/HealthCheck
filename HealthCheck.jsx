@@ -1229,8 +1229,8 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
                   <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
-                    {formData.date ? new Date(formData.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : '　月　日'}
-                    <span className="ml-4 font-normal text-sm">({formData.dayOfWeek || '　曜日'})</span>
+                    {formData.date ? (() => { const [y,m,d] = formData.date.split('-'); return `${y}年${parseInt(m)}月${parseInt(d)}日`; })() : '　年　月　日'}
+                    <span className="ml-4 font-normal text-sm">（{formData.dayOfWeek || '　曜日'}）</span>
                   </div>
                   <div className="w-[140px] bg-slate-100 p-2 flex items-center justify-center font-bold text-sm">
                     {formData.purpose || ''}
@@ -1247,7 +1247,7 @@ export default function App() {
                       <span className="text-sm font-normal">様</span>
                     </div>
                   </div>
-                  <div className="print-id w-[140px] p-2 flex items-center justify-center text-sm font-mono">
+                  <div className="print-id w-[140px] p-2 flex items-center justify-center text-[21px] font-mono">
                     {formData.id ? `ID: ${formData.id}` : ''}
                   </div>
                 </div>
@@ -1255,9 +1255,12 @@ export default function App() {
                 {/* 行: 生年月日 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
-                  <div className="flex-1 p-2 flex justify-between items-center pr-10">
+                  <div className="flex-1 p-2 flex justify-between items-center pr-6">
                     <span className="text-lg">{formData.birthDate ? formatDobDisplay(formData.birthDate) : '　　　年　月　日'}</span>
-                    <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
+                    <div className="flex items-center gap-6">
+                      <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
+                      <span className="text-lg font-bold">{formData.gender || ''}</span>
+                    </div>
                   </div>
                 </div>
 
