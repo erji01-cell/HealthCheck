@@ -1096,6 +1096,7 @@ export default function App() {
                                   key={idx}
                                   onClick={() => {
                                     if (!day || isDisabled) return;
+                                    handleReset();
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
                                   className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
