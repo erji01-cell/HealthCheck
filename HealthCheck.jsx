@@ -304,7 +304,8 @@ export default function App() {
             patient_name: formData.name || '',
             patient_name_kana: formData.yurigana || '',
             patient_dob: formData.birthDate ? formData.birthDate.replace(/-/g, '') : '',
-            company_name: formData.companyName || '',
+            zipcode: '',
+            address: '',
             phone_number: formData.contact || '',
           });
         }
@@ -455,7 +456,7 @@ export default function App() {
         ].join(',');
         const { data, error } = await supabase
           .from('patients')
-          .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, company_name, phone_number')
+          .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, zipcode, address, phone_number')
           .or(orStr)
           .limit(100);
         if (error) console.error('patient search error:', error);
@@ -535,7 +536,6 @@ export default function App() {
       yurigana: patient.patient_name_kana || '',
       birthDate: iso,
       gender: patient.patient_gender || '',
-      companyName: patient.company_name || '',
       contact: patient.phone_number || '',
     }));
     setBirthDateInput(iso);
