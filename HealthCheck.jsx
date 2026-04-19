@@ -133,6 +133,14 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // 30分ごとに軽いクエリを発行してSupabaseを起こし続ける
+  useEffect(() => {
+    const keepAlive = setInterval(async () => {
+      await supabase.from('health_reserv').select('date').limit(1);
+    }, 30 * 60 * 1000);
+    return () => clearInterval(keepAlive);
+  }, []);
+
   // 生年月日と健診希望日から年齢を計算
   useEffect(() => {
     if (formData.birthDate && formData.date) {
