@@ -50,6 +50,10 @@ export default function App() {
   const [patientSearching, setPatientSearching] = useState(false);
   const [birthDateInput, setBirthDateInput] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
+  const [modalStep, setModalStep] = useState('search'); // 'search' | 'reservations'
+  const [selectedPatientForModal, setSelectedPatientForModal] = useState(null);
+  const [patientReservations, setPatientReservations] = useState([]);
+  const [patientReservLoading, setPatientReservLoading] = useState(false);
   const searchRef = useRef(null);
   const modalSearchRef = useRef(null);
 
@@ -535,6 +539,20 @@ export default function App() {
       return `${nums.slice(0,4)}-${nums.slice(4,6)}-${nums.slice(6,8)}`;
     }
     return '';
+  };
+
+  const handleSelectPatientFromModal = async (patient) => {
+    setSelectedPatientForModal(patient);
+    setPatientReservLoading(true);
+    setModalStep('reservations');
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('id, date, day_of_week, purpose, fee, payment_type, item_basic, item_x_ray, item_ecg, item_blood, item_endoscopy')
+      .eq('patient_id', patient.patient_id)
+      .order('date', { ascending: false })
+      .limit(20);
+    setPatientReservations(!error && data ? data : []);
+    setPatientReservLoading(false);
   };
 
   const handleSelectPatient = (patient) => {
@@ -1152,53 +1170,95 @@ export default function App() {
 
             {/* 患者検索モーダル */}
             {showPatientModal && (
-              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowPatientModal(false)}>
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => { setShowPatientModal(false); setModalStep('search'); }}>
                 <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-teal-500 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
-                      <h2 className="text-white font-bold text-lg">患者検索</h2>
-                    </div>
-                    <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
-                  </div>
-                  <div className="relative" ref={modalSearchRef}>
-                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      autoFocus
-                      type="text"
-                      value={patientQuery}
-                      onChange={e => setPatientQuery(e.target.value)}
-                      placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
-                      className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
-                    />
-                  </div>
-                  <div className="mt-4 max-h-72 overflow-y-auto">
-                    {patientSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
-                    {!patientSearching && patientQuery.length > 0 && patientSuggestions.length === 0 && (
-                      <div className="text-center text-slate-400 py-6 text-sm">該当する患者が見つかりません</div>
-                    )}
-                    {!patientSearching && patientQuery.length === 0 && (
-                      <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
-                        <Search size={28} className="text-slate-600" />
-                        <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
+
+                  {/* ステップ1: 患者検索 */}
+                  {modalStep === 'search' && (<>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-teal-500 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
+                        <h2 className="text-white font-bold text-lg">患者検索</h2>
                       </div>
-                    )}
-                    {!patientSearching && patientSuggestions.map(p => (
-                      <div
-                        key={p.patient_id}
-                        onClick={() => { handleSelectPatient(p); setShowPatientModal(false); }}
-                        className="px-4 py-3 hover:bg-slate-100 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
-                      >
-                        <div className="font-bold text-sm">{p.patient_name}</div>
-                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5">
-                          <span>{p.patient_name_kana}</span>
-                          <span>ID: {p.patient_id}</span>
-                          {p.patient_dob && <span>{formatDobDisplay(parseDobToISO(p.patient_dob))}</span>}
-                          {p.patient_gender && <span>{p.patient_gender}</span>}
+                      <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                    </div>
+                    <div className="relative">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={patientQuery}
+                        onChange={e => setPatientQuery(e.target.value)}
+                        placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
+                        className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
+                      />
+                    </div>
+                    <div className="mt-4 max-h-72 overflow-y-auto">
+                      {patientSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                      {!patientSearching && patientQuery.length > 0 && patientSuggestions.length === 0 && (
+                        <div className="text-center text-slate-400 py-6 text-sm">該当する患者が見つかりません</div>
+                      )}
+                      {!patientSearching && patientQuery.length === 0 && (
+                        <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
+                          <Search size={28} className="text-slate-600" />
+                          <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
+                        </div>
+                      )}
+                      {!patientSearching && patientSuggestions.map(p => (
+                        <div
+                          key={p.patient_id}
+                          onClick={() => handleSelectPatientFromModal(p)}
+                          className="px-4 py-3 hover:bg-slate-100 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                        >
+                          <div className="font-bold text-sm">{p.patient_name}</div>
+                          <div className="text-xs text-slate-500 flex gap-3 mt-0.5">
+                            <span>{p.patient_name_kana}</span>
+                            <span>ID: {p.patient_id}</span>
+                            {p.patient_dob && <span>{formatDobDisplay(parseDobToISO(p.patient_dob))}</span>}
+                            {p.patient_gender && <span>{p.patient_gender}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>)}
+
+                  {/* ステップ2: 予約一覧 */}
+                  {modalStep === 'reservations' && (<>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setModalStep('search')} className="text-slate-400 hover:text-white text-sm">← 戻る</button>
+                        <div>
+                          <div className="text-white font-bold text-lg">{selectedPatientForModal?.patient_name}</div>
+                          <div className="text-slate-400 text-xs">ID: {selectedPatientForModal?.patient_id}　{selectedPatientForModal?.patient_name_kana}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <button onClick={() => { setShowPatientModal(false); setModalStep('search'); }} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {patientReservLoading && <div className="text-center text-slate-400 py-6 text-sm">読み込み中...</div>}
+                      {!patientReservLoading && patientReservations.length === 0 && (
+                        <div className="text-center text-slate-400 py-8 text-sm">予約情報なし</div>
+                      )}
+                      {!patientReservLoading && patientReservations.map((r, i) => {
+                        const items = [r.item_basic && '基本', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
+                        return (
+                          <div
+                            key={i}
+                            onClick={() => { handleLoadReservation(r.id, false); setRightTab('preview'); setShowPatientModal(false); setModalStep('search'); }}
+                            className="px-4 py-3 bg-white hover:bg-blue-50 cursor-pointer rounded-xl mb-2 border border-slate-200"
+                          >
+                            <div className="font-bold text-sm text-blue-700">{r.date} ({r.day_of_week})</div>
+                            <div className="text-xs text-slate-500 mt-0.5 flex gap-2 flex-wrap">
+                              <span>{r.purpose}</span>
+                              {items.map(it => <span key={it} className="bg-slate-100 px-1.5 py-0.5 rounded">{it}</span>)}
+                              {r.fee != null && <span className="text-blue-600 font-bold">¥{r.fee.toLocaleString()}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>)}
+
                 </div>
               </div>
             )}
