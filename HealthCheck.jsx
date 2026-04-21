@@ -49,7 +49,9 @@ export default function App() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [patientSearching, setPatientSearching] = useState(false);
   const [birthDateInput, setBirthDateInput] = useState('');
+  const [showPatientModal, setShowPatientModal] = useState(false);
   const searchRef = useRef(null);
+  const modalSearchRef = useRef(null);
 
   // 初期状態の定義
   const tomorrow = new Date();
@@ -793,9 +795,14 @@ export default function App() {
                     <PlusCircle className="text-blue-600" size={20} />
                     <h2 className="text-lg font-bold">予約詳細入力</h2>
                   </div>
-                  <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
-                    <RotateCcw size={13} /> リセット
-                  </button>
+                  <div className="flex items-center gap-[10mm]">
+                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
+                      <Search size={13} /> 患者検索
+                    </button>
+                    <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                      <RotateCcw size={13} /> リセット
+                    </button>
+                  </div>
                 </div>
 
                 {/* 患者検索 */}
@@ -1140,6 +1147,59 @@ export default function App() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 患者検索モーダル */}
+            {showPatientModal && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowPatientModal(false)}>
+                <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-teal-500 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
+                      <h2 className="text-white font-bold text-lg">患者検索</h2>
+                    </div>
+                    <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                  </div>
+                  <div className="relative" ref={modalSearchRef}>
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={patientQuery}
+                      onChange={e => setPatientQuery(e.target.value)}
+                      placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
+                      className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
+                    />
+                  </div>
+                  <div className="mt-4 max-h-72 overflow-y-auto">
+                    {patientSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                    {!patientSearching && patientQuery.length > 0 && patientSuggestions.length === 0 && (
+                      <div className="text-center text-slate-400 py-6 text-sm">該当する患者が見つかりません</div>
+                    )}
+                    {!patientSearching && patientQuery.length === 0 && (
+                      <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
+                        <Search size={28} className="text-slate-600" />
+                        <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
+                      </div>
+                    )}
+                    {!patientSearching && patientSuggestions.map(p => (
+                      <div
+                        key={p.patient_id}
+                        onClick={() => { handleSelectPatient(p); setShowPatientModal(false); }}
+                        className="px-4 py-3 hover:bg-slate-100 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                      >
+                        <div className="font-bold text-sm">{p.patient_name}</div>
+                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5">
+                          <span>{p.patient_name_kana}</span>
+                          <span>ID: {p.patient_id}</span>
+                          {p.patient_dob && <span>{formatDobDisplay(parseDobToISO(p.patient_dob))}</span>}
+                          {p.patient_gender && <span>{p.patient_gender}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
