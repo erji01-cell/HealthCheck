@@ -54,6 +54,9 @@ export default function App() {
   const [selectedPatientForModal, setSelectedPatientForModal] = useState(null);
   const [patientReservations, setPatientReservations] = useState([]);
   const [patientReservLoading, setPatientReservLoading] = useState(false);
+  const [modalQuery, setModalQuery] = useState('');
+  const [modalSuggestions, setModalSuggestions] = useState([]);
+  const [modalSearching, setModalSearching] = useState(false);
   const searchRef = useRef(null);
   const modalSearchRef = useRef(null);
 
@@ -485,6 +488,27 @@ export default function App() {
     }, 200);
     return () => clearTimeout(timer);
   }, [patientQuery, session]);
+
+  // モーダル専用患者検索
+  useEffect(() => {
+    if (!session || modalQuery.length < 1) { setModalSuggestions([]); setModalSearching(false); return; }
+    setModalSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const q = modalQuery.trim();
+        const variants = getKanaVariants(q);
+        const qNorm = variants[0];
+        const kanaOr = variants.map(v => `patient_name_kana.ilike.%${v}%`).join(',');
+        const dobCond = getDobSearchCondition(q);
+        const orStr = [`patient_name.ilike.%${qNorm}%`, `patient_id.ilike.%${qNorm}%`, kanaOr, ...(dobCond ? [dobCond] : [])].join(',');
+        const { data, error } = await supabase.from('patients')
+          .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, zipcode, address, phone_number')
+          .or(orStr).limit(100);
+        setModalSuggestions(!error && data ? data : []);
+      } catch (e) { console.error(e); } finally { setModalSearching(false); }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [modalQuery, session]);
 
   // 外側クリックで候補を閉じる
   useEffect(() => {
@@ -1187,24 +1211,24 @@ export default function App() {
                       <input
                         autoFocus
                         type="text"
-                        value={patientQuery}
-                        onChange={e => setPatientQuery(e.target.value)}
+                        value={modalQuery}
+                        onChange={e => setModalQuery(e.target.value)}
                         placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
                         className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
                       />
                     </div>
                     <div className="mt-4 max-h-72 overflow-y-auto">
-                      {patientSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
-                      {!patientSearching && patientQuery.length > 0 && patientSuggestions.length === 0 && (
+                      {modalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                      {!modalSearching && modalQuery.length > 0 && modalSuggestions.length === 0 && (
                         <div className="text-center text-slate-400 py-6 text-sm">該当する患者が見つかりません</div>
                       )}
-                      {!patientSearching && patientQuery.length === 0 && (
+                      {!modalSearching && modalQuery.length === 0 && (
                         <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
                           <Search size={28} className="text-slate-600" />
                           <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
                         </div>
                       )}
-                      {!patientSearching && patientSuggestions.map(p => (
+                      {!modalSearching && modalSuggestions.map(p => (
                         <div
                           key={p.patient_id}
                           onClick={() => handleSelectPatientFromModal(p)}
