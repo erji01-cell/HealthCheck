@@ -813,7 +813,7 @@ export default function App() {
                     <PlusCircle className="text-blue-600" size={20} />
                     <h2 className="text-lg font-bold">予約詳細入力</h2>
                   </div>
-                  <div className="flex items-center gap-[10mm]">
+                  <div className="flex items-center gap-[5mm]">
                     <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
                       <Search size={13} /> 患者検索
                     </button>
