@@ -1034,7 +1034,7 @@ export default function App() {
           </div>
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[595px] shrink-0 print-right">
+        <div className="w-full lg:w-[671px] shrink-0 print-right">
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2 print-hide">
               <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
