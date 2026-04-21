@@ -212,7 +212,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, patient_gender, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -1188,6 +1188,11 @@ export default function App() {
                           <div>
                             <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
                             <div className="font-black text-lg">{r.patient_name}</div>
+                            <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
+                              {r.patient_gender && <span>{r.patient_gender}</span>}
+                              {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
+                              {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+                            </div>
                           </div>
                           <div className="text-right text-xs text-slate-500">
                             <div>{r.purpose}</div>
