@@ -793,8 +793,8 @@ export default function App() {
                     <PlusCircle className="text-blue-600" size={20} />
                     <h2 className="text-lg font-bold">予約詳細入力</h2>
                   </div>
-                  <button onClick={handleReset} className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-xs">
-                    <RotateCcw size={14} /> リセット
+                  <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                    <RotateCcw size={13} /> リセット
                   </button>
                 </div>
 
