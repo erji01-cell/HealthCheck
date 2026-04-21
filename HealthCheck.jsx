@@ -1112,7 +1112,7 @@ export default function App() {
                                   {day && (
                                     <>
                                       <div className={`font-bold mb-0.5 ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</div>
-                                      {reservations.slice(0, 2).map((r, ri) => (
+                                      {(() => { const show = reservations.length === 3 ? 3 : 2; return reservations.slice(0, show).map((r, ri) => (
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
@@ -1120,8 +1120,8 @@ export default function App() {
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
-                                      ))}
-                                      {reservations.length > 2 && (
+                                      )); })()}
+                                      {reservations.length > 3 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
                                           className="text-[11px] text-black px-0.5 cursor-pointer bg-slate-100 rounded hover:bg-slate-200"
