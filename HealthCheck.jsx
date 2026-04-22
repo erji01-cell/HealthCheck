@@ -1190,7 +1190,7 @@ export default function App() {
                                         const isMale = gender === '男';
                                         const isFemale = gender === '女';
                                         const bgColor = isPast ? 'bg-slate-200 hover:bg-slate-300' : isMale ? 'bg-blue-100 hover:bg-blue-200' : isFemale ? 'bg-pink-100 hover:bg-pink-200' : 'bg-slate-100 hover:bg-slate-200';
-                                        const textColor = isPast ? 'text-slate-600' : isMale ? 'text-blue-700' : isFemale ? 'text-pink-700' : 'text-black';
+                                        const textColor = isPast ? 'text-slate-600' : isMale ? 'text-blue-950' : isFemale ? 'text-red-800' : 'text-black';
                                         return (
                                         <div
                                           key={ri}
