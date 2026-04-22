@@ -58,6 +58,7 @@ export default function App() {
   const [modalSuggestions, setModalSuggestions] = useState([]);
   const [modalSearching, setModalSearching] = useState(false);
   const searchRef = useRef(null);
+  const currentMonthRef = useRef(null);
   const modalSearchRef = useRef(null);
 
   // 初期状態の定義
@@ -231,8 +232,8 @@ export default function App() {
   const fetchCalendarData = async () => {
     setCalendarLoading(true);
     const today = new Date();
-    const start = today.toISOString().split('T')[0];
-    const end = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()).toISOString().split('T')[0];
+    const start = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
       .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
@@ -523,6 +524,13 @@ export default function App() {
     }, 200);
     return () => clearTimeout(timer);
   }, [modalQuery, session]);
+
+  // カレンダー表示時に当月へスクロール
+  useEffect(() => {
+    if (rightTab === 'calendar') {
+      setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [rightTab]);
 
   // 外側クリックで候補を閉じる
   useEffect(() => {
@@ -1108,7 +1116,7 @@ export default function App() {
                   📋 プレビュー
                 </button>
                 <button
-                  onClick={() => { setRightTab('calendar'); fetchCalendarData(); }}
+                  onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                 >
                   📅 カレンダー
@@ -1128,7 +1136,7 @@ export default function App() {
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
                   <div className="space-y-6">
-                    {Array.from({ length: 6 }, (_, i) => {
+                    {Array.from({ length: 13 }, (_, i) => {
                       const d = new Date();
                       const year = new Date(d.getFullYear(), d.getMonth() + i, 1).getFullYear();
                       const month = new Date(d.getFullYear(), d.getMonth() + i, 1).getMonth();
@@ -1143,8 +1151,9 @@ export default function App() {
                         }
                         weeks.push(week);
                       }
+                      const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
                       return (
-                        <div key={`${year}-${month}`}>
+                        <div key={`${year}-${month}`} ref={isCurrentMonth ? currentMonthRef : null}>
                           <div className="text-sm font-black text-indigo-700 mb-2">{year}年{month + 1}月</div>
                           <div className="grid grid-cols-7 text-center text-[10px] font-bold mb-1">
                             {['日','月','火','水','木','金','土'].map((d, i) => (
@@ -1162,6 +1171,7 @@ export default function App() {
                               const isSat = idx % 7 === 6;
                               const isHoliday = dateStr ? HOLIDAYS.has(dateStr) : false;
                               const isDisabled = isSun || isHoliday;
+                              const isPast = dateStr ? dateStr < todayStr : false;
                               return (
                                 <div
                                   key={idx}
@@ -1170,20 +1180,27 @@ export default function App() {
                                     handleReset();
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
                                       <div className={`font-bold mb-0.5 ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</div>
-                                      {(() => { const show = reservations.length === 3 ? 3 : 2; return reservations.slice(0, show).map((r, ri) => (
+                                      {(() => { const show = reservations.length === 3 ? 3 : 2; return reservations.slice(0, show).map((r, ri) => {
+                                        const gender = (r.patient_gender || '').trim();
+                                        const isMale = gender === '男';
+                                        const isFemale = gender === '女';
+                                        const bgColor = isPast ? 'bg-slate-200 hover:bg-slate-300' : isMale ? 'bg-blue-100 hover:bg-blue-200' : isFemale ? 'bg-pink-100 hover:bg-pink-200' : 'bg-slate-100 hover:bg-slate-200';
+                                        const textColor = isPast ? 'text-slate-600' : isMale ? 'text-blue-700' : isFemale ? 'text-pink-700' : 'text-black';
+                                        return (
                                         <div
                                           key={ri}
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] bg-slate-100 text-black rounded px-0.5 mb-px truncate leading-tight hover:bg-slate-200 cursor-pointer"
+                                          className={`text-[11px] ${bgColor} ${textColor} rounded px-0.5 mb-px truncate leading-tight cursor-pointer`}
                                         >
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
-                                      )); })()}
+                                        );
+                                      }); })()}
                                       {reservations.length > 3 && (
                                         <div
                                           onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
