@@ -129,15 +129,29 @@ export default function App() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
 
+  // 1年以上前の予約データを自動削除
+  const deleteOldReservations = async () => {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const cutoffDate = oneYearAgo.toISOString().split('T')[0];
+    await supabase.from('health_reserv').delete().lt('date', cutoffDate);
+  };
+
   // セッション監視
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchCalendarData();
+      if (session) {
+        deleteOldReservations();
+        fetchCalendarData();
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchCalendarData();
+      if (session) {
+        deleteOldReservations();
+        fetchCalendarData();
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
