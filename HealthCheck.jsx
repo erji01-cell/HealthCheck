@@ -1184,8 +1184,16 @@ export default function App() {
                                 >
                                   {day && (
                                     <>
-                                      <div className={`font-bold mb-0.5 ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</div>
-                                      {(() => { const show = reservations.length === 3 ? 3 : 2; return reservations.slice(0, show).map((r, ri) => {
+                                      <div className="flex justify-between items-center mb-0.5">
+                                        <span className={`font-bold ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
+                                        {reservations.length > 3 && (
+                                          <span
+                                            onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
+                                            className="text-[10px] text-emerald-600 font-bold cursor-pointer hover:text-emerald-800"
+                                          >他{reservations.length - 3}名</span>
+                                        )}
+                                      </div>
+                                      {(() => { const show = 3; return reservations.slice(0, show).map((r, ri) => {
                                         const gender = (r.patient_gender || '').trim();
                                         const isMale = gender === '男';
                                         const isFemale = gender === '女';
@@ -1201,14 +1209,6 @@ export default function App() {
                                         </div>
                                         );
                                       }); })()}
-                                      {reservations.length > 3 && (
-                                        <div
-                                          onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                          className="text-[11px] text-black px-0.5 cursor-pointer bg-slate-100 rounded hover:bg-slate-200"
-                                        >
-                                          他{reservations.length - 2}名
-                                        </div>
-                                      )}
                                     </>
                                   )}
                                 </div>
