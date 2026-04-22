@@ -1410,7 +1410,6 @@ export default function App() {
 
             {/* A4帳票再現 */}
             {rightTab === 'preview' && <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
-              <div className="absolute top-0 right-0 p-4 text-[9px] text-slate-300 font-mono">FORM_TYPE_A</div>
               <h1 className="text-[22px] font-bold text-center mb-[5mm] border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm print-table">
