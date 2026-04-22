@@ -129,6 +129,7 @@ export default function App() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
+  const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
 
   // 1年以上前の予約データを自動削除
   const deleteOldReservations = async () => {
@@ -855,9 +856,19 @@ export default function App() {
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px]">
             <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between border-b pb-4">
-                  <div className="flex items-center gap-2">
-                    <PlusCircle className="text-blue-600" size={20} />
-                    <h2 className="text-lg font-bold">予約詳細入力</h2>
+                  <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
+                    <button
+                      onClick={() => setLeftTab('reservation')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'reservation' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      <PlusCircle size={13} /> 予約詳細入力
+                    </button>
+                    <button
+                      onClick={() => setLeftTab('result')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'result' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      <ClipboardCheck size={13} /> 診断結果入力
+                    </button>
                   </div>
                   <div className="flex items-center gap-[5mm]">
                     <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
@@ -869,6 +880,7 @@ export default function App() {
                   </div>
                 </div>
 
+                {leftTab === 'reservation' && <>
                 {/* 患者検索 */}
                 <div className="space-y-1" ref={searchRef}>
                   <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
@@ -1100,6 +1112,158 @@ export default function App() {
                   <Save size={18} />
                   {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '予約データを保存'}
                 </button>
+                </>}
+
+                {/* ===== 診断結果入力タブ ===== */}
+                {leftTab === 'result' && (
+                  <div className="space-y-5">
+
+                    {/* 対象患者サマリ */}
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold text-emerald-500 uppercase mb-0.5">対象患者</div>
+                        <div className="font-bold text-base">{formData.name || <span className="text-slate-300 font-normal text-sm">未選択（予約詳細入力タブで患者を選択）</span>}</div>
+                        {formData.yurigana && <div className="text-xs text-slate-400">{formData.yurigana}</div>}
+                      </div>
+                      <div className="text-right text-xs text-slate-500">
+                        {formData.date && <div>{formData.date.replace(/-/g, '/')}</div>}
+                        {formData.age !== '' && <div>{formData.age}歳{formData.gender ? ` / ${formData.gender}` : ''}</div>}
+                      </div>
+                    </div>
+
+                    {/* 血圧・脈拍・色神 */}
+                    <div className="space-y-3">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧・脈拍・色神</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500 font-medium">血圧1回目 <span className="text-[10px] text-slate-400">(mmHg)</span></div>
+                          <div className="flex items-center gap-1">
+                            <input type="text" name="bp1Sys" value={formData.bp1Sys} onChange={handleChange} placeholder="収縮期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <span className="text-slate-400 font-bold flex-shrink-0">/</span>
+                            <input type="text" name="bp1Dia" value={formData.bp1Dia} onChange={handleChange} placeholder="拡張期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500 font-medium">血圧2回目 <span className="text-[10px] text-slate-400">(mmHg)</span></div>
+                          <div className="flex items-center gap-1">
+                            <input type="text" name="bp2Sys" value={formData.bp2Sys} onChange={handleChange} placeholder="収縮期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <span className="text-slate-400 font-bold flex-shrink-0">/</span>
+                            <input type="text" name="bp2Dia" value={formData.bp2Dia} onChange={handleChange} placeholder="拡張期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500 font-medium">脈拍 <span className="text-[10px] text-slate-400">(/分)</span></div>
+                          <input type="text" name="pulse" value={formData.pulse} onChange={handleChange} placeholder="脈拍数" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-500 font-medium">色神</div>
+                        <div className="flex items-center gap-3">
+                          {['正常', '異常'].map(v => (
+                            <label key={v} className="flex items-center gap-1.5 text-sm cursor-pointer font-medium">
+                              <input type="radio" name="colorVision" value={v} checked={formData.colorVision === v} onChange={handleChange} className="w-4 h-4 accent-emerald-600" /> {v}
+                            </label>
+                          ))}
+                          <input type="text" name="colorVision" value={formData.colorVision} onChange={handleChange} placeholder="その他（自由記入）" className="flex-1 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 身体測定 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">身体測定</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {[
+                          { label: '身長', name: 'height', unit: 'cm' },
+                          { label: '体重', name: 'weight', unit: 'kg' },
+                          { label: 'BMI', name: 'bmi', unit: '' },
+                          { label: '腹囲', name: 'waist', unit: 'cm' },
+                          { label: '胸囲', name: 'chest', unit: 'cm' },
+                        ].map(({ label, name, unit }) => (
+                          <div key={name} className="space-y-1">
+                            <div className="text-xs text-slate-500 font-medium text-center">{label}{unit && <span className="text-[10px] text-slate-400 ml-0.5">({unit})</span>}</div>
+                            <input type="text" name={name} value={formData[name]} onChange={handleChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 視力 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">視力</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { label: '裸眼', rName: 'visionR', lName: 'visionL' },
+                          { label: '矯正', rName: 'visionR2', lName: 'visionL2' },
+                        ].map(({ label, rName, lName }) => (
+                          <div key={label} className="space-y-1">
+                            <div className="text-xs text-slate-500 font-medium">{label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">右</span>
+                              <input type="text" name={rName} value={formData[rName]} onChange={handleChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">左</span>
+                              <input type="text" name={lName} value={formData[lName]} onChange={handleChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 聴力 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">聴力</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { label: '1000Hz', rName: 'hearingR', lName: 'hearingL' },
+                          { label: '4000Hz', rName: 'hearingR2', lName: 'hearingL2' },
+                        ].map(({ label, rName, lName }) => (
+                          <div key={label} className="space-y-1">
+                            <div className="text-xs text-slate-500 font-medium">{label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">右</span>
+                              <input type="text" name={rName} value={formData[rName]} onChange={handleChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">左</span>
+                              <input type="text" name={lName} value={formData[lName]} onChange={handleChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 既往歴 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">既往歴</label>
+                      <textarea name="medicalHistory" value={formData.medicalHistory} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="既往歴を入力..." />
+                    </div>
+
+                    {/* 所見 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">所見</label>
+                      <textarea name="findings" value={formData.findings} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="所見を入力..." />
+                    </div>
+
+                    {/* その他・備考 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他・備考</label>
+                      <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="その他・備考を入力..." />
+                    </div>
+
+                    {/* 保存ボタン */}
+                    <button
+                      onClick={handleSave}
+                      disabled={saveStatus === 'saving'}
+                      className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                        saveStatus === 'saved' ? 'bg-green-600 text-white' :
+                        saveStatus === 'error' ? 'bg-red-600 text-white' :
+                        saveStatus === 'saving' ? 'bg-emerald-400 text-white cursor-not-allowed' :
+                        'bg-emerald-600 text-white hover:bg-emerald-700'
+                      }`}
+                    >
+                      <Save size={18} />
+                      {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '結果データを保存'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
