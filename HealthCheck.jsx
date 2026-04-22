@@ -30,6 +30,50 @@ const HOLIDAYS = new Set([
   '2027-10-11','2027-11-03','2027-11-23',
 ]);
 
+// 健康診断書専用データの初期状態（診断結果入力タブ → 健康診断書と連動）
+const kenshinInitialState = {
+  address: '',
+  bpSys: '', bpDia: '',
+  height: '', weight: '', bmi: '', waist: '',
+  visionR: '', visionL: '', visionR2: '', visionL2: '',
+  colorVision: '',
+  hearingR: '', hearingL: '',
+  medicalHistory: '',
+  rbc: '', hemoglobin: '',
+  got: '', gpt: '', gammaGtp: '',
+  hdl: '', ldl: '', triglyceride: '',
+  bloodGlucose: '', uricAcid: '',
+  xRayDate: '', xRayResult: '',
+  ecgResult: '',
+  urineGlucose: '', urineProtein: '', urineUrobilinogen: '',
+  doctorFindings: '', overallFindings: '',
+  issueDate: '',
+};
+
+// ISO日付 → 和暦表示
+const toWareki = (isoDate) => {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-').map(Number);
+  let eraName, eraYear;
+  if (y >= 2019)      { eraName = '令和'; eraYear = y - 2018; }
+  else if (y >= 1989) { eraName = '平成'; eraYear = y - 1988; }
+  else if (y >= 1926) { eraName = '昭和'; eraYear = y - 1925; }
+  else if (y >= 1912) { eraName = '大正'; eraYear = y - 1911; }
+  else                { eraName = '明治'; eraYear = y - 1867; }
+  return `${eraName}${eraYear}年${m}月${d}日`;
+};
+
+// 生年月日の元号コードを返す
+const getBirthEra = (isoDate) => {
+  if (!isoDate) return '';
+  const y = parseInt(isoDate.split('-')[0]);
+  if (y >= 2019) return 'R';
+  if (y >= 1989) return 'H';
+  if (y >= 1926) return 'S';
+  if (y >= 1912) return 'T';
+  return 'M';
+};
+
 export default function App() {
   // 認証状態
   const [session, setSession] = useState(null);
@@ -130,6 +174,7 @@ export default function App() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
+  const [kenshinData, setKenshinData] = useState(kenshinInitialState);
 
   // 1年以上前の予約データを自動削除
   const deleteOldReservations = async () => {
@@ -690,6 +735,12 @@ export default function App() {
     }
   };
 
+  // 健康診断書データ変更ハンドラ
+  const handleKenshinChange = (e) => {
+    const { name, value } = e.target;
+    setKenshinData(prev => ({ ...prev, [name]: value }));
+  };
+
   // 生年月日フィールドからフォーカスが外れたときにパース
   const handleBirthDateBlur = () => {
     const iso = parseDateFlexible(birthDateInput);
@@ -699,6 +750,7 @@ export default function App() {
 
   const handleReset = () => {
     setFormData(initialState);
+    setKenshinData(kenshinInitialState);
     setPatientQuery('');
     setBirthDateInput('');
     setEditingReservationId(null);
@@ -1114,15 +1166,15 @@ export default function App() {
                 </button>
                 </>}
 
-                {/* ===== 診断結果入力タブ ===== */}
+                {/* ===== 診断結果入力タブ（健康診断書と連動） ===== */}
                 {leftTab === 'result' && (
                   <div className="space-y-5">
 
-                    {/* 対象患者サマリ */}
+                    {/* 対象患者サマリ（formDataから読み取り表示のみ） */}
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between">
                       <div>
-                        <div className="text-[10px] font-bold text-emerald-500 uppercase mb-0.5">対象患者</div>
-                        <div className="font-bold text-base">{formData.name || <span className="text-slate-300 font-normal text-sm">未選択（予約詳細入力タブで患者を選択）</span>}</div>
+                        <div className="text-[10px] font-bold text-emerald-500 uppercase mb-0.5">対象患者（予約詳細入力タブで選択）</div>
+                        <div className="font-bold text-base">{formData.name || <span className="text-slate-300 font-normal text-sm">未選択</span>}</div>
                         {formData.yurigana && <div className="text-xs text-slate-400">{formData.yurigana}</div>}
                       </div>
                       <div className="text-right text-xs text-slate-500">
@@ -1131,60 +1183,37 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* 血圧・脈拍・色神 */}
-                    <div className="space-y-3">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧・脈拍・色神</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <div className="text-xs text-slate-500 font-medium">血圧1回目 <span className="text-[10px] text-slate-400">(mmHg)</span></div>
-                          <div className="flex items-center gap-1">
-                            <input type="text" name="bp1Sys" value={formData.bp1Sys} onChange={handleChange} placeholder="収縮期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                            <span className="text-slate-400 font-bold flex-shrink-0">/</span>
-                            <input type="text" name="bp1Dia" value={formData.bp1Dia} onChange={handleChange} placeholder="拡張期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-xs text-slate-500 font-medium">血圧2回目 <span className="text-[10px] text-slate-400">(mmHg)</span></div>
-                          <div className="flex items-center gap-1">
-                            <input type="text" name="bp2Sys" value={formData.bp2Sys} onChange={handleChange} placeholder="収縮期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                            <span className="text-slate-400 font-bold flex-shrink-0">/</span>
-                            <input type="text" name="bp2Dia" value={formData.bp2Dia} onChange={handleChange} placeholder="拡張期" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-xs text-slate-500 font-medium">脈拍 <span className="text-[10px] text-slate-400">(/分)</span></div>
-                          <input type="text" name="pulse" value={formData.pulse} onChange={handleChange} placeholder="脈拍数" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500 font-medium">色神</div>
-                        <div className="flex items-center gap-3">
-                          {['正常', '異常'].map(v => (
-                            <label key={v} className="flex items-center gap-1.5 text-sm cursor-pointer font-medium">
-                              <input type="radio" name="colorVision" value={v} checked={formData.colorVision === v} onChange={handleChange} className="w-4 h-4 accent-emerald-600" /> {v}
-                            </label>
-                          ))}
-                          <input type="text" name="colorVision" value={formData.colorVision} onChange={handleChange} placeholder="その他（自由記入）" className="flex-1 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
-                      </div>
+                    {/* 住所 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
+                      <input type="text" name="address" value={kenshinData.address} onChange={handleKenshinChange} placeholder="住所を入力" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     {/* 身体測定 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">身体測定</label>
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         {[
-                          { label: '身長', name: 'height', unit: 'cm' },
-                          { label: '体重', name: 'weight', unit: 'kg' },
-                          { label: 'BMI', name: 'bmi', unit: '' },
-                          { label: '腹囲', name: 'waist', unit: 'cm' },
-                          { label: '胸囲', name: 'chest', unit: 'cm' },
-                        ].map(({ label, name, unit }) => (
+                          { label: '身長(cm)', name: 'height' },
+                          { label: '体重(kg)', name: 'weight' },
+                          { label: 'BMI', name: 'bmi' },
+                          { label: '腹囲(cm)', name: 'waist' },
+                        ].map(({ label, name }) => (
                           <div key={name} className="space-y-1">
-                            <div className="text-xs text-slate-500 font-medium text-center">{label}{unit && <span className="text-[10px] text-slate-400 ml-0.5">({unit})</span>}</div>
-                            <input type="text" name={name} value={formData[name]} onChange={handleChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <div className="text-xs text-slate-500 font-medium text-center">{label}</div>
+                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* 血圧 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 (mmHg)</label>
+                      <div className="flex items-center gap-2 max-w-[240px]">
+                        <input type="text" name="bpSys" value={kenshinData.bpSys} onChange={handleKenshinChange} placeholder="収縮期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        <span className="text-slate-500 font-bold">/</span>
+                        <input type="text" name="bpDia" value={kenshinData.bpDia} onChange={handleKenshinChange} placeholder="拡張期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
                     </div>
 
@@ -1199,68 +1228,165 @@ export default function App() {
                           <div key={label} className="space-y-1">
                             <div className="text-xs text-slate-500 font-medium">{label}</div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">右</span>
-                              <input type="text" name={rName} value={formData[rName]} onChange={handleChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">左</span>
-                              <input type="text" name={lName} value={formData[lName]} onChange={handleChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                              <span className="text-xs text-slate-400 flex-shrink-0">右</span>
+                              <input type="text" name={rName} value={kenshinData[rName]} onChange={handleKenshinChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                              <span className="text-xs text-slate-400 flex-shrink-0">左</span>
+                              <input type="text" name={lName} value={kenshinData[lName]} onChange={handleKenshinChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* 聴力 */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">聴力</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {[
-                          { label: '1000Hz', rName: 'hearingR', lName: 'hearingL' },
-                          { label: '4000Hz', rName: 'hearingR2', lName: 'hearingL2' },
-                        ].map(({ label, rName, lName }) => (
-                          <div key={label} className="space-y-1">
-                            <div className="text-xs text-slate-500 font-medium">{label}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">右</span>
-                              <input type="text" name={rName} value={formData[rName]} onChange={handleChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                              <span className="text-xs text-slate-400 w-4 flex-shrink-0">左</span>
-                              <input type="text" name={lName} value={formData[lName]} onChange={handleChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                            </div>
-                          </div>
-                        ))}
+                    {/* 色神・聴力 */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">色神</label>
+                        <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-400 flex-shrink-0">右</span>
+                          <input type="text" name="hearingR" value={kenshinData.hearingR} onChange={handleKenshinChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          <span className="text-xs text-slate-400 flex-shrink-0">左</span>
+                          <input type="text" name="hearingL" value={kenshinData.hearingL} onChange={handleKenshinChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
                       </div>
                     </div>
 
                     {/* 既往歴 */}
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">既往歴</label>
-                      <textarea name="medicalHistory" value={formData.medicalHistory} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="既往歴を入力..." />
+                      <input type="text" name="medicalHistory" value={kenshinData.medicalHistory} onChange={handleKenshinChange} placeholder="なし / 高血圧など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
-                    {/* 所見 */}
+                    {/* 血液検査 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">血液検査</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
+                        {/* 貧血検査 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1">貧血検査</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { label: '赤血球(万/mm³)', name: 'rbc' },
+                              { label: '血色素(g/dL)', name: 'hemoglobin' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500 w-[110px] flex-shrink-0">{label}</span>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* 肝機能 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1">肝機能</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { label: 'GOT(IU/L)', name: 'got' },
+                              { label: 'GPT(IU/L)', name: 'gpt' },
+                              { label: 'γ-GTP(IU/L)', name: 'gammaGtp' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* 血中脂質 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1">血中脂質</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { label: 'HDL(mg/dL)', name: 'hdl' },
+                              { label: 'LDL(mg/dL)', name: 'ldl' },
+                              { label: '中性脂肪(mg/dL)', name: 'triglyceride' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* 血糖・尿酸 */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: '血糖検査(mg/dL)', name: 'bloodGlucose' },
+                            { label: '尿酸(mg/dL)', name: 'uricAcid' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500 w-[110px] flex-shrink-0">{label}</span>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 胸部X-P検査 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">胸部X-P検査</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500">撮影日</div>
+                          <input type="date" name="xRayDate" value={kenshinData.xRayDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500">結果</div>
+                          <input type="text" name="xRayResult" value={kenshinData.xRayResult} onChange={handleKenshinChange} placeholder="異常なし" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 心電図 */}
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">所見</label>
-                      <textarea name="findings" value={formData.findings} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="所見を入力..." />
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">心電図</label>
+                      <input type="text" name="ecgResult" value={kenshinData.ecgResult} onChange={handleKenshinChange} placeholder="正常範囲" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
-                    {/* その他・備考 */}
+                    {/* 尿検査 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">尿検査</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: '糖', name: 'urineGlucose' },
+                          { label: '蛋白', name: 'urineProtein' },
+                          { label: 'ウロビリノーゲン', name: 'urineUrobilinogen' },
+                        ].map(({ label, name }) => (
+                          <div key={name} className="space-y-0.5">
+                            <div className="text-xs text-slate-500 text-center">{label}</div>
+                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 診察所見・総合所見 */}
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他・備考</label>
-                      <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="その他・備考を入力..." />
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">診察所見</label>
+                      <textarea name="doctorFindings" value={kenshinData.doctorFindings} onChange={handleKenshinChange} className="w-full p-3 border rounded-xl h-20 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="異常を認めない。" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">総合所見</label>
+                      <textarea name="overallFindings" value={kenshinData.overallFindings} onChange={handleKenshinChange} className="w-full p-3 border rounded-xl h-20 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="異常を認めない。勤務に支障なし。" />
                     </div>
 
-                    {/* 保存ボタン */}
+                    {/* 診断日 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">診断日（健康診断書の発行日）</label>
+                      <input type="date" name="issueDate" value={kenshinData.issueDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+
+                    {/* 健康診断書プレビューボタン */}
                     <button
-                      onClick={handleSave}
-                      disabled={saveStatus === 'saving'}
-                      className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                        saveStatus === 'saved' ? 'bg-green-600 text-white' :
-                        saveStatus === 'error' ? 'bg-red-600 text-white' :
-                        saveStatus === 'saving' ? 'bg-emerald-400 text-white cursor-not-allowed' :
-                        'bg-emerald-600 text-white hover:bg-emerald-700'
-                      }`}
+                      onClick={() => setRightTab('kenshin')}
+                      className="w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
                     >
-                      <Save size={18} />
-                      {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '結果データを保存'}
+                      <ClipboardCheck size={18} /> 健康診断書をプレビュー
                     </button>
                   </div>
                 )}
@@ -1285,8 +1411,14 @@ export default function App() {
                 >
                   📅 カレンダー
                 </button>
+                <button
+                  onClick={() => setRightTab('kenshin')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                >
+                  📄 健康診断書
+                </button>
               </div>
-              {rightTab === 'preview' && (
+              {(rightTab === 'preview' || rightTab === 'kenshin') && (
                 <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
                   <Printer size={14} /> 用紙を印刷
                 </button>
@@ -1569,6 +1701,228 @@ export default function App() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* ===== 健康診断書 ===== */}
+            {rightTab === 'kenshin' && (
+              <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px'}}>
+
+                {/* タイトル */}
+                <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '1em'}}>健　康　診　断　書</h1>
+
+                {/* 患者情報 */}
+                <div className="mb-3" style={{border: '1.5px solid black'}}>
+                  {/* ふりがな・氏名・性別・住所 */}
+                  <div className="flex" style={{borderBottom: '1.5px solid black'}}>
+                    <div className="flex flex-col bg-slate-50" style={{width: '78px', borderRight: '1.5px solid black'}}>
+                      <div className="text-center py-0.5" style={{fontSize: '10px', borderBottom: '1px solid black'}}>ふりがな</div>
+                      <div className="flex-1 flex items-center justify-center font-bold" style={{fontSize: '11px'}}>氏名</div>
+                    </div>
+                    <div className="flex flex-col flex-1" style={{borderRight: '1.5px solid black'}}>
+                      <div className="px-2 py-0.5" style={{fontSize: '11px', borderBottom: '1px solid black', minHeight: '20px'}}>{formData.yurigana}</div>
+                      <div className="px-2 py-1 flex items-center gap-2">
+                        <span className="font-bold" style={{fontSize: '17px'}}>{formData.name}</span>
+                        <span style={{fontSize: '14px'}} className="ml-1">様</span>
+                        <div className="ml-3" style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
+                          <div className={`px-2`} style={formData.gender === '男' ? {background:'black', color:'white', fontWeight:'bold', borderBottom: '1px solid black'} : {borderBottom: '1px solid black'}}>男</div>
+                          <div className={`px-2`} style={formData.gender === '女' ? {background:'black', color:'white', fontWeight:'bold'} : {}}>女</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{width: '200px'}}>
+                      <div className="text-center py-0.5 bg-slate-50" style={{fontSize: '10px', borderBottom: '1px solid black'}}>住所</div>
+                      <div className="px-2 py-1" style={{fontSize: '11px'}}>{kenshinData.address}</div>
+                    </div>
+                  </div>
+                  {/* 生年月日 */}
+                  <div className="flex" style={{minHeight: '36px'}}>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>生年月日</div>
+                    <div className="flex-1 flex items-center gap-3 px-3 py-1">
+                      {(() => {
+                        const era = getBirthEra(formData.birthDate);
+                        return (
+                          <div style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
+                            {[['T','大正'],['S','昭和'],['H','平成'],['R','令和']].map(([code, name], i) => (
+                              <div key={code} className="px-1.5" style={era === code ? {background:'black', color:'white', fontWeight:'bold', borderBottom: i < 3 ? '1px solid black' : 'none'} : {borderBottom: i < 3 ? '1px solid black' : 'none'}}>{name}</div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      {(() => {
+                        if (!formData.birthDate) return <span style={{fontSize: '14px'}}>　　年　　月　　日（　　歳）</span>;
+                        const [y, m, d] = formData.birthDate.split('-').map(Number);
+                        const era = getBirthEra(formData.birthDate);
+                        const eraBaseMap = { T: 1911, S: 1925, H: 1988, R: 2018, M: 1867 };
+                        const eraYear = y - (eraBaseMap[era] || 0);
+                        return <span style={{fontSize: '14px'}}>{eraYear}年　{m}月　{d}日　（{formData.age}歳）</span>;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 診断事項タイトル */}
+                <div className="text-center font-bold mb-2" style={{fontSize: '14px', letterSpacing: '0.6em'}}>診　断　事　項</div>
+
+                {/* メインテーブル */}
+                <div className="flex flex-1" style={{border: '1.5px solid black'}}>
+
+                  {/* 左列 */}
+                  <div className="flex flex-col" style={{flex: 1, borderRight: '1.5px solid black'}}>
+
+                    {/* 身長/体重・BMI・腹囲・血圧 */}
+                    {[
+                      { label: '身長/体重', val: kenshinData.height && kenshinData.weight ? `${kenshinData.height} cm / ${kenshinData.weight} kg` : '' },
+                      { label: 'BMI',       val: kenshinData.bmi },
+                      { label: '腹囲',      val: kenshinData.waist ? `${kenshinData.waist} cm` : '' },
+                      { label: '血圧(mmhg)',val: kenshinData.bpSys || kenshinData.bpDia ? `${kenshinData.bpSys || ''} / ${kenshinData.bpDia || ''}` : '' },
+                    ].map(({ label, val }) => (
+                      <div key={label} className="flex" style={{borderBottom: '1px solid black', minHeight: '26px'}}>
+                        <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
+                        <div className="flex-1 flex items-center px-2 font-mono" style={{fontSize: '12px'}}>{val}</div>
+                      </div>
+                    ))}
+
+                    {/* 眼（視力・色神） */}
+                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '12px', letterSpacing: '6px', padding: '4px 2px'}}>眼</div>
+                      <div className="flex flex-col flex-1">
+                        <div className="flex" style={{borderBottom: '1px solid black'}}>
+                          <div className="bg-slate-50 flex flex-col items-center justify-center" style={{width: '28px', borderRight: '1px solid black', fontSize: '10px'}}>
+                            <span>視</span><span>力</span>
+                          </div>
+                          <div className="flex flex-col flex-1" style={{borderRight: '0'}}>
+                            {[
+                              { side: '右', bare: kenshinData.visionR, corr: kenshinData.visionR2 },
+                              { side: '左', bare: kenshinData.visionL, corr: kenshinData.visionL2 },
+                            ].map(({ side, bare, corr }, i) => (
+                              <div key={side} className="flex items-center gap-1 px-2" style={{minHeight: '24px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                                <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
+                                <span>裸眼: {bare}</span>
+                                {corr && <span className="ml-3">矯正: {corr}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-2" style={{minHeight: '24px', fontSize: '11px'}}>
+                          <span className="font-bold text-slate-600">色神</span>
+                          <span>{kenshinData.colorVision}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 聴力 */}
+                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px'}}>聴力</div>
+                      <div className="flex flex-col flex-1">
+                        {[{ side: '右', val: kenshinData.hearingR }, { side: '左', val: kenshinData.hearingL }].map(({ side, val }, i) => (
+                          <div key={side} className="flex items-center gap-2 px-2" style={{minHeight: '26px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                            <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
+                            <span>{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 血液検査 */}
+                    <div className="flex flex-1">
+                      <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '11px', letterSpacing: '2px', padding: '4px 2px'}}>血液検査</div>
+                      <div className="flex flex-col flex-1">
+
+                        {[
+                          { group: '貧血検査', rows: [{ label: '赤血球(万/mm³)', val: kenshinData.rbc }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin }] },
+                          { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got }, { label: 'GPT(IU/L)', val: kenshinData.gpt }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp }] },
+                          { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride }] },
+                        ].map(({ group, rows }) => (
+                          <div key={group} className="flex" style={{borderBottom: '1px solid black'}}>
+                            <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '44px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
+                            <div className="flex flex-col flex-1">
+                              {rows.map(({ label, val }, i) => (
+                                <div key={label} className="flex items-center gap-1 px-1" style={{minHeight: '22px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                                  <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
+                                  <span className="font-mono font-bold">{val}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {[
+                          { label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose },
+                          { label: '尿酸(mg/dL)',     val: kenshinData.uricAcid },
+                        ].map(({ label, val }, i) => (
+                          <div key={label} className="flex items-center gap-1 px-1" style={{minHeight: '22px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                            <span className="text-slate-600" style={{width: '174px', flexShrink: 0}}>{label}</span>
+                            <span className="font-mono font-bold">{val}</span>
+                          </div>
+                        ))}
+
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 右列 */}
+                  <div className="flex flex-col" style={{flex: 1}}>
+
+                    {/* 既往歴 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '44px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>既往歴</div>
+                      <div className="flex-1 p-2" style={{fontSize: '11px'}}>{kenshinData.medicalHistory || 'なし'}</div>
+                    </div>
+
+                    {/* 撮影区分 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '26px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>撮影区分</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>
+                        {kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}　撮影` : ''}
+                      </div>
+                    </div>
+
+                    {/* 胸部X-P検査 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '120px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', lineHeight: '1.8'}}>胸部<br/>X-P<br/>検査</div>
+                      <div className="flex-1 flex items-center justify-center p-2 text-center" style={{fontSize: '11px'}}>{kenshinData.xRayResult}</div>
+                    </div>
+
+                    {/* 心電図 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '40px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>心電図</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.ecgResult}</div>
+                    </div>
+
+                    {/* 尿検査 */}
+                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>尿検査</div>
+                      <div className="flex-1 p-2" style={{fontSize: '11px', lineHeight: '1.8'}}>
+                        <div>・糖　　　　（{kenshinData.urineGlucose || '　　'}）</div>
+                        <div>・蛋白　　　（{kenshinData.urineProtein || '　　'}）</div>
+                        <div>・ウロビリノーゲン（{kenshinData.urineUrobilinogen || '　　'}）</div>
+                      </div>
+                    </div>
+
+                    {/* 診察所見 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '55px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>診察所見</div>
+                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.doctorFindings}</div>
+                    </div>
+
+                    {/* 総合所見 */}
+                    <div className="flex flex-1">
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>総合所見</div>
+                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.overallFindings}</div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* フッター */}
+                <div className="mt-4 space-y-1" style={{fontSize: '12px'}}>
+                  <div>上記のとおり診断します</div>
+                  <div>{kenshinData.issueDate ? toWareki(kenshinData.issueDate) : '　　　年　　月　　日'}</div>
+                  <div className="mt-2" style={{marginLeft: '3em'}}>鹿児島県</div>
+                  <div style={{marginLeft: '5em'}}>医療法人　□会　　　　　診療所　　医師　　　　　　　　　　㊞</div>
+                </div>
+
               </div>
             )}
 
@@ -1875,6 +2229,18 @@ export default function App() {
           .print-table { border: 1.5px solid black !important; }
           .print-table > div { border-bottom: 1.5px solid black !important; }
           .print-table > div > div:first-child { border-right: 1.5px solid black !important; }
+          #kenshin-printable {
+            width: 210mm !important;
+            min-height: 0 !important;
+            padding: 8mm 12mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
     </div>
