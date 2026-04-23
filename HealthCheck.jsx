@@ -1599,8 +1599,8 @@ export default function App() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">医師名</label>
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                        <div className="flex items-center gap-4">
-                          {['杉原一明', '杉原一信', 'その他'].map(name => (
+                        <div className="flex items-center gap-4 flex-wrap">
+                          {['杉原一明', '杉原一信'].map(name => (
                             <label key={name} className="flex items-center gap-2 cursor-pointer">
                               <input
                                 type="radio"
@@ -1613,6 +1613,27 @@ export default function App() {
                               <span className="text-sm font-medium">{name}</span>
                             </label>
                           ))}
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="doctorName"
+                              value="その他"
+                              checked={kenshinData.doctorName === 'その他'}
+                              onChange={handleKenshinChange}
+                              className="w-4 h-4 accent-emerald-600"
+                            />
+                            <span className="text-sm font-medium">その他</span>
+                          </label>
+                          {kenshinData.doctorName === 'その他' && (
+                            <input
+                              type="text"
+                              name="doctorNameCustom"
+                              value={kenshinData.doctorNameCustom}
+                              onChange={handleKenshinChange}
+                              placeholder="医師名を入力"
+                              className="flex-1 min-w-[140px] p-1.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                            />
+                          )}
                           {kenshinData.doctorName && (
                             <button
                               onClick={() => setKenshinData(prev => ({ ...prev, doctorName: '', doctorNameCustom: '' }))}
@@ -1620,16 +1641,6 @@ export default function App() {
                             >クリア</button>
                           )}
                         </div>
-                        {kenshinData.doctorName === 'その他' && (
-                          <input
-                            type="text"
-                            name="doctorNameCustom"
-                            value={kenshinData.doctorNameCustom}
-                            onChange={handleKenshinChange}
-                            placeholder="医師名を入力"
-                            className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                          />
-                        )}
                       </div>
                     </div>
 
