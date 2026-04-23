@@ -55,6 +55,8 @@ const kenshinInitialState = {
   bloodGlucose: '', hba1c: '', crp: '', rf: '', aso: '',
   // 腫瘍マーカー
   cea: '', ca199: '', psaValue: '', bnp: '',
+  // その他採血項目
+  hbsAg: '', hbsAb: '', hcvAb: '', syphilisSTS: '', mrsaStaph: '',
   // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
@@ -1484,6 +1486,27 @@ export default function App() {
                           </div>
                         </div>
 
+                      </div>
+                    </div>
+
+                    {/* その他採血項目 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他採血項目</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: 'HBs抗原', name: 'hbsAg' },
+                            { label: 'HBs抗体', name: 'hbsAb' },
+                            { label: 'HCV抗体', name: 'hcvAb' },
+                            { label: '梅毒STS', name: 'syphilisSTS' },
+                            { label: 'MRSA 黄色ブドウ球菌', name: 'mrsaStaph' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="space-y-0.5">
+                              <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
