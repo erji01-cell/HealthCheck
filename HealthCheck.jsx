@@ -32,6 +32,8 @@ const HOLIDAYS = new Set([
 
 // 健康診断書専用データの初期状態（診断結果入力タブ → 健康診断書と連動）
 const kenshinInitialState = {
+  // 患者情報
+  kDate: '', kId: '', kName: '', kYurigana: '', kBirthDate: '', kAge: '', kGender: '', kContact: '', kCompanyName: '',
   address: '',
   bpSys: '', bpDia: '',
   height: '', weight: '', bmi: '', waist: '',
@@ -203,6 +205,21 @@ export default function App() {
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
   const [kenshinData, setKenshinData] = useState(kenshinInitialState);
+  const [kenshinBirthDateInput, setKenshinBirthDateInput] = useState('');
+
+  // 診断結果入力：生年月日→年齢自動計算
+  useEffect(() => {
+    if (kenshinData.kBirthDate && kenshinData.kDate) {
+      const birth = new Date(kenshinData.kBirthDate);
+      const target = new Date(kenshinData.kDate);
+      let age = target.getFullYear() - birth.getFullYear();
+      const m = target.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) age--;
+      setKenshinData(prev => ({ ...prev, kAge: age >= 0 ? age : '' }));
+    } else {
+      setKenshinData(prev => ({ ...prev, kAge: '' }));
+    }
+  }, [kenshinData.kBirthDate, kenshinData.kDate]);
 
   // 1年以上前の予約データを自動削除
   const deleteOldReservations = async () => {
@@ -776,11 +793,35 @@ export default function App() {
     if (iso) setBirthDateInput(iso);
   };
 
+  // 診断結果入力用：生年月日パース
+  const handleKenshinBirthDateBlur = () => {
+    const iso = parseDateFlexible(kenshinBirthDateInput);
+    setKenshinData(prev => ({ ...prev, kBirthDate: iso }));
+    if (iso) setKenshinBirthDateInput(iso);
+  };
+
+  // 診断結果入力用：患者検索から選択
+  const handleSelectKenshinPatient = (p) => {
+    const iso = p.patient_dob ? parseDateFlexible(p.patient_dob) : '';
+    setKenshinData(prev => ({
+      ...prev,
+      kId: p.patient_id || '',
+      kName: p.patient_name || '',
+      kYurigana: p.patient_name_kana || '',
+      kBirthDate: iso,
+      kGender: p.patient_gender || '',
+    }));
+    if (iso) setKenshinBirthDateInput(iso);
+    setPatientQuery('');
+    setShowSuggestions(false);
+  };
+
   const handleReset = () => {
     setFormData(initialState);
     setKenshinData(kenshinInitialState);
     setPatientQuery('');
     setBirthDateInput('');
+    setKenshinBirthDateInput('');
     setEditingReservationId(null);
   };
 
@@ -1007,12 +1048,12 @@ export default function App() {
                     <input type="text" name="id" value={formData.id} onChange={handleChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
-                    <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                  </div>
-                  <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">氏名</label>
                     <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
+                    <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（例: S42.1.25）</label>
@@ -1199,7 +1240,7 @@ export default function App() {
                   <div className="space-y-5">
 
                     {/* 患者検索 */}
-                    <div className="space-y-1" ref={searchRef}>
+                    <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
                       <div className="relative">
                         <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400" />
@@ -1218,7 +1259,7 @@ export default function App() {
                             {patientSuggestions.map(p => (
                               <div
                                 key={p.patient_id}
-                                onMouseDown={() => handleSelectPatient(p)}
+                                onMouseDown={() => handleSelectKenshinPatient(p)}
                                 className="px-4 py-2.5 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0"
                               >
                                 <div className="font-bold text-sm">{p.patient_name}</div>
@@ -1237,44 +1278,44 @@ export default function App() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">健診希望日</label>
-                        <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="date" name="kDate" value={kenshinData.kDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">カルテID (任意)</label>
-                        <input type="text" name="id" value={formData.id} onChange={handleChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
-                        <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="text" name="kId" value={kenshinData.kId} onChange={handleKenshinChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">氏名</label>
-                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="text" name="kName" value={kenshinData.kName} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
+                        <input type="text" name="kYurigana" value={kenshinData.kYurigana} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（例: S42.1.25）</label>
                         <input
                           type="text"
                           placeholder="S420125 / 19670125 / S42.1.25"
-                          value={birthDateInput}
-                          onChange={e => setBirthDateInput(e.target.value)}
-                          onBlur={handleBirthDateBlur}
+                          value={kenshinBirthDateInput}
+                          onChange={e => setKenshinBirthDateInput(e.target.value)}
+                          onBlur={handleKenshinBirthDateBlur}
                           className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
                         />
                         <div className="text-sm text-emerald-600 pl-2">
-                          {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
+                          {kenshinData.kBirthDate ? formatDobDisplay(kenshinData.kBirthDate) : <span className="text-slate-300">未入力</span>}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
                           <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
-                            {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                            {kenshinData.kAge !== '' && kenshinData.kAge != null ? `${kenshinData.kAge} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
                           </div>
                         </div>
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">性別</label>
-                          <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                          <select name="kGender" value={kenshinData.kGender} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                             <option value="">未選択</option>
                             <option value="男">男</option>
                             <option value="女">女</option>
@@ -1284,11 +1325,11 @@ export default function App() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
-                        <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="text" name="kContact" value={kenshinData.kContact} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
-                        <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                     </div>
 
