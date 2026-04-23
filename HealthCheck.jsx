@@ -63,6 +63,8 @@ const kenshinInitialState = {
   stoolOccult: '', norovirus: '', bacteria3: '', bacteria5: '', paratyphoid: '',
   // 有機溶剤
   methanol: '', normalHexane: '', methylHippuric: '',
+  // その他
+  otherExams: '',
   // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
@@ -1573,6 +1575,12 @@ export default function App() {
                           ))}
                         </div>
                       </div>
+                    </div>
+
+                    {/* その他 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他</label>
+                      <textarea name="otherExams" value={kenshinData.otherExams} onChange={handleKenshinChange} className="w-full p-3 border border-slate-200 rounded-xl h-20 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50" placeholder="その他の検査結果など" />
                     </div>
 
                     {/* 診察所見・総合所見 */}
