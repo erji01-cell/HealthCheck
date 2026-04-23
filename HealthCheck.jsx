@@ -74,6 +74,7 @@ const kenshinInitialState = {
   // 所見・発行日
   doctorFindings: '', overallFindings: '',
   doctorName: '',
+  doctorNameCustom: '',
   issueDate: '',
 };
 
@@ -1597,25 +1598,37 @@ export default function App() {
                     {/* 医師名 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">医師名</label>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-3">
-                        {['杉原一明', '杉原一信'].map(name => (
-                          <label key={name} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="doctorName"
-                              value={name}
-                              checked={kenshinData.doctorName === name}
-                              onChange={handleKenshinChange}
-                              className="w-4 h-4 accent-emerald-600"
-                            />
-                            <span className="text-sm font-medium">{name}</span>
-                          </label>
-                        ))}
-                        {kenshinData.doctorName && (
-                          <button
-                            onClick={() => setKenshinData(prev => ({ ...prev, doctorName: '' }))}
-                            className="ml-auto text-xs text-slate-400 hover:text-slate-600"
-                          >クリア</button>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-4">
+                          {['杉原一明', '杉原一信', 'その他'].map(name => (
+                            <label key={name} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="doctorName"
+                                value={name}
+                                checked={kenshinData.doctorName === name}
+                                onChange={handleKenshinChange}
+                                className="w-4 h-4 accent-emerald-600"
+                              />
+                              <span className="text-sm font-medium">{name}</span>
+                            </label>
+                          ))}
+                          {kenshinData.doctorName && (
+                            <button
+                              onClick={() => setKenshinData(prev => ({ ...prev, doctorName: '', doctorNameCustom: '' }))}
+                              className="ml-auto text-xs text-slate-400 hover:text-slate-600"
+                            >クリア</button>
+                          )}
+                        </div>
+                        {kenshinData.doctorName === 'その他' && (
+                          <input
+                            type="text"
+                            name="doctorNameCustom"
+                            value={kenshinData.doctorNameCustom}
+                            onChange={handleKenshinChange}
+                            placeholder="医師名を入力"
+                            className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                          />
                         )}
                       </div>
                     </div>
