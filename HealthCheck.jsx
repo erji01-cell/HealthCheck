@@ -2165,17 +2165,17 @@ export default function App() {
                       { label: '腹囲',      val: kenshinData.waist ? `${kenshinData.waist} cm` : '' },
                       { label: '血圧(mmhg)',val: kenshinData.bpSys || kenshinData.bpDia ? `${kenshinData.bpSys || ''} / ${kenshinData.bpDia || ''}` : '' },
                     ].map(({ label, val }) => (
-                      <div key={label} className="flex" style={{borderBottom: '1px solid black', minHeight: '26px'}}>
+                      <div key={label} className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '22px'}}>
                         <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
                         <div className="flex-1 flex items-center px-2 font-mono" style={{fontSize: '12px'}}>{val}</div>
                       </div>
                     ))}
 
                     {/* 眼（視力・色神） */}
-                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '12px', letterSpacing: '6px', padding: '4px 2px'}}>眼</div>
                       <div className="flex flex-col flex-1">
-                        <div className="flex" style={{borderBottom: '1px solid black'}}>
+                        <div className="flex" style={{borderBottom: '1px solid black', flex: 2}}>
                           <div className="bg-slate-50 flex flex-col items-center justify-center" style={{width: '28px', borderRight: '1px solid black', fontSize: '10px'}}>
                             <span>視</span><span>力</span>
                           </div>
@@ -2184,7 +2184,7 @@ export default function App() {
                               { side: '右', bare: kenshinData.visionR, corr: kenshinData.visionR2 },
                               { side: '左', bare: kenshinData.visionL, corr: kenshinData.visionL2 },
                             ].map(({ side, bare, corr }, i) => (
-                              <div key={side} className="flex items-center gap-1 px-2" style={{minHeight: '24px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                              <div key={side} className="flex items-center gap-1 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
                                 <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
                                 <span>裸眼: {bare}</span>
                                 {corr && <span className="ml-3">矯正: {corr}</span>}
@@ -2192,7 +2192,7 @@ export default function App() {
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 px-2" style={{minHeight: '24px', fontSize: '11px'}}>
+                        <div className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', fontSize: '11px'}}>
                           <span className="font-bold text-slate-600">色神</span>
                           <span>{kenshinData.colorVision}</span>
                         </div>
@@ -2200,11 +2200,11 @@ export default function App() {
                     </div>
 
                     {/* 聴力 */}
-                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px'}}>聴力</div>
                       <div className="flex flex-col flex-1">
                         {[{ side: '右', val: kenshinData.hearingR }, { side: '左', val: kenshinData.hearingL }].map(({ side, val }, i) => (
-                          <div key={side} className="flex items-center gap-2 px-2" style={{minHeight: '26px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                          <div key={side} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
                             <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
                             <span>{val}</span>
                           </div>
@@ -2213,7 +2213,7 @@ export default function App() {
                     </div>
 
                     {/* 血液検査 */}
-                    <div className="flex flex-1">
+                    <div className="flex" style={{flex: 10}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '11px', letterSpacing: '2px', padding: '4px 2px'}}>血液検査</div>
                       <div className="flex flex-col flex-1">
 
@@ -2222,11 +2222,11 @@ export default function App() {
                           { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got }, { label: 'GPT(IU/L)', val: kenshinData.gpt }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp }] },
                           { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride }] },
                         ].map(({ group, rows }) => (
-                          <div key={group} className="flex" style={{borderBottom: '1px solid black'}}>
+                          <div key={group} className="flex" style={{borderBottom: '1px solid black', flex: rows.length}}>
                             <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '44px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
                             <div className="flex flex-col flex-1">
                               {rows.map(({ label, val }, i) => (
-                                <div key={label} className="flex items-center gap-1 px-1" style={{minHeight: '22px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                                <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
                                   <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                   <span className="font-mono font-bold">{val}</span>
                                 </div>
@@ -2239,7 +2239,7 @@ export default function App() {
                           { label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose },
                           { label: '尿酸(mg/dL)',     val: kenshinData.uricAcid },
                         ].map(({ label, val }, i) => (
-                          <div key={label} className="flex items-center gap-1 px-1" style={{minHeight: '22px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                          <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '10px'}}>
                             <span className="text-slate-600" style={{width: '174px', flexShrink: 0}}>{label}</span>
                             <span className="font-mono font-bold">{val}</span>
                           </div>
@@ -2253,13 +2253,13 @@ export default function App() {
                   <div className="flex flex-col" style={{flex: 1}}>
 
                     {/* 既往歴 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '44px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>既往歴</div>
                       <div className="flex-1 p-2" style={{fontSize: '11px'}}>{kenshinData.medicalHistory || 'なし'}</div>
                     </div>
 
                     {/* 撮影区分 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '26px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '18px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>撮影区分</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>
                         {kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}　撮影` : ''}
@@ -2267,19 +2267,19 @@ export default function App() {
                     </div>
 
                     {/* 胸部X-P検査 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '120px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 6, minHeight: '44px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', lineHeight: '1.8'}}>胸部<br/>X-P<br/>検査</div>
                       <div className="flex-1 flex items-center justify-center p-2 text-center" style={{fontSize: '11px'}}>{kenshinData.xRayResult}</div>
                     </div>
 
                     {/* 心電図 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '40px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>心電図</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.ecgResult}</div>
                     </div>
 
                     {/* 尿検査 */}
-                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '44px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>尿検査</div>
                       <div className="flex-1 p-2" style={{fontSize: '11px', lineHeight: '1.8'}}>
                         <div>・糖　　　　（{kenshinData.urineGlucose || '　　'}）</div>
@@ -2289,13 +2289,13 @@ export default function App() {
                     </div>
 
                     {/* 診察所見 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', minHeight: '55px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>診察所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.doctorFindings}</div>
                     </div>
 
                     {/* 総合所見 */}
-                    <div className="flex flex-1">
+                    <div className="flex" style={{flex: 2}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>総合所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.overallFindings}</div>
                     </div>
