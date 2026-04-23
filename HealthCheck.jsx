@@ -1370,38 +1370,34 @@ export default function App() {
                     {/* 視力 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">視力</label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-4 gap-2">
                         {[
-                          { label: '裸眼', rName: 'visionR', lName: 'visionL' },
-                          { label: '矯正', rName: 'visionR2', lName: 'visionL2' },
-                        ].map(({ label, rName, lName }) => (
-                          <div key={label} className="space-y-1">
-                            <div className="text-xs text-slate-500 font-medium">{label}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-400 flex-shrink-0">右</span>
-                              <input type="text" name={rName} value={kenshinData[rName]} onChange={handleKenshinChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                              <span className="text-xs text-slate-400 flex-shrink-0">左</span>
-                              <input type="text" name={lName} value={kenshinData[lName]} onChange={handleKenshinChange} placeholder="0.0" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                            </div>
+                          { label: '裸眼 右', name: 'visionR' },
+                          { label: '裸眼 左', name: 'visionL' },
+                          { label: '矯正 右', name: 'visionR2' },
+                          { label: '矯正 左', name: 'visionL2' },
+                        ].map(({ label, name }) => (
+                          <div key={name} className="space-y-0.5">
+                            <div className="text-[10px] text-slate-500 text-center">{label}</div>
+                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* 色神・聴力 */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">色神</label>
-                        <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力</label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400 flex-shrink-0">右</span>
-                          <input type="text" name="hearingR" value={kenshinData.hearingR} onChange={handleKenshinChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                          <span className="text-xs text-slate-400 flex-shrink-0">左</span>
-                          <input type="text" name="hearingL" value={kenshinData.hearingL} onChange={handleKenshinChange} placeholder="正常/異常" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力 右</label>
+                        <input type="text" name="hearingR" value={kenshinData.hearingR} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力 左</label>
+                        <input type="text" name="hearingL" value={kenshinData.hearingL} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
                     </div>
 
