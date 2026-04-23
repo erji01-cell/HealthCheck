@@ -57,6 +57,8 @@ const kenshinInitialState = {
   cea: '', ca199: '', psaValue: '', bnp: '',
   // その他採血項目
   hbsAg: '', hbsAb: '', hcvAb: '', syphilisSTS: '', mrsaStaph: '',
+  // その他検査項目
+  endoscopyResult: '', echoResult: '', manganeseResult: '',
   // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
@@ -1500,6 +1502,25 @@ export default function App() {
                             { label: 'HCV抗体', name: 'hcvAb' },
                             { label: '梅毒STS', name: 'syphilisSTS' },
                             { label: 'MRSA 黄色ブドウ球菌', name: 'mrsaStaph' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="space-y-0.5">
+                              <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* その他検査項目 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他検査項目</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: '胃内視鏡', name: 'endoscopyResult' },
+                            { label: '腹部エコー', name: 'echoResult' },
+                            { label: 'マンガン', name: 'manganeseResult' },
                           ].map(({ label, name }) => (
                             <div key={name} className="space-y-0.5">
                               <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
