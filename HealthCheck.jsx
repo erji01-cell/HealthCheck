@@ -1277,6 +1277,51 @@ export default function App() {
                       <input type="text" name="medicalHistory" value={kenshinData.medicalHistory} onChange={handleKenshinChange} placeholder="なし / 高血圧など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
+                    {/* 尿検査 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">尿検査</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { label: '糖', name: 'urineGlucose' },
+                            { label: '蛋白', name: 'urineProtein' },
+                            { label: 'ウロビリノーゲン', name: 'urineUrobilinogen' },
+                            { label: 'ビリルビン', name: 'urineBilirubin' },
+                            { label: '比重', name: 'urineSpecificGravity' },
+                            { label: 'pH', name: 'urinePh' },
+                            { label: 'ケトン体', name: 'urineKetone' },
+                            { label: '潜血', name: 'urineOccultBlood' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="space-y-0.5">
+                              <div className="text-xs text-slate-500 text-center">{label}</div>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 胸部X-P検査 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">胸部X-P検査</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500">撮影日</div>
+                          <input type="date" name="xRayDate" value={kenshinData.xRayDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500">結果</div>
+                          <input type="text" name="xRayResult" value={kenshinData.xRayResult} onChange={handleKenshinChange} placeholder="異常なし" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 心電図 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">心電図</label>
+                      <input type="text" name="ecgResult" value={kenshinData.ecgResult} onChange={handleKenshinChange} placeholder="正常範囲" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+
                     {/* 血液検査 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">血液検査（採血結果）</label>
@@ -1439,49 +1484,6 @@ export default function App() {
                           </div>
                         </div>
 
-                      </div>
-                    </div>
-
-                    {/* 胸部X-P検査 */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">胸部X-P検査</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <div className="text-xs text-slate-500">撮影日</div>
-                          <input type="date" name="xRayDate" value={kenshinData.xRayDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-xs text-slate-500">結果</div>
-                          <input type="text" name="xRayResult" value={kenshinData.xRayResult} onChange={handleKenshinChange} placeholder="異常なし" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 心電図 */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">心電図</label>
-                      <input type="text" name="ecgResult" value={kenshinData.ecgResult} onChange={handleKenshinChange} placeholder="正常範囲" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                    </div>
-
-                    {/* 尿検査 */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">尿検査</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { label: '糖', name: 'urineGlucose' },
-                          { label: '蛋白', name: 'urineProtein' },
-                          { label: 'ウロビリノーゲン', name: 'urineUrobilinogen' },
-                          { label: 'ビリルビン', name: 'urineBilirubin' },
-                          { label: '比重', name: 'urineSpecificGravity' },
-                          { label: 'pH', name: 'urinePh' },
-                          { label: 'ケトン体', name: 'urineKetone' },
-                          { label: '潜血', name: 'urineOccultBlood' },
-                        ].map(({ label, name }) => (
-                          <div key={name} className="space-y-0.5">
-                            <div className="text-xs text-slate-500 text-center">{label}</div>
-                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                          </div>
-                        ))}
                       </div>
                     </div>
 
