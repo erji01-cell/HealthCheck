@@ -2093,6 +2093,7 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
+              <>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px'}}>
 
                 {/* タイトル */}
@@ -2476,6 +2477,7 @@ export default function App() {
                 </div>
 
               </div>
+              </>
             )}
 
             {/* A4帳票再現 */}
