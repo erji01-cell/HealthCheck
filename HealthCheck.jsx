@@ -2785,7 +2785,7 @@ export default function App() {
           .print-table > div > div:first-child { border-right: 1.5px solid black !important; }
           #kenshin-printable {
             width: 210mm !important;
-            min-height: 0 !important;
+            height: 292mm !important;
             padding: 8mm 12mm !important;
             margin: 0 !important;
             box-shadow: none !important;
