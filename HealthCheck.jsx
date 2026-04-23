@@ -39,13 +39,29 @@ const kenshinInitialState = {
   colorVision: '',
   hearingR: '', hearingL: '',
   medicalHistory: '',
-  rbc: '', hemoglobin: '',
-  got: '', gpt: '', gammaGtp: '',
-  hdl: '', ldl: '', triglyceride: '',
-  bloodGlucose: '', uricAcid: '',
+  // 血算 (CBC)
+  wbc: '', rbc: '', hemoglobin: '', ht: '', mcv: '', mch: '', mchc: '', platelet: '',
+  // 生化学 - 蛋白・ビリルビン
+  tp: '', alb: '', agRatio: '', tBil: '', dBil: '',
+  // 生化学 - 肝機能・酵素
+  alp: '', ldh: '', got: '', gpt: '', gammaGtp: '', ck: '', amy: '',
+  // 脂質
+  tCho: '', hdl: '', ldl: '', triglyceride: '', lhRatio: '',
+  // 腎機能
+  un: '', cre: '', egfr: '', uricAcid: '',
+  // 電解質
+  na: '', k: '', cl: '', ca: '', ip: '', mgElec: '', fe: '',
+  // 免疫・糖尿病
+  bloodGlucose: '', hba1c: '', crp: '', rf: '', aso: '',
+  // 腫瘍マーカー
+  cea: '', ca199: '', psaValue: '', bnp: '',
+  // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
+  // 尿検査
   urineGlucose: '', urineProtein: '', urineUrobilinogen: '',
+  urineBilirubin: '', urineSpecificGravity: '', urinePh: '', urineKetone: '', urineOccultBlood: '',
+  // 所見・発行日
   doctorFindings: '', overallFindings: '',
   issueDate: '',
 };
@@ -1263,67 +1279,166 @@ export default function App() {
 
                     {/* 血液検査 */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">血液検査</label>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
-                        {/* 貧血検査 */}
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">血液検査（採血結果）</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-4">
+
+                        {/* 血算 */}
                         <div>
-                          <div className="text-[11px] font-bold text-blue-600 mb-1">貧血検査</div>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">血算（CBC）</div>
+                          <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: '赤血球(万/mm³)', name: 'rbc' },
-                              { label: '血色素(g/dL)', name: 'hemoglobin' },
+                              { label: 'WBC(×10³)', name: 'wbc' },
+                              { label: 'RBC(万/μL)', name: 'rbc' },
+                              { label: 'Hb(g/dL)', name: 'hemoglobin' },
+                              { label: 'Ht(%)', name: 'ht' },
+                              { label: 'MCV(fL)', name: 'mcv' },
+                              { label: 'MCH(pg)', name: 'mch' },
+                              { label: 'MCHC(%)', name: 'mchc' },
+                              { label: 'PLT(×10⁴)', name: 'platelet' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 w-[110px] flex-shrink-0">{label}</span>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
                               </div>
                             ))}
                           </div>
                         </div>
-                        {/* 肝機能 */}
+
+                        {/* 総蛋白・ビリルビン */}
                         <div>
-                          <div className="text-[11px] font-bold text-blue-600 mb-1">肝機能</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">総蛋白・ビリルビン</div>
+                          <div className="grid grid-cols-5 gap-2">
                             {[
+                              { label: 'TP(g/dL)', name: 'tp' },
+                              { label: 'Alb(g/dL)', name: 'alb' },
+                              { label: 'A/G比', name: 'agRatio' },
+                              { label: 'T-Bil(mg/dL)', name: 'tBil' },
+                              { label: 'D-Bil(mg/dL)', name: 'dBil' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 肝機能・酵素 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">肝機能・酵素</div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { label: 'ALP(IU/L)', name: 'alp' },
+                              { label: 'LDH(IU/L)', name: 'ldh' },
                               { label: 'GOT(IU/L)', name: 'got' },
                               { label: 'GPT(IU/L)', name: 'gpt' },
                               { label: 'γ-GTP(IU/L)', name: 'gammaGtp' },
+                              { label: 'CK(IU/L)', name: 'ck' },
+                              { label: 'Amy(IU/L)', name: 'amy' },
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
-                                <div className="text-[10px] text-slate-500 text-center">{label}</div>
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
                                 <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
                               </div>
                             ))}
                           </div>
                         </div>
-                        {/* 血中脂質 */}
+
+                        {/* 脂質 */}
                         <div>
-                          <div className="text-[11px] font-bold text-blue-600 mb-1">血中脂質</div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">脂質</div>
+                          <div className="grid grid-cols-5 gap-2">
                             {[
+                              { label: 'T-Cho(mg/dL)', name: 'tCho' },
                               { label: 'HDL(mg/dL)', name: 'hdl' },
                               { label: 'LDL(mg/dL)', name: 'ldl' },
-                              { label: '中性脂肪(mg/dL)', name: 'triglyceride' },
+                              { label: 'TG(mg/dL)', name: 'triglyceride' },
+                              { label: 'L/H比', name: 'lhRatio' },
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
-                                <div className="text-[10px] text-slate-500 text-center">{label}</div>
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
                                 <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
                               </div>
                             ))}
                           </div>
                         </div>
-                        {/* 血糖・尿酸 */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { label: '血糖検査(mg/dL)', name: 'bloodGlucose' },
-                            { label: '尿酸(mg/dL)', name: 'uricAcid' },
-                          ].map(({ label, name }) => (
-                            <div key={name} className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500 w-[110px] flex-shrink-0">{label}</span>
-                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
-                            </div>
-                          ))}
+
+                        {/* 腎機能 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">腎機能</div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { label: 'UN(mg/dL)', name: 'un' },
+                              { label: 'Cre(mg/dL)', name: 'cre' },
+                              { label: 'eGFR', name: 'egfr' },
+                              { label: '尿酸(mg/dL)', name: 'uricAcid' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
                         </div>
+
+                        {/* 電解質 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">電解質</div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { label: 'Na(mEq/L)', name: 'na' },
+                              { label: 'K(mEq/L)', name: 'k' },
+                              { label: 'Cl(mEq/L)', name: 'cl' },
+                              { label: 'Ca(mg/dL)', name: 'ca' },
+                              { label: 'IP(mg/dL)', name: 'ip' },
+                              { label: 'Mg(mg/dL)', name: 'mgElec' },
+                              { label: 'Fe(μg/dL)', name: 'fe' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 免疫・糖尿病 */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">免疫・糖尿病</div>
+                          <div className="grid grid-cols-5 gap-2">
+                            {[
+                              { label: '血糖(mg/dL)', name: 'bloodGlucose' },
+                              { label: 'HbA1c(%)', name: 'hba1c' },
+                              { label: 'CRP(mg/dL)', name: 'crp' },
+                              { label: 'RF(IU/mL)', name: 'rf' },
+                              { label: 'ASO(IU/mL)', name: 'aso' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 腫瘍マーカー */}
+                        <div>
+                          <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">腫瘍マーカー</div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { label: 'CEA(ng/mL)', name: 'cea' },
+                              { label: 'CA19-9(U/mL)', name: 'ca199' },
+                              { label: 'PSA(ng/mL)', name: 'psaValue' },
+                              { label: 'BNP(pg/mL)', name: 'bnp' },
+                            ].map(({ label, name }) => (
+                              <div key={name} className="space-y-0.5">
+                                <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
                       </div>
                     </div>
 
@@ -1351,11 +1466,16 @@ export default function App() {
                     {/* 尿検査 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">尿検査</label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         {[
                           { label: '糖', name: 'urineGlucose' },
                           { label: '蛋白', name: 'urineProtein' },
                           { label: 'ウロビリノーゲン', name: 'urineUrobilinogen' },
+                          { label: 'ビリルビン', name: 'urineBilirubin' },
+                          { label: '比重', name: 'urineSpecificGravity' },
+                          { label: 'pH', name: 'urinePh' },
+                          { label: 'ケトン体', name: 'urineKetone' },
+                          { label: '潜血', name: 'urineOccultBlood' },
                         ].map(({ label, name }) => (
                           <div key={name} className="space-y-0.5">
                             <div className="text-xs text-slate-500 text-center">{label}</div>
