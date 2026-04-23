@@ -1198,16 +1198,97 @@ export default function App() {
                 {leftTab === 'result' && (
                   <div className="space-y-5">
 
-                    {/* 対象患者サマリ（formDataから読み取り表示のみ） */}
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-bold text-emerald-500 uppercase mb-0.5">対象患者（予約詳細入力タブで選択）</div>
-                        <div className="font-bold text-base">{formData.name || <span className="text-slate-300 font-normal text-sm">未選択</span>}</div>
-                        {formData.yurigana && <div className="text-xs text-slate-400">{formData.yurigana}</div>}
+                    {/* 患者検索 */}
+                    <div className="space-y-1" ref={searchRef}>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
+                      <div className="relative">
+                        <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400" />
+                        <input
+                          type="text"
+                          value={patientQuery}
+                          onChange={e => setPatientQuery(e.target.value)}
+                          placeholder="氏名・ヨミガナ・ID・生年月日で検索..."
+                          className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-50"
+                        />
+                        {patientSearching && patientQuery.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-xs text-slate-400">検索中...</div>
+                        )}
+                        {showSuggestions && !patientSearching && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            {patientSuggestions.map(p => (
+                              <div
+                                key={p.patient_id}
+                                onMouseDown={() => handleSelectPatient(p)}
+                                className="px-4 py-2.5 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0"
+                              >
+                                <div className="font-bold text-sm">{p.patient_name}</div>
+                                <div className="text-xs text-slate-500 flex gap-3">
+                                  <span>{p.patient_name_kana}</span>
+                                  <span>ID: {p.patient_id}</span>
+                                  {p.patient_dob && <span>{p.patient_dob.replace(/-/g, '/')}</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-right text-xs text-slate-500">
-                        {formData.date && <div>{formData.date.replace(/-/g, '/')}</div>}
-                        {formData.age !== '' && <div>{formData.age}歳{formData.gender ? ` / ${formData.gender}` : ''}</div>}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">健診希望日</label>
+                        <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">カルテID (任意)</label>
+                        <input type="text" name="id" value={formData.id} onChange={handleChange} placeholder="ID-00000" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">ヨミガナ</label>
+                        <input type="text" name="yurigana" value={formData.yurigana} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">氏名</label>
+                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-lg font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">生年月日（例: S42.1.25）</label>
+                        <input
+                          type="text"
+                          placeholder="S420125 / 19670125 / S42.1.25"
+                          value={birthDateInput}
+                          onChange={e => setBirthDateInput(e.target.value)}
+                          onBlur={handleBirthDateBlur}
+                          className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <div className="text-sm text-emerald-600 pl-2">
+                          {formData.birthDate ? formatDobDisplay(formData.birthDate) : <span className="text-slate-300">未入力</span>}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
+                          <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
+                            {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">性別</label>
+                          <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="">未選択</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                            <option value="その他">その他</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
+                        <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
+                        <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                     </div>
 
