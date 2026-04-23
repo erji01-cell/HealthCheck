@@ -61,6 +61,8 @@ const kenshinInitialState = {
   endoscopyResult: '', echoResult: '', manganeseResult: '',
   // 検便
   stoolOccult: '', norovirus: '', bacteria3: '', bacteria5: '', paratyphoid: '',
+  // 有機溶剤
+  methanol: '', normalHexane: '', methylHippuric: '',
   // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
@@ -1544,6 +1546,25 @@ export default function App() {
                             { label: '3菌種(赤痢・サルモネラ・O157)', name: 'bacteria3' },
                             { label: '5菌種(赤痢・サルモネラ・O157・O111・O26)', name: 'bacteria5' },
                             { label: 'パラチフス・腸チフス', name: 'paratyphoid' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="space-y-0.5">
+                              <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 有機溶剤 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">有機溶剤</label>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: 'メタノール', name: 'methanol' },
+                            { label: 'ノルマルヘキサン', name: 'normalHexane' },
+                            { label: 'メチル馬尿酸', name: 'methylHippuric' },
                           ].map(({ label, name }) => (
                             <div key={name} className="space-y-0.5">
                               <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
