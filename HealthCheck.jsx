@@ -57,7 +57,6 @@ const kenshinInitialState = {
   cea: '', ca199: '', psaValue: '', bnp: '',
   // その他採血項目
   hbsAg: '', hbsAb: '', hcvAb: '', syphilisSTS: '', mrsaStaph: '',
-  echoResult: '', manganeseResult: '',
   // 胸部X-P・心電図
   xRayDate: '', xRayResult: '',
   ecgResult: '',
@@ -1501,8 +1500,6 @@ export default function App() {
                             { label: 'HCV抗体', name: 'hcvAb' },
                             { label: '梅毒STS', name: 'syphilisSTS' },
                             { label: 'MRSA 黄色ブドウ球菌', name: 'mrsaStaph' },
-                            { label: '腹部エコー', name: 'echoResult' },
-                            { label: 'マンガン', name: 'manganeseResult' },
                           ].map(({ label, name }) => (
                             <div key={name} className="space-y-0.5">
                               <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
