@@ -1118,7 +1118,7 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-[5mm]">
                     <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
-                      <Search size={13} /> 患者検索
+                      <Search size={13} /> 予約患者検索
                     </button>
                     <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
                       <RotateCcw size={13} /> リセット
@@ -1129,7 +1129,7 @@ export default function App() {
                 {leftTab === 'reservation' && <>
                 {/* 患者検索 */}
                 <div className="space-y-1" ref={searchRef}>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">予約患者検索（氏名・ヨミガナ・ID・生年月日）</label>
                   <div className="relative">
                     <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -1366,7 +1366,7 @@ export default function App() {
 
                     {/* 患者検索 */}
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">患者検索（氏名・ヨミガナ・ID・生年月日）</label>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">予約患者検索（氏名・ヨミガナ・ID・生年月日）</label>
                       <div className="relative">
                         <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400" />
                         <input
@@ -2063,7 +2063,7 @@ export default function App() {
                     <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-3">
                         <div className="bg-teal-500 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
-                        <h2 className="text-white font-bold text-lg">患者検索</h2>
+                        <h2 className="text-white font-bold text-lg">予約患者検索</h2>
                       </div>
                       <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
                     </div>
