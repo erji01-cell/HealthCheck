@@ -1926,28 +1926,33 @@ export default function App() {
         <div className="w-full lg:w-[671px] shrink-0 print-right">
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2 print-hide">
-              <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
-                <button
-                  onClick={() => setRightTab('preview')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-green-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
-                >
-                  📋 予約プレビュー
-                </button>
+              <div className="flex items-center gap-2">
+                {/* グループ：予約プレビュー・健康診断書 */}
+                <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
+                  <button
+                    onClick={() => setRightTab('preview')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-green-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                  >
+                    📋 予約プレビュー
+                  </button>
+                  <button
+                    onClick={() => setRightTab('kenshin')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                  >
+                    📄 健康診断書
+                  </button>
+                </div>
+                {/* 独立：予約カレンダー */}
                 <button
                   onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 border ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md border-blue-500' : 'bg-white text-blue-400 border-blue-200 hover:text-blue-600'}`}
                 >
                   📅 予約カレンダー
                 </button>
-                <button
-                  onClick={() => setRightTab('kenshin')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
-                >
-                  📄 健康診断書
-                </button>
+                {/* 独立：診断書検索 */}
                 <button
                   onClick={() => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); }}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 border bg-white border-emerald-300 text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
                 >
                   <Search size={12} /> 診断書検索
                 </button>
