@@ -40,6 +40,7 @@ const kenshinInitialState = {
   visionR: '', visionL: '', visionR2: '', visionL2: '',
   colorVision: '',
   hearingR: '', hearingL: '',
+  hearing4000R: '', hearing4000L: '',
   medicalHistory: '',
   // 血算 (CBC)
   wbc: '', rbc: '', hemoglobin: '', ht: '', mcv: '', mch: '', mchc: '', platelet: '',
@@ -1385,19 +1386,29 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* 色神・聴力 */}
-                    <div className="grid grid-cols-3 gap-3">
+                    {/* 色神 */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">色神</label>
+                      <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+
+                    {/* 聴力 */}
+                    <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">色神</label>
-                        <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-emerald-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力 右</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力1000Hz 右</label>
                         <input type="text" name="hearingR" value={kenshinData.hearingR} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力 左</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力1000Hz 左</label>
                         <input type="text" name="hearingL" value={kenshinData.hearingL} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力4000Hz 右</label>
+                        <input type="text" name="hearing4000R" value={kenshinData.hearing4000R} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力4000Hz 左</label>
+                        <input type="text" name="hearing4000L" value={kenshinData.hearing4000L} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
                     </div>
 
@@ -2176,7 +2187,7 @@ export default function App() {
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '12px', letterSpacing: '6px', padding: '4px 2px'}}>眼</div>
                       <div className="flex flex-col flex-1">
                         <div className="flex" style={{borderBottom: '1px solid black', flex: 2}}>
-                          <div className="bg-slate-50 flex flex-col items-center justify-center" style={{width: '28px', borderRight: '1px solid black', fontSize: '10px'}}>
+                          <div className="bg-slate-50 flex flex-col items-center justify-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>
                             <span>視</span><span>力</span>
                           </div>
                           <div className="flex flex-col flex-1" style={{borderRight: '0'}}>
@@ -2192,9 +2203,9 @@ export default function App() {
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', fontSize: '11px'}}>
-                          <span className="font-bold text-slate-600">色神</span>
-                          <span>{kenshinData.colorVision}</span>
+                        <div className="flex" style={{flex: 1, minHeight: '18px', fontSize: '11px'}}>
+                          <div className="bg-slate-50 flex items-center justify-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>色神</div>
+                          <div className="flex items-center px-2">{kenshinData.colorVision}</div>
                         </div>
                       </div>
                     </div>
@@ -2203,10 +2214,14 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 2}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px'}}>聴力</div>
                       <div className="flex flex-col flex-1">
-                        {[{ side: '右', val: kenshinData.hearingR }, { side: '左', val: kenshinData.hearingL }].map(({ side, val }, i) => (
-                          <div key={side} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
-                            <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
-                            <span>{val}</span>
+                        {[
+                          { hz: '1000Hz', r: kenshinData.hearingR,     l: kenshinData.hearingL },
+                          { hz: '4000Hz', r: kenshinData.hearing4000R, l: kenshinData.hearing4000L },
+                        ].map(({ hz, r, l }, i) => (
+                          <div key={hz} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                            <span className="text-slate-500" style={{width: '38px', flexShrink: 0}}>{hz}</span>
+                            <span>右: {r}</span>
+                            <span className="ml-2">左: {l}</span>
                           </div>
                         ))}
                       </div>
@@ -2225,7 +2240,7 @@ export default function App() {
                           { group: '腎機能', rows: [{ label: '尿酸(mg/dL)', val: kenshinData.uricAcid }] },
                         ].map(({ group, rows }) => (
                           <div key={group} className="flex" style={{borderBottom: '1px solid black', flex: rows.length}}>
-                            <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '44px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
+                            <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
                             <div className="flex flex-col flex-1">
                               {rows.map(({ label, val }, i) => (
                                 <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
@@ -2299,8 +2314,9 @@ export default function App() {
                 <div className="mt-4 space-y-1" style={{fontSize: '12px'}}>
                   <div>上記のとおり診断します</div>
                   <div>{kenshinData.issueDate ? toWareki(kenshinData.issueDate) : '　　　年　　月　　日'}</div>
-                  <div className="mt-2" style={{marginLeft: '3em'}}>鹿児島県</div>
-                  <div style={{marginLeft: '5em'}}>医療法人　□会　　　　　診療所　　医師　　　　　　　　　　㊞</div>
+                  <div className="mt-2">鹿児島県志布志市志布志町志布志286-4</div>
+                  <div>医療法人一斉会　陽春堂内科診療所</div>
+                  <div>医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}　　㊞</div>
                 </div>
 
               </div>
@@ -2465,7 +2481,7 @@ export default function App() {
 
                 {/* 別紙フッター */}
                 <div className="mt-4 text-right text-[10px] text-slate-500">
-                  {kenshinData.issueDate ? toWareki(kenshinData.issueDate) : ''}　医療法人　□会　　診療所
+                  {kenshinData.issueDate ? toWareki(kenshinData.issueDate) : ''}　医療法人一斉会　陽春堂内科診療所　医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}
                 </div>
 
               </div>
