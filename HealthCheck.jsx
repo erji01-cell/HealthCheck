@@ -488,7 +488,7 @@ export default function App() {
     }
   }, [formData.purpose]);
 
-  // BMI自動計算
+  // BMI自動計算（予約詳細入力）
   useEffect(() => {
     const h = parseFloat(formData.height);
     const w = parseFloat(formData.weight);
@@ -497,6 +497,18 @@ export default function App() {
       setFormData(prev => ({ ...prev, bmi }));
     }
   }, [formData.height, formData.weight]);
+
+  // BMI自動計算（健康診断結果入力）
+  useEffect(() => {
+    const h = parseFloat(kenshinData.height);
+    const w = parseFloat(kenshinData.weight);
+    if (h > 0 && w > 0) {
+      const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+      setKenshinData(prev => ({ ...prev, bmi }));
+    } else {
+      setKenshinData(prev => ({ ...prev, bmi: '' }));
+    }
+  }, [kenshinData.height, kenshinData.weight]);
 
   // ひらがな・全角カタカナ・半角カタカナ の相互変換バリアント生成
   const getKanaVariants = (input) => {
@@ -557,6 +569,43 @@ export default function App() {
       if (parts.length === 1 && /^\d{1,2}$/.test(parts[0])) {
         return `patient_dob.ilike.${era.base + parseInt(parts[0])}%`;
       }
+    }
+    return null;
+  };
+
+  // 生年月日 → ISO DATE形式に変換（health_data の k_birth_date DATE型向け）
+  const parseKBirthDate = (input) => {
+    const s = input.trim();
+    if (/^\d{8}$/.test(s)) return { type: 'exact', date: `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}` };
+    const mFull = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if (mFull) return { type: 'exact', date: `${mFull[1]}-${mFull[2].padStart(2,'0')}-${mFull[3].padStart(2,'0')}` };
+    if (/^\d{4}$/.test(s) && parseInt(s) >= 1900 && parseInt(s) <= 2099) return { type: 'year', year: parseInt(s) };
+    if (/^\d{6}$/.test(s)) return { type: 'yearmonth', year: parseInt(s.slice(0,4)), month: parseInt(s.slice(4,6)) };
+    const eras = [
+      { re: /^(r|令和?)\s*/i, base: 2018 }, { re: /^(h|平成?)\s*/i, base: 1988 },
+      { re: /^(s|昭和?)\s*/i, base: 1925 }, { re: /^(t|大正?)\s*/i, base: 1911 },
+      { re: /^(m|明治?)\s*/i, base: 1867 },
+    ];
+    for (const era of eras) {
+      const eraMatch = s.match(era.re);
+      if (!eraMatch) continue;
+      const rest = s.slice(eraMatch[0].length);
+      const nums = rest.replace(/\D/g, '');
+      if (/^\d{6}$/.test(nums)) {
+        const y = era.base + parseInt(nums.slice(0,2));
+        return { type: 'exact', date: `${y}-${nums.slice(2,4)}-${nums.slice(4,6)}` };
+      }
+      const parts = rest.replace(/[年月日]/g, ' ').split(/[\s\/\-]+/).filter(Boolean);
+      if (parts.length >= 3) {
+        const y = era.base + parseInt(parts[0]);
+        return { type: 'exact', date: `${y}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}` };
+      }
+      if (parts.length === 2) {
+        const y = era.base + parseInt(parts[0]);
+        return { type: 'yearmonth', year: y, month: parseInt(parts[1]) };
+      }
+      if (parts.length === 1 && /^\d{1,2}$/.test(parts[0]))
+        return { type: 'year', year: era.base + parseInt(parts[0]) };
     }
     return null;
   };
@@ -798,12 +847,33 @@ export default function App() {
     setKenshinModalSearching(true);
     const timer = setTimeout(async () => {
       const q = kenshinModalQuery.trim();
-      const { data } = await supabase.from('health_data')
-        .select('*')
-        .or(`k_id.ilike.%${q}%,k_name.ilike.%${q}%,k_yurigana.ilike.%${q}%`)
-        .order('k_date', { ascending: false })
-        .limit(20);
-      setKenshinModalResults(data || []);
+      const variants = getKanaVariants(q);
+      const qNorm = variants[0];
+      const kanaOr = variants.map(v => `k_yurigana.ilike.%${v}%`).join(',');
+      const orStr = [`k_id.ilike.%${qNorm}%`, `k_name.ilike.%${qNorm}%`, kanaOr].join(',');
+
+      const promises = [
+        supabase.from('health_data').select('*').or(orStr).order('k_date', { ascending: false }).limit(20)
+      ];
+
+      const parsed = parseKBirthDate(q);
+      if (parsed) {
+        let bdQuery = supabase.from('health_data').select('*');
+        if (parsed.type === 'exact') {
+          bdQuery = bdQuery.eq('k_birth_date', parsed.date);
+        } else if (parsed.type === 'year') {
+          bdQuery = bdQuery.gte('k_birth_date', `${parsed.year}-01-01`).lte('k_birth_date', `${parsed.year}-12-31`);
+        } else if (parsed.type === 'yearmonth') {
+          const mm = String(parsed.month).padStart(2, '0');
+          bdQuery = bdQuery.gte('k_birth_date', `${parsed.year}-${mm}-01`).lte('k_birth_date', `${parsed.year}-${mm}-31`);
+        }
+        promises.push(bdQuery.order('k_date', { ascending: false }).limit(20));
+      }
+
+      const results = await Promise.all(promises);
+      const merged = [...(results[0].data || []), ...(results[1]?.data || [])];
+      const deduped = [...new Map(merged.map(r => [r.id, r])).values()];
+      setKenshinModalResults(deduped.slice(0, 20));
       setKenshinModalSearching(false);
     }, 300);
     return () => clearTimeout(timer);
@@ -1471,7 +1541,6 @@ export default function App() {
                         {[
                           { label: '身長(cm)', name: 'height' },
                           { label: '体重(kg)', name: 'weight' },
-                          { label: 'BMI', name: 'bmi' },
                           { label: '腹囲(cm)', name: 'waist' },
                         ].map(({ label, name }) => (
                           <div key={name} className="space-y-1">
@@ -1479,6 +1548,10 @@ export default function App() {
                             <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         ))}
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500 font-medium text-center">BMI</div>
+                          <div className="w-full p-2 border rounded-lg text-center text-sm bg-slate-50 text-slate-700 font-mono">{kenshinData.bmi || '−'}</div>
+                        </div>
                       </div>
                     </div>
 
@@ -1927,35 +2000,36 @@ export default function App() {
           <div className="sticky top-6">
             <div className="flex justify-between items-center mb-4 px-2 print-hide">
               <div className="flex items-center gap-2">
-                {/* グループ：予約プレビュー・健康診断書 */}
+                {/* グループ1：予約プレビュー・予約カレンダー */}
                 <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
                   <button
                     onClick={() => setRightTab('preview')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-green-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                   >
                     📋 予約プレビュー
                   </button>
                   <button
-                    onClick={() => setRightTab('kenshin')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                    onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                   >
-                    📄 健康診断書
+                    📅 予約カレンダー
                   </button>
                 </div>
-                {/* 独立：予約カレンダー */}
-                <button
-                  onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 border ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md border-blue-500' : 'bg-white text-blue-400 border-blue-200 hover:text-blue-600'}`}
-                >
-                  📅 予約カレンダー
-                </button>
-                {/* 独立：診断書検索 */}
-                <button
-                  onClick={() => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 border bg-white border-emerald-300 text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
-                >
-                  <Search size={12} /> 診断書検索
-                </button>
+                {/* グループ2：診断書プレビュー・診断書検索 */}
+                <div className="flex gap-1.5 bg-emerald-50 p-1 rounded-xl shadow-sm border border-emerald-200">
+                  <button
+                    onClick={() => setRightTab('kenshin')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-500 hover:text-emerald-700'}`}
+                  >
+                    📄 診断書プレビュー
+                  </button>
+                  <button
+                    onClick={() => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); }}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-500 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    <Search size={12} /> 診断書検索
+                  </button>
+                </div>
               </div>
               {(rightTab === 'preview' || rightTab === 'kenshin') && (
                 <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
@@ -2171,7 +2245,7 @@ export default function App() {
                       type="text"
                       value={kenshinModalQuery}
                       onChange={e => setKenshinModalQuery(e.target.value)}
-                      placeholder="ID・氏名・ヨミガナで検索..."
+                      placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
                       className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-emerald-400 bg-slate-50 outline-none focus:border-emerald-500 text-sm"
                     />
                   </div>
@@ -2183,7 +2257,7 @@ export default function App() {
                     {!kenshinModalSearching && kenshinModalQuery.length === 0 && (
                       <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
                         <Search size={28} className="text-slate-600" />
-                        <span className="text-sm">IDまたは氏名・ヨミガナを入力してください</span>
+                        <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
                       </div>
                     )}
                     {!kenshinModalSearching && kenshinModalResults.map(r => (
@@ -2196,8 +2270,9 @@ export default function App() {
                         <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap">
                           {r.k_yurigana && <span>{r.k_yurigana}</span>}
                           {r.k_id && <span>ID: {r.k_id}</span>}
-                          {r.k_date && <span>健診日: {r.k_date}</span>}
+                          {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
                           {r.k_gender && <span>{r.k_gender}</span>}
+                          {r.k_date && <span>健診日: {r.k_date}</span>}
                         </div>
                       </div>
                     ))}
