@@ -2094,7 +2094,7 @@ export default function App() {
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
               <>
-              <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px'}}>
+              <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
                 <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '1em'}}>健　康　診　断　書</h1>
@@ -2314,7 +2314,7 @@ export default function App() {
               </div>
 
               {/* ===== 別紙（健康診断書に記載されていない追加検査項目） ===== */}
-              <div className="bessi-page-break bg-white text-black" style={{padding: '8mm 12mm', fontSize: '11px', width: '210mm', minHeight: '297mm', borderTop: '2px dashed #ccc', marginTop: '8mm'}}>
+              <div className="bessi-page-break bg-white text-black" style={{padding: '8mm 12mm', fontSize: '11px', width: '180mm', minHeight: '297mm', borderTop: '2px dashed #ccc', marginTop: '8mm'}}>
 
                 {/* 別紙タイトル */}
                 <div className="text-center font-bold text-[16px] mb-3 border-b-2 border-black pb-2 tracking-widest">別　　紙</div>
