@@ -2108,13 +2108,13 @@ export default function App() {
                       <div className="flex-1 flex items-center justify-center font-bold" style={{fontSize: '11px'}}>氏名</div>
                     </div>
                     <div className="flex flex-col flex-1" style={{borderRight: '1.5px solid black'}}>
-                      <div className="px-2 py-0.5" style={{fontSize: '11px', borderBottom: '1px solid black', minHeight: '20px'}}>{formData.yurigana}</div>
+                      <div className="px-2 py-0.5" style={{fontSize: '11px', borderBottom: '1px solid black', minHeight: '20px'}}>{kenshinData.kYurigana}</div>
                       <div className="px-2 py-1 flex items-center gap-2">
-                        <span className="font-bold" style={{fontSize: '17px'}}>{formData.name}</span>
+                        <span className="font-bold" style={{fontSize: '17px'}}>{kenshinData.kName}</span>
                         <span style={{fontSize: '14px'}} className="ml-1">様</span>
                         <div className="ml-3" style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
-                          <div className={`px-2`} style={formData.gender === '男' ? {background:'black', color:'white', fontWeight:'bold', borderBottom: '1px solid black'} : {borderBottom: '1px solid black'}}>男</div>
-                          <div className={`px-2`} style={formData.gender === '女' ? {background:'black', color:'white', fontWeight:'bold'} : {}}>女</div>
+                          <div className={`px-2`} style={kenshinData.kGender === '男' ? {background:'black', color:'white', fontWeight:'bold', borderBottom: '1px solid black'} : {borderBottom: '1px solid black'}}>男</div>
+                          <div className={`px-2`} style={kenshinData.kGender === '女' ? {background:'black', color:'white', fontWeight:'bold'} : {}}>女</div>
                         </div>
                       </div>
                     </div>
@@ -2128,7 +2128,7 @@ export default function App() {
                     <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>生年月日</div>
                     <div className="flex-1 flex items-center gap-3 px-3 py-1">
                       {(() => {
-                        const era = getBirthEra(formData.birthDate);
+                        const era = getBirthEra(kenshinData.kBirthDate);
                         return (
                           <div style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
                             {[['T','大正'],['S','昭和'],['H','平成'],['R','令和']].map(([code, name], i) => (
@@ -2138,12 +2138,12 @@ export default function App() {
                         );
                       })()}
                       {(() => {
-                        if (!formData.birthDate) return <span style={{fontSize: '14px'}}>　　年　　月　　日（　　歳）</span>;
-                        const [y, m, d] = formData.birthDate.split('-').map(Number);
-                        const era = getBirthEra(formData.birthDate);
+                        if (!kenshinData.kBirthDate) return <span style={{fontSize: '14px'}}>　　年　　月　　日（　　歳）</span>;
+                        const [y, m, d] = kenshinData.kBirthDate.split('-').map(Number);
+                        const era = getBirthEra(kenshinData.kBirthDate);
                         const eraBaseMap = { T: 1911, S: 1925, H: 1988, R: 2018, M: 1867 };
                         const eraYear = y - (eraBaseMap[era] || 0);
-                        return <span style={{fontSize: '14px'}}>{eraYear}年　{m}月　{d}日　（{formData.age}歳）</span>;
+                        return <span style={{fontSize: '14px'}}>{eraYear}年　{m}月　{d}日　（{kenshinData.kAge}歳）</span>;
                       })()}
                     </div>
                   </div>
@@ -2213,7 +2213,7 @@ export default function App() {
                     </div>
 
                     {/* 血液検査 */}
-                    <div className="flex" style={{flex: 10}}>
+                    <div className="flex" style={{flex: 11}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '11px', letterSpacing: '2px', padding: '4px 2px'}}>血液検査</div>
                       <div className="flex flex-col flex-1">
 
@@ -2221,6 +2221,8 @@ export default function App() {
                           { group: '貧血検査', rows: [{ label: '赤血球(万/mm³)', val: kenshinData.rbc }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin }] },
                           { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got }, { label: 'GPT(IU/L)', val: kenshinData.gpt }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp }] },
                           { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride }] },
+                          { group: '血糖', rows: [{ label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose }, { label: 'HbA1c(%)', val: kenshinData.hba1c }] },
+                          { group: '腎機能', rows: [{ label: '尿酸(mg/dL)', val: kenshinData.uricAcid }] },
                         ].map(({ group, rows }) => (
                           <div key={group} className="flex" style={{borderBottom: '1px solid black', flex: rows.length}}>
                             <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '44px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
@@ -2232,16 +2234,6 @@ export default function App() {
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        ))}
-
-                        {[
-                          { label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose },
-                          { label: '尿酸(mg/dL)',     val: kenshinData.uricAcid },
-                        ].map(({ label, val }, i) => (
-                          <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '10px'}}>
-                            <span className="text-slate-600" style={{width: '174px', flexShrink: 0}}>{label}</span>
-                            <span className="font-mono font-bold">{val}</span>
                           </div>
                         ))}
 
