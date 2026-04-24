@@ -208,6 +208,10 @@ export default function App() {
   const [kenshinData, setKenshinData] = useState(kenshinInitialState);
   const [kenshinBirthDateInput, setKenshinBirthDateInput] = useState('');
   const [kenshinSaveStatus, setKenshinSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
+  const [showKenshinModal, setShowKenshinModal] = useState(false);
+  const [kenshinModalQuery, setKenshinModalQuery] = useState('');
+  const [kenshinModalResults, setKenshinModalResults] = useState([]);
+  const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
 
   // 診断結果入力：生年月日→年齢自動計算
   useEffect(() => {
@@ -786,6 +790,70 @@ export default function App() {
   const handleKenshinChange = (e) => {
     const { name, value } = e.target;
     setKenshinData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // 診断書検索
+  useEffect(() => {
+    if (!session || kenshinModalQuery.length < 1) { setKenshinModalResults([]); setKenshinModalSearching(false); return; }
+    setKenshinModalSearching(true);
+    const timer = setTimeout(async () => {
+      const q = kenshinModalQuery.trim();
+      const { data } = await supabase.from('health_data')
+        .select('*')
+        .or(`k_id.ilike.%${q}%,k_name.ilike.%${q}%,k_yurigana.ilike.%${q}%`)
+        .order('k_date', { ascending: false })
+        .limit(20);
+      setKenshinModalResults(data || []);
+      setKenshinModalSearching(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [kenshinModalQuery, session]);
+
+  // 診断書検索から選択してkenshinDataに復元
+  const handleSelectKenshinRecord = (r) => {
+    setKenshinData({
+      kDate: r.k_date || '', kId: r.k_id || '', kName: r.k_name || '', kYurigana: r.k_yurigana || '',
+      kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
+      kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: r.k_company_name || '',
+      address: r.address || '',
+      bpSys: r.bp_sys || '', bpDia: r.bp_dia || '',
+      height: r.height || '', weight: r.weight || '', bmi: r.bmi || '', waist: r.waist || '',
+      visionR: r.vision_r || '', visionL: r.vision_l || '', visionR2: r.vision_r2 || '', visionL2: r.vision_l2 || '',
+      colorVision: r.color_vision || '',
+      hearingR: r.hearing_r || '', hearingL: r.hearing_l || '',
+      hearing4000R: r.hearing_4000r || '', hearing4000L: r.hearing_4000l || '',
+      medicalHistory: r.medical_history || '',
+      wbc: r.wbc || '', rbc: r.rbc || '', hemoglobin: r.hemoglobin || '', ht: r.ht || '',
+      mcv: r.mcv || '', mch: r.mch || '', mchc: r.mchc || '', platelet: r.platelet || '',
+      tp: r.tp || '', alb: r.alb || '', agRatio: r.ag_ratio || '', tBil: r.t_bil || '', dBil: r.d_bil || '',
+      alp: r.alp || '', ldh: r.ldh || '', got: r.got || '', gpt: r.gpt || '',
+      gammaGtp: r.gamma_gtp || '', ck: r.ck || '', amy: r.amy || '',
+      tCho: r.t_cho || '', hdl: r.hdl || '', ldl: r.ldl || '', triglyceride: r.triglyceride || '', lhRatio: r.lh_ratio || '',
+      un: r.un || '', cre: r.cre || '', egfr: r.egfr || '', uricAcid: r.uric_acid || '',
+      na: r.na || '', k: r.k || '', cl: r.cl || '', ca: r.ca || '', ip: r.ip || '', mgElec: r.mg_elec || '', fe: r.fe || '',
+      bloodGlucose: r.blood_glucose || '', hba1c: r.hba1c || '', crp: r.crp || '', rf: r.rf || '', aso: r.aso || '',
+      cea: r.cea || '', ca199: r.ca199 || '', psaValue: r.psa_value || '', bnp: r.bnp || '',
+      hbsAg: r.hbs_ag || '', hbsAb: r.hbs_ab || '', hcvAb: r.hcv_ab || '',
+      syphilisSTS: r.syphilis_sts || '', mrsaStaph: r.mrsa_staph || '',
+      endoscopyResult: r.endoscopy_result || '', echoResult: r.echo_result || '', manganeseResult: r.manganese_result || '',
+      stoolOccult: r.stool_occult || '', norovirus: r.norovirus || '',
+      bacteria3: r.bacteria3 || '', bacteria5: r.bacteria5 || '', paratyphoid: r.paratyphoid || '',
+      methanol: r.methanol || '', normalHexane: r.normal_hexane || '', methylHippuric: r.methyl_hippuric || '',
+      otherExams: r.other_exams || '',
+      xRayDate: r.x_ray_date || '', xRayCategory: r.x_ray_category || '', xRayResult: r.x_ray_result || '',
+      ecgResult: r.ecg_result || '',
+      urineGlucose: r.urine_glucose || '', urineProtein: r.urine_protein || '',
+      urineUrobilinogen: r.urine_urobilinogen || '', urineBilirubin: r.urine_bilirubin || '',
+      urineSpecificGravity: r.urine_specific_gravity || '', urinePh: r.urine_ph || '',
+      urineKetone: r.urine_ketone || '', urineOccultBlood: r.urine_occult_blood || '',
+      doctorFindings: r.doctor_findings || '', overallFindings: r.overall_findings || '',
+      doctorName: r.doctor_name || '', doctorNameCustom: r.doctor_name_custom || '',
+      issueDate: r.issue_date || '',
+    });
+    setShowKenshinModal(false);
+    setKenshinModalQuery('');
+    setLeftTab('result');
+    setRightTab('kenshin');
   };
 
   // 健康診断結果をSupabaseに保存
@@ -1877,6 +1945,12 @@ export default function App() {
                 >
                   📄 健康診断書
                 </button>
+                <button
+                  onClick={() => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); }}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                >
+                  <Search size={12} /> 診断書検索
+                </button>
               </div>
               {(rightTab === 'preview' || rightTab === 'kenshin') && (
                 <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
@@ -2070,6 +2144,59 @@ export default function App() {
                     </div>
                   </>)}
 
+                </div>
+              </div>
+            )}
+
+            {/* 診断書検索モーダル */}
+            {showKenshinModal && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowKenshinModal(false)}>
+                <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-emerald-600 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
+                      <h2 className="text-white font-bold text-lg">診断書検索</h2>
+                    </div>
+                    <button onClick={() => setShowKenshinModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                  </div>
+                  <div className="relative">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={kenshinModalQuery}
+                      onChange={e => setKenshinModalQuery(e.target.value)}
+                      placeholder="ID・氏名・ヨミガナで検索..."
+                      className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-emerald-400 bg-slate-50 outline-none focus:border-emerald-500 text-sm"
+                    />
+                  </div>
+                  <div className="mt-4 max-h-72 overflow-y-auto">
+                    {kenshinModalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                    {!kenshinModalSearching && kenshinModalQuery.length > 0 && kenshinModalResults.length === 0 && (
+                      <div className="text-center text-slate-400 py-6 text-sm">該当する診断書が見つかりません</div>
+                    )}
+                    {!kenshinModalSearching && kenshinModalQuery.length === 0 && (
+                      <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
+                        <Search size={28} className="text-slate-600" />
+                        <span className="text-sm">IDまたは氏名・ヨミガナを入力してください</span>
+                      </div>
+                    )}
+                    {!kenshinModalSearching && kenshinModalResults.map(r => (
+                      <div
+                        key={r.id}
+                        onClick={() => handleSelectKenshinRecord(r)}
+                        className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                      >
+                        <div className="font-bold text-sm">{r.k_name}</div>
+                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap">
+                          {r.k_yurigana && <span>{r.k_yurigana}</span>}
+                          {r.k_id && <span>ID: {r.k_id}</span>}
+                          {r.k_date && <span>健診日: {r.k_date}</span>}
+                          {r.k_gender && <span>{r.k_gender}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
