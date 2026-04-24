@@ -69,7 +69,7 @@ const kenshinInitialState = {
   // その他
   otherExams: '',
   // 胸部X-P・心電図
-  xRayDate: '', xRayResult: '',
+  xRayDate: '', xRayCategory: '', xRayResult: '',
   ecgResult: '',
   // 尿検査
   urineGlucose: '', urineProtein: '', urineUrobilinogen: '',
@@ -207,6 +207,7 @@ export default function App() {
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
   const [kenshinData, setKenshinData] = useState(kenshinInitialState);
   const [kenshinBirthDateInput, setKenshinBirthDateInput] = useState('');
+  const [kenshinSaveStatus, setKenshinSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
 
   // 診断結果入力：生年月日→年齢自動計算
   useEffect(() => {
@@ -785,6 +786,61 @@ export default function App() {
   const handleKenshinChange = (e) => {
     const { name, value } = e.target;
     setKenshinData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // 健康診断結果をSupabaseに保存
+  const handleKenshinSave = async () => {
+    setKenshinSaveStatus('saving');
+    const d = kenshinData;
+    const record = {
+      k_date: d.kDate || null,
+      k_id: d.kId || null,
+      k_name: d.kName,
+      k_yurigana: d.kYurigana,
+      k_birth_date: d.kBirthDate || null,
+      k_age: d.kAge !== '' && d.kAge != null ? parseInt(d.kAge) : null,
+      k_gender: d.kGender,
+      k_contact: d.kContact,
+      k_company_name: d.kCompanyName,
+      address: d.address,
+      bp_sys: d.bpSys, bp_dia: d.bpDia,
+      height: d.height, weight: d.weight, bmi: d.bmi, waist: d.waist,
+      vision_r: d.visionR, vision_l: d.visionL, vision_r2: d.visionR2, vision_l2: d.visionL2,
+      color_vision: d.colorVision,
+      hearing_r: d.hearingR, hearing_l: d.hearingL,
+      hearing_4000r: d.hearing4000R, hearing_4000l: d.hearing4000L,
+      medical_history: d.medicalHistory,
+      wbc: d.wbc, rbc: d.rbc, hemoglobin: d.hemoglobin, ht: d.ht,
+      mcv: d.mcv, mch: d.mch, mchc: d.mchc, platelet: d.platelet,
+      tp: d.tp, alb: d.alb, ag_ratio: d.agRatio, t_bil: d.tBil, d_bil: d.dBil,
+      alp: d.alp, ldh: d.ldh, got: d.got, gpt: d.gpt, gamma_gtp: d.gammaGtp, ck: d.ck, amy: d.amy,
+      t_cho: d.tCho, hdl: d.hdl, ldl: d.ldl, triglyceride: d.triglyceride, lh_ratio: d.lhRatio,
+      un: d.un, cre: d.cre, egfr: d.egfr, uric_acid: d.uricAcid,
+      na: d.na, k: d.k, cl: d.cl, ca: d.ca, ip: d.ip, mg_elec: d.mgElec, fe: d.fe,
+      blood_glucose: d.bloodGlucose, hba1c: d.hba1c, crp: d.crp, rf: d.rf, aso: d.aso,
+      cea: d.cea, ca199: d.ca199, psa_value: d.psaValue, bnp: d.bnp,
+      hbs_ag: d.hbsAg, hbs_ab: d.hbsAb, hcv_ab: d.hcvAb, syphilis_sts: d.syphilisSTS, mrsa_staph: d.mrsaStaph,
+      endoscopy_result: d.endoscopyResult, echo_result: d.echoResult, manganese_result: d.manganeseResult,
+      stool_occult: d.stoolOccult, norovirus: d.norovirus, bacteria3: d.bacteria3, bacteria5: d.bacteria5, paratyphoid: d.paratyphoid,
+      methanol: d.methanol, normal_hexane: d.normalHexane, methyl_hippuric: d.methylHippuric,
+      other_exams: d.otherExams,
+      x_ray_date: d.xRayDate || null, x_ray_category: d.xRayCategory, x_ray_result: d.xRayResult,
+      ecg_result: d.ecgResult,
+      urine_glucose: d.urineGlucose, urine_protein: d.urineProtein, urine_urobilinogen: d.urineUrobilinogen,
+      urine_bilirubin: d.urineBilirubin, urine_specific_gravity: d.urineSpecificGravity,
+      urine_ph: d.urinePh, urine_ketone: d.urineKetone, urine_occult_blood: d.urineOccultBlood,
+      doctor_findings: d.doctorFindings, overall_findings: d.overallFindings,
+      doctor_name: d.doctorName, doctor_name_custom: d.doctorNameCustom,
+      issue_date: d.issueDate || null,
+      user_id: session?.user?.id,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = d.kId && d.kDate
+      ? await supabase.from('health_data').upsert(record, { onConflict: 'k_id,k_date' })
+      : await supabase.from('health_data').insert(record);
+    if (error) { console.error(error); setKenshinSaveStatus('error'); }
+    else { setKenshinSaveStatus('saved'); }
+    setTimeout(() => setKenshinSaveStatus(''), 3000);
   };
 
   // 生年月日フィールドからフォーカスが外れたときにパース
@@ -1445,10 +1501,14 @@ export default function App() {
                     {/* 胸部X-P検査 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">胸部X-P検査</label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <div className="text-xs text-slate-500">撮影日</div>
                           <input type="date" name="xRayDate" value={kenshinData.xRayDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs text-slate-500">撮影区分</div>
+                          <input type="text" name="xRayCategory" value={kenshinData.xRayCategory} onChange={handleKenshinChange} placeholder="直接・間接など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                         <div className="space-y-1">
                           <div className="text-xs text-slate-500">結果</div>
@@ -1779,12 +1839,14 @@ export default function App() {
                       <input type="date" name="issueDate" value={kenshinData.issueDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
-                    {/* 健康診断書プレビューボタン */}
+                    {/* 健康診断結果保存ボタン */}
                     <button
-                      onClick={() => setRightTab('kenshin')}
-                      className="w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+                      onClick={handleKenshinSave}
+                      disabled={kenshinSaveStatus === 'saving'}
+                      className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${kenshinSaveStatus === 'saved' ? 'bg-green-500 text-white' : kenshinSaveStatus === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                     >
-                      <ClipboardCheck size={18} /> 健康診断書をプレビュー
+                      <Save size={18} />
+                      {kenshinSaveStatus === 'saving' ? '保存中...' : kenshinSaveStatus === 'saved' ? '保存しました ✓' : kenshinSaveStatus === 'error' ? '保存失敗 ✗' : '健康診断結果を保存'}
                     </button>
                   </div>
                 )}
@@ -1801,13 +1863,13 @@ export default function App() {
                   onClick={() => setRightTab('preview')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-green-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                 >
-                  📋 プレビュー
+                  📋 予約プレビュー
                 </button>
                 <button
                   onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                 >
-                  📅 カレンダー
+                  📅 予約カレンダー
                 </button>
                 <button
                   onClick={() => setRightTab('kenshin')}
@@ -2269,7 +2331,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '18px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>撮影区分</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>
-                        {kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}　撮影` : ''}
+                        {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}　撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　')}
                       </div>
                     </div>
 
