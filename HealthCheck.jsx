@@ -2436,7 +2436,7 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
-              <div className="kenshin-scroll-wrapper" style={{overflowY: 'auto', height: 'calc(100vh - 90px)', overscrollBehavior: 'contain'}}>
+              <div className="kenshin-scroll-wrapper max-h-[900px] overflow-y-auto">
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
@@ -2868,7 +2868,9 @@ export default function App() {
             )}
 
             {/* A4帳票再現 */}
-            {rightTab === 'preview' && <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
+            {rightTab === 'preview' && (
+              <div className="max-h-[900px] overflow-y-auto">
+              <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <h1 className="text-[22px] font-bold text-center mb-[5mm] border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
               <div className="border-[1.5px] border-black text-sm print-table">
@@ -3124,7 +3126,9 @@ export default function App() {
                   <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">陽春堂内科診療所</div>
                 </div>
               </div>
-            </div>}
+            </div>
+              </div>
+            )}
           </div>
         </div>
 
