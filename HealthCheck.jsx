@@ -2436,7 +2436,7 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
-              <div className="kenshin-scroll-wrapper max-h-[900px] overflow-y-auto">
+              <div className="kenshin-scroll-wrapper" style={{height: '900px', overflowY: 'auto', overscrollBehavior: 'contain', overflowX: 'hidden'}}>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
