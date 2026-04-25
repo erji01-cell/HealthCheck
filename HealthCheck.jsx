@@ -138,6 +138,8 @@ export default function App() {
   const searchRef = useRef(null);
   const currentMonthRef = useRef(null);
   const modalSearchRef = useRef(null);
+  const kenshinTopRef = useRef(null);
+  const kenshinBottomRef = useRef(null);
 
   // 初期状態の定義
   const tomorrow = new Date();
@@ -1165,7 +1167,7 @@ export default function App() {
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
 
         {/* 左セクション: 操作エリア */}
-        <div className="flex-1 space-y-4 print-hide">
+        <div className="flex-1 space-y-4 print-hide relative">
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
@@ -1442,6 +1444,7 @@ export default function App() {
                 {/* ===== 診断結果入力タブ（健康診断書と連動） ===== */}
                 {leftTab === 'result' && (
                   <div className="space-y-5">
+                    <div ref={kenshinTopRef} />
 
                     {/* 患者検索 */}
                     <div className="space-y-1">
@@ -2032,11 +2035,28 @@ export default function App() {
                       <Save size={18} />
                       {kenshinSaveStatus === 'saving' ? '保存中...' : kenshinSaveStatus === 'saved' ? '保存しました ✓' : kenshinSaveStatus === 'error' ? '保存失敗 ✗' : '健康診断結果を保存'}
                     </button>
+                    <div ref={kenshinBottomRef} />
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* スクロールボタン（診断結果入力タブ時のみ・左パネル右外側にスティッキー表示） */}
+          {leftTab === 'result' && (
+            <div className="hidden lg:flex flex-col gap-2 fixed z-40 print-hide" style={{right: 'calc(50% - 700px + 35px)', bottom: '40px'}}>
+              <button
+                onClick={() => kenshinTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-all"
+                title="先頭へ"
+              >▲</button>
+              <button
+                onClick={() => kenshinBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+                className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-all"
+                title="末尾へ"
+              >▼</button>
+            </div>
+          )}
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[671px] shrink-0 print-right">
@@ -2447,24 +2467,16 @@ export default function App() {
                   {/* 生年月日 */}
                   <div className="flex" style={{borderBottom: '1.5px solid black', minHeight: '36px'}}>
                     <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>生年月日</div>
-                    <div className="flex-1 flex items-center gap-3 px-3 py-1">
+                    <div className="flex-1 flex items-center px-3 py-1">
                       {(() => {
-                        const era = getBirthEra(kenshinData.kBirthDate);
-                        return (
-                          <div style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
-                            {[['T','大正'],['S','昭和'],['H','平成'],['R','令和']].map(([code, name], i) => (
-                              <div key={code} className="px-1.5" style={era === code ? {background:'black', color:'white', fontWeight:'bold', borderBottom: i < 3 ? '1px solid black' : 'none'} : {borderBottom: i < 3 ? '1px solid black' : 'none'}}>{name}</div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                      {(() => {
-                        if (!kenshinData.kBirthDate) return <span style={{fontSize: '14px'}}>　　年　　月　　日（　　歳）</span>;
+                        if (!kenshinData.kBirthDate) return <span style={{fontSize: '14px'}}>　　　　年（　　　　）　　月　　日</span>;
                         const [y, m, d] = kenshinData.kBirthDate.split('-').map(Number);
                         const era = getBirthEra(kenshinData.kBirthDate);
+                        const eraNameMap = { T: '大正', S: '昭和', H: '平成', R: '令和', M: '明治' };
                         const eraBaseMap = { T: 1911, S: 1925, H: 1988, R: 2018, M: 1867 };
+                        const eraName = eraNameMap[era] || '';
                         const eraYear = y - (eraBaseMap[era] || 0);
-                        return <span style={{fontSize: '14px'}}>{eraYear}年　{m}月　{d}日　（{kenshinData.kAge}歳）</span>;
+                        return <span style={{fontSize: '14px'}}>{eraName}{eraYear}年（{y}年）{m}月{d}日　{kenshinData.kAge ? `（${kenshinData.kAge}歳）` : ''}</span>;
                       })()}
                     </div>
                   </div>
