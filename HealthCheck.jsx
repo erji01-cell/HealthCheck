@@ -42,6 +42,9 @@ const kenshinInitialState = {
   hearingR: '', hearingL: '',
   hearing4000R: '', hearing4000L: '',
   medicalHistory: '',
+  medBP: '', medBG: '', medLipid: '',
+  smokingHistory: '',
+  subjective: '',
   // 血算 (CBC)
   wbc: '', rbc: '', hemoglobin: '', ht: '', mcv: '', mch: '', mchc: '', platelet: '',
   // 生化学 - 蛋白・ビリルビン
@@ -893,6 +896,9 @@ export default function App() {
       hearingR: r.hearing_r || '', hearingL: r.hearing_l || '',
       hearing4000R: r.hearing_4000r || '', hearing4000L: r.hearing_4000l || '',
       medicalHistory: r.medical_history || '',
+      medBP: r.med_bp || '', medBG: r.med_bg || '', medLipid: r.med_lipid || '',
+      smokingHistory: r.smoking_history || '',
+      subjective: r.subjective || '',
       wbc: r.wbc || '', rbc: r.rbc || '', hemoglobin: r.hemoglobin || '', ht: r.ht || '',
       mcv: r.mcv || '', mch: r.mch || '', mchc: r.mchc || '', platelet: r.platelet || '',
       tp: r.tp || '', alb: r.alb || '', agRatio: r.ag_ratio || '', tBil: r.t_bil || '', dBil: r.d_bil || '',
@@ -948,6 +954,9 @@ export default function App() {
       hearing_r: d.hearingR, hearing_l: d.hearingL,
       hearing_4000r: d.hearing4000R, hearing_4000l: d.hearing4000L,
       medical_history: d.medicalHistory,
+      med_bp: d.medBP, med_bg: d.medBG, med_lipid: d.medLipid,
+      smoking_history: d.smokingHistory,
+      subjective: d.subjective,
       wbc: d.wbc, rbc: d.rbc, hemoglobin: d.hemoglobin, ht: d.ht,
       mcv: d.mcv, mch: d.mch, mchc: d.mchc, platelet: d.platelet,
       tp: d.tp, alb: d.alb, ag_ratio: d.agRatio, t_bil: d.tBil, d_bil: d.dBil,
@@ -1286,8 +1295,8 @@ export default function App() {
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
-                    <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
+                    <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
@@ -1523,8 +1532,8 @@ export default function App() {
                         <input type="text" name="kContact" value={kenshinData.kContact} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">会社名</label>
-                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinChange} placeholder="会社名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
+                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinChange} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                     </div>
 
@@ -1532,6 +1541,46 @@ export default function App() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
                       <input type="text" name="address" value={kenshinData.address} onChange={handleKenshinChange} placeholder="住所を入力" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+
+                    {/* 既往歴・服薬歴・喫煙歴・自覚症状グループ */}
+                    <div className="border border-emerald-200 rounded-xl p-3 space-y-3 bg-emerald-50/30">
+                      <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">既往歴・服薬歴・喫煙歴・自覚症状</div>
+
+                      {/* 既往歴 */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">既往歴</label>
+                        <input type="text" name="medicalHistory" value={kenshinData.medicalHistory} onChange={handleKenshinChange} placeholder="なし / 高血圧など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                      </div>
+
+                      {/* 服薬歴 */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">服薬歴</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: '血圧', name: 'medBP' },
+                            { label: '血糖', name: 'medBG' },
+                            { label: '脂質', name: 'medLipid' },
+                          ].map(({ label, name }) => (
+                            <div key={name} className="space-y-0.5">
+                              <div className="text-[10px] text-slate-500 font-medium text-center">{label}</div>
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="なし / 薬剤名" className="w-full p-1.5 border rounded-lg text-xs outline-none focus:ring-2 focus:ring-emerald-500 text-center bg-white" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 喫煙歴 */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">喫煙歴</label>
+                        <input type="text" name="smokingHistory" value={kenshinData.smokingHistory} onChange={handleKenshinChange} placeholder="なし / 〇本×〇年など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                      </div>
+
+                      {/* 自覚症状 */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">自覚症状</label>
+                        <input type="text" name="subjective" value={kenshinData.subjective} onChange={handleKenshinChange} placeholder="なし / 症状など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                      </div>
                     </div>
 
                     {/* 身体測定 */}
@@ -1607,12 +1656,6 @@ export default function App() {
                         <label className="text-[11px] font-bold text-slate-400 uppercase">聴力4000Hz 左</label>
                         <input type="text" name="hearing4000L" value={kenshinData.hearing4000L} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
-                    </div>
-
-                    {/* 既往歴 */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">既往歴</label>
-                      <input type="text" name="medicalHistory" value={kenshinData.medicalHistory} onChange={handleKenshinChange} placeholder="なし / 高血圧など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     {/* 尿検査 */}
@@ -2381,30 +2424,28 @@ export default function App() {
 
                 {/* 患者情報 */}
                 <div className="mb-3" style={{border: '1.5px solid black'}}>
-                  {/* ふりがな・氏名・性別・住所 */}
+                  {/* ふりがな・氏名・性別 */}
                   <div className="flex" style={{borderBottom: '1.5px solid black'}}>
                     <div className="flex flex-col bg-slate-50" style={{width: '78px', borderRight: '1.5px solid black'}}>
                       <div className="text-center py-0.5" style={{fontSize: '10px', borderBottom: '1px solid black'}}>ふりがな</div>
                       <div className="flex-1 flex items-center justify-center font-bold" style={{fontSize: '11px'}}>氏名</div>
                     </div>
-                    <div className="flex flex-col flex-1" style={{borderRight: '1.5px solid black'}}>
+                    <div className="flex flex-col flex-1">
                       <div className="px-2 py-0.5" style={{fontSize: '11px', borderBottom: '1px solid black', minHeight: '20px'}}>{kenshinData.kYurigana}</div>
                       <div className="px-2 py-1 flex items-center gap-2">
                         <span className="font-bold" style={{fontSize: '17px'}}>{kenshinData.kName}</span>
                         <span style={{fontSize: '14px'}} className="ml-1">様</span>
-                        <div className="ml-3" style={{border: '1.5px solid black', fontSize: '11px', lineHeight: '1.7'}}>
-                          <div className={`px-2`} style={kenshinData.kGender === '男' ? {background:'black', color:'white', fontWeight:'bold', borderBottom: '1px solid black'} : {borderBottom: '1px solid black'}}>男</div>
-                          <div className={`px-2`} style={kenshinData.kGender === '女' ? {background:'black', color:'white', fontWeight:'bold'} : {}}>女</div>
-                        </div>
+                        {kenshinData.kGender && <span className="ml-2 font-bold" style={{fontSize: '14px'}}>（{kenshinData.kGender}）</span>}
                       </div>
                     </div>
-                    <div style={{width: '200px'}}>
-                      <div className="text-center py-0.5 bg-slate-50" style={{fontSize: '10px', borderBottom: '1px solid black'}}>住所</div>
-                      <div className="px-2 py-1" style={{fontSize: '11px'}}>{kenshinData.address}</div>
-                    </div>
+                  </div>
+                  {/* 住所 */}
+                  <div className="flex" style={{borderBottom: '1.5px solid black', minHeight: '28px'}}>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>住所</div>
+                    <div className="flex-1 px-3 py-1" style={{fontSize: '11px'}}>{kenshinData.address}</div>
                   </div>
                   {/* 生年月日 */}
-                  <div className="flex" style={{minHeight: '36px'}}>
+                  <div className="flex" style={{borderBottom: '1.5px solid black', minHeight: '36px'}}>
                     <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>生年月日</div>
                     <div className="flex-1 flex items-center gap-3 px-3 py-1">
                       {(() => {
@@ -2427,10 +2468,27 @@ export default function App() {
                       })()}
                     </div>
                   </div>
+                  {/* 団体名 */}
+                  <div className="flex" style={{minHeight: '28px'}}>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>団体名</div>
+                    <div className="flex-1 flex items-center px-3" style={{fontSize: '13px'}}>{kenshinData.kCompanyName}</div>
+                  </div>
                 </div>
 
-                {/* 診断事項タイトル */}
-                <div className="text-center font-bold mb-2" style={{fontSize: '14px', letterSpacing: '0.6em'}}>診　断　事　項</div>
+                {/* 既往歴・服薬歴・喫煙歴・自覚症状（独立セクション） */}
+                <div className="mb-2" style={{border: '1.5px solid black'}}>
+                  {[
+                    { label: '既往歴',   content: kenshinData.medicalHistory || 'なし' },
+                    { label: '服薬歴',   content: [kenshinData.medBP && `血圧: ${kenshinData.medBP}`, kenshinData.medBG && `血糖: ${kenshinData.medBG}`, kenshinData.medLipid && `脂質: ${kenshinData.medLipid}`].filter(Boolean).join('　') || 'なし' },
+                    { label: '喫煙歴',   content: kenshinData.smokingHistory || 'なし' },
+                    { label: '自覚症状', content: kenshinData.subjective || 'なし' },
+                  ].map(({ label, content }, i, arr) => (
+                    <div key={label} className="flex" style={{borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', minHeight: '20px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{content}</div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* メインテーブル */}
                 <div className="flex flex-1" style={{border: '1.5px solid black'}}>
@@ -2502,19 +2560,18 @@ export default function App() {
                       <div className="flex flex-col flex-1">
 
                         {[
-                          { group: '貧血検査', rows: [{ label: '赤血球(万/mm³)', val: kenshinData.rbc }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin }] },
+                          { group: '貧血検査', rows: [{ label: '白血球(10²/mm³)', val: kenshinData.wbc }, { label: '赤血球(万/mm³)', val: kenshinData.rbc }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin }, { label: 'ヘマトクリット(%)', val: kenshinData.ht }] },
                           { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got }, { label: 'GPT(IU/L)', val: kenshinData.gpt }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp }] },
                           { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride }] },
                           { group: '血糖', rows: [{ label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose }, { label: 'HbA1c(%)', val: kenshinData.hba1c }] },
-                          { group: '腎機能', rows: [{ label: '尿酸(mg/dL)', val: kenshinData.uricAcid }] },
-                        ].map(({ group, rows }) => (
-                          <div key={group} className="flex" style={{borderBottom: '1px solid black', flex: rows.length}}>
+                        ].map(({ group, rows }, idx, arr) => (
+                          <div key={group} className="flex" style={{borderBottom: idx < arr.length - 1 ? '1px solid black' : 'none', flex: rows.length}}>
                             <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
                             <div className="flex flex-col flex-1">
                               {rows.map(({ label, val }, i) => (
                                 <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
                                   <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
-                                  <span className="font-mono font-bold">{val}</span>
+                                  <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                                 </div>
                               ))}
                             </div>
@@ -2528,39 +2585,80 @@ export default function App() {
                   {/* 右列 */}
                   <div className="flex flex-col" style={{flex: 1}}>
 
-                    {/* 既往歴 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '22px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>既往歴</div>
-                      <div className="flex-1 p-2" style={{fontSize: '11px'}}>{kenshinData.medicalHistory || 'なし'}</div>
-                    </div>
-
-                    {/* 撮影区分 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '18px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>撮影区分</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>
-                        {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}　撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　')}
+                    {/* 血液検査（腎機能） */}
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '20px', borderRight: '1px solid black', writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: '11px', letterSpacing: '2px', padding: '4px 2px'}}>血液検査</div>
+                      <div className="flex flex-col flex-1">
+                        <div className="flex" style={{flex: 3}}>
+                          <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '38px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>腎機能</div>
+                          <div className="flex flex-col flex-1">
+                            {[
+                              { label: '尿酸(mg/dL)',           val: kenshinData.uricAcid },
+                              { label: '血清クレアチニン(mg/dL)', val: kenshinData.cre },
+                              { label: 'eGFR',                  val: kenshinData.egfr },
+                            ].map(({ label, val }, i, arr) => (
+                              <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                                <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
+                                <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* 胸部X-P検査 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 6, minHeight: '44px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', lineHeight: '1.8'}}>胸部<br/>X-P<br/>検査</div>
-                      <div className="flex-1 flex items-center justify-center p-2 text-center" style={{fontSize: '11px'}}>{kenshinData.xRayResult}</div>
+                    {/* 胸部X-P */}
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '20px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>胸部X-P</div>
+                      <div className="flex-1 flex flex-col justify-start p-1" style={{fontSize: '11px'}}>
+                        {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　') && (
+                          <div className="text-slate-500" style={{fontSize: '10px'}}>
+                            {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　')}
+                          </div>
+                        )}
+                        <div>{kenshinData.xRayResult}</div>
+                      </div>
                     </div>
 
                     {/* 心電図 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '22px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>心電図</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.ecgResult}</div>
                     </div>
 
+                    {/* 胃内視鏡 */}
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>胃内視鏡</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.endoscopyResult}</div>
+                    </div>
+
+                    {/* 腹部エコー */}
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>腹部エコー</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.echoResult}</div>
+                    </div>
+
+                    {/* マンガン */}
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
+                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>マンガン</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.manganeseResult}</div>
+                    </div>
+
                     {/* 尿検査 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '44px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>尿検査</div>
-                      <div className="flex-1 p-2" style={{fontSize: '11px', lineHeight: '1.8'}}>
-                        <div>・糖　　　　（{kenshinData.urineGlucose || '　　'}）</div>
-                        <div>・蛋白　　　（{kenshinData.urineProtein || '　　'}）</div>
-                        <div>・ウロビリノーゲン（{kenshinData.urineUrobilinogen || '　　'}）</div>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 4}}>
+                      <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>尿検査</div>
+                      <div className="flex flex-col flex-1">
+                        {[
+                          { label: '糖',             val: kenshinData.urineGlucose },
+                          { label: '蛋白',           val: kenshinData.urineProtein },
+                          { label: 'ウロビリノーゲン', val: kenshinData.urineUrobilinogen },
+                          { label: '潜血',           val: kenshinData.urineOccultBlood },
+                        ].map(({ label, val }, i, arr) => (
+                          <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                            <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
+                            <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -2612,7 +2710,7 @@ export default function App() {
                   {[kenshinData.wbc, kenshinData.rbc, kenshinData.hemoglobin, kenshinData.ht, kenshinData.mcv, kenshinData.mch, kenshinData.mchc, kenshinData.platelet].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>血算（CBC）</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['WBC', kenshinData.wbc, '×10³/μL'], ['RBC', kenshinData.rbc, '万/μL'], ['Hb', kenshinData.hemoglobin, 'g/dL'], ['Ht', kenshinData.ht, '%'], ['MCV', kenshinData.mcv, 'fL'], ['MCH', kenshinData.mch, 'pg'], ['MCHC', kenshinData.mchc, '%'], ['PLT', kenshinData.platelet, '×10⁴/μL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
                       </div>
                     </div>
@@ -2622,7 +2720,7 @@ export default function App() {
                   {[kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>総蛋白・Bil</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['TP', kenshinData.tp, 'g/dL'], ['Alb', kenshinData.alb, 'g/dL'], ['A/G比', kenshinData.agRatio, ''], ['T-Bil', kenshinData.tBil, 'mg/dL'], ['D-Bil', kenshinData.dBil, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
@@ -2632,7 +2730,7 @@ export default function App() {
                   {[kenshinData.alp, kenshinData.ldh, kenshinData.got, kenshinData.gpt, kenshinData.gammaGtp, kenshinData.ck, kenshinData.amy].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>肝機能・酵素</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['ALP', kenshinData.alp], ['LDH', kenshinData.ldh], ['GOT', kenshinData.got], ['GPT', kenshinData.gpt], ['γ-GTP', kenshinData.gammaGtp], ['CK', kenshinData.ck], ['Amy', kenshinData.amy]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v} IU/L</span> : null)}
                       </div>
                     </div>
@@ -2642,7 +2740,7 @@ export default function App() {
                   {[kenshinData.tCho, kenshinData.hdl, kenshinData.ldl, kenshinData.triglyceride, kenshinData.lhRatio].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>脂質</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['T-Cho', kenshinData.tCho, 'mg/dL'], ['HDL', kenshinData.hdl, 'mg/dL'], ['LDL', kenshinData.ldl, 'mg/dL'], ['TG', kenshinData.triglyceride, 'mg/dL'], ['L/H比', kenshinData.lhRatio, '']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
@@ -2652,7 +2750,7 @@ export default function App() {
                   {[kenshinData.un, kenshinData.cre, kenshinData.egfr, kenshinData.uricAcid].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腎機能</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['UN', kenshinData.un, 'mg/dL'], ['Cre', kenshinData.cre, 'mg/dL'], ['eGFR', kenshinData.egfr, ''], ['尿酸', kenshinData.uricAcid, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
@@ -2662,7 +2760,7 @@ export default function App() {
                   {[kenshinData.na, kenshinData.k, kenshinData.cl, kenshinData.ca, kenshinData.ip, kenshinData.mgElec, kenshinData.fe].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>電解質</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['Na', kenshinData.na, 'mEq/L'], ['K', kenshinData.k, 'mEq/L'], ['Cl', kenshinData.cl, 'mEq/L'], ['Ca', kenshinData.ca, 'mg/dL'], ['IP', kenshinData.ip, 'mg/dL'], ['Mg', kenshinData.mgElec, 'mg/dL'], ['Fe', kenshinData.fe, 'μg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
                       </div>
                     </div>
@@ -2672,7 +2770,7 @@ export default function App() {
                   {[kenshinData.bloodGlucose, kenshinData.hba1c, kenshinData.crp, kenshinData.rf, kenshinData.aso].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>免疫・糖尿病</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['血糖', kenshinData.bloodGlucose, 'mg/dL'], ['HbA1c', kenshinData.hba1c, '%'], ['CRP', kenshinData.crp, 'mg/dL'], ['RF', kenshinData.rf, 'IU/mL'], ['ASO', kenshinData.aso, 'IU/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
                       </div>
                     </div>
@@ -2682,7 +2780,7 @@ export default function App() {
                   {[kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.bnp].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腫瘍マーカー</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['CEA', kenshinData.cea, 'ng/mL'], ['CA19-9', kenshinData.ca199, 'U/mL'], ['PSA', kenshinData.psaValue, 'ng/mL'], ['BNP', kenshinData.bnp, 'pg/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
                       </div>
                     </div>
@@ -2692,7 +2790,7 @@ export default function App() {
                   {[kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>その他採血</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['HBs抗原', kenshinData.hbsAg], ['HBs抗体', kenshinData.hbsAb], ['HCV抗体', kenshinData.hcvAb], ['梅毒STS', kenshinData.syphilisSTS], ['MRSA黄色ブドウ球菌', kenshinData.mrsaStaph]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -2702,7 +2800,7 @@ export default function App() {
                   {[kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone, kenshinData.urineOccultBlood].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>尿検査（追加）</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['ビリルビン', kenshinData.urineBilirubin], ['比重', kenshinData.urineSpecificGravity], ['pH', kenshinData.urinePh], ['ケトン体', kenshinData.urineKetone], ['潜血', kenshinData.urineOccultBlood]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -2712,7 +2810,7 @@ export default function App() {
                   {[kenshinData.endoscopyResult, kenshinData.echoResult, kenshinData.manganeseResult].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>その他検査</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['胃内視鏡', kenshinData.endoscopyResult], ['腹部エコー', kenshinData.echoResult], ['マンガン', kenshinData.manganeseResult]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -2722,7 +2820,7 @@ export default function App() {
                   {[kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>検便</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['便潜血2日法', kenshinData.stoolOccult], ['ノロウイルス', kenshinData.norovirus], ['3菌種', kenshinData.bacteria3], ['5菌種', kenshinData.bacteria5], ['パラチフス・腸チフス', kenshinData.paratyphoid]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -2732,7 +2830,7 @@ export default function App() {
                   {[kenshinData.methanol, kenshinData.normalHexane, kenshinData.methylHippuric].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>有機溶剤</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '10px'}}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['メタノール', kenshinData.methanol], ['ノルマルヘキサン', kenshinData.normalHexane], ['メチル馬尿酸', kenshinData.methylHippuric]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -2807,9 +2905,9 @@ export default function App() {
                   <div className="flex-1 p-2 font-mono">{formData.contact || '　　-　　　-　　　'}</div>
                 </div>
 
-                {/* 行: 会社名 */}
+                {/* 行: 団体名 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">会社名</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">団体名</div>
                   <div className="flex-1 p-2">{formData.companyName || '　'}</div>
                 </div>
 
