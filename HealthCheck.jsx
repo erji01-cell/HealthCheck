@@ -1163,11 +1163,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center">
-      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6">
+    <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden">
+      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
-        <div className="flex-1 space-y-4 print-hide relative">
+        <div className="flex-1 space-y-4 print-hide relative lg:flex lg:flex-col lg:min-h-0">
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
@@ -1180,7 +1180,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px]">
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
@@ -2059,9 +2059,9 @@ export default function App() {
           )}
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[671px] shrink-0 print-right">
-          <div className="sticky top-6">
-            <div className="flex justify-between items-center mb-4 px-2 print-hide">
+        <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0">
+          <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
+            <div className="flex justify-between items-center mb-4 px-2 print-hide lg:shrink-0">
               <div className="flex items-center gap-2">
                 {/* グループ1：予約プレビュー・予約カレンダー */}
                 <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
@@ -2101,9 +2101,11 @@ export default function App() {
               )}
             </div>
 
+            <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
-              <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4 max-h-[841px] overflow-y-auto">
+              <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4">
                 {calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
@@ -2436,7 +2438,7 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
-              <div className="kenshin-scroll-wrapper" style={{height: '900px', overflowY: 'auto', overscrollBehavior: 'contain', overflowX: 'hidden'}}>
+              <>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
@@ -2864,12 +2866,11 @@ export default function App() {
                 </div>
 
               </div>
-              </div>
+              </>
             )}
 
             {/* A4帳票再現 */}
             {rightTab === 'preview' && (
-              <div className="max-h-[900px] overflow-y-auto">
               <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <h1 className="text-[22px] font-bold text-center mb-[5mm] border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
 
@@ -3127,8 +3128,9 @@ export default function App() {
                 </div>
               </div>
             </div>
-              </div>
             )}
+
+            </div>
           </div>
         </div>
 
