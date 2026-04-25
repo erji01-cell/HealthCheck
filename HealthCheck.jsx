@@ -2042,9 +2042,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* スクロールボタン（診断結果入力タブ時のみ・左パネル右外側にスティッキー表示） */}
+          {/* スクロールボタン（診断結果入力タブ時のみ・入力枠左3mmに固定表示） */}
           {leftTab === 'result' && (
-            <div className="hidden lg:flex flex-col gap-2 fixed z-40 print-hide" style={{right: 'calc(50% - 700px + 35px)', bottom: '40px'}}>
+            <div className="hidden lg:flex flex-col gap-2 fixed z-40 print-hide" style={{left: 'calc(50vw - 751px)', top: '50%', transform: 'translateY(-50%)'}}>
               <button
                 onClick={() => kenshinTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                 className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-all"
@@ -2436,11 +2436,11 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
-              <>
+              <div className="kenshin-scroll-wrapper" style={{overflowY: 'auto', height: 'calc(100vh - 90px)', overscrollBehavior: 'contain'}}>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
-                <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '1em'}}>健　康　診　断　書</h1>
+                <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '0.5em'}}>健　康　診　断　書</h1>
 
                 {/* 患者情報 */}
                 <div className="mb-3" style={{border: '1.5px solid black'}}>
@@ -2864,7 +2864,7 @@ export default function App() {
                 </div>
 
               </div>
-              </>
+              </div>
             )}
 
             {/* A4帳票再現 */}
@@ -3132,6 +3132,7 @@ export default function App() {
 
       <style>{`
         .print-only { display: none; }
+        .kenshin-scroll-wrapper { overflow: visible !important; max-height: none !important; height: auto !important; }
         @media print {
           .print-only { display: inline !important; }
           @page { size: A4 portrait; margin: 5mm 0 0 0; }
