@@ -1172,7 +1172,7 @@ export default function App() {
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
-            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約システム</h1>
+            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム</h1>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all"
@@ -1186,13 +1186,13 @@ export default function App() {
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
-                      onClick={() => setLeftTab('reservation')}
+                      onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
                       className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'reservation' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       <PlusCircle size={13} /> 予約詳細入力
                     </button>
                     <button
-                      onClick={() => setLeftTab('result')}
+                      onClick={() => { setLeftTab('result'); setRightTab('kenshin'); }}
                       className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'result' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
@@ -1618,28 +1618,23 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* 視力 */}
+                    {/* 視力・色神 */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">視力</label>
-                      <div className="grid grid-cols-4 gap-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">視力・色神</label>
+                      <div className="grid grid-cols-5 gap-2">
                         {[
-                          { label: '裸眼 右', name: 'visionR' },
-                          { label: '裸眼 左', name: 'visionL' },
-                          { label: '矯正 右', name: 'visionR2' },
-                          { label: '矯正 左', name: 'visionL2' },
-                        ].map(({ label, name }) => (
+                          { label: '裸眼 右', name: 'visionR',     placeholder: '0.0' },
+                          { label: '裸眼 左', name: 'visionL',     placeholder: '0.0' },
+                          { label: '矯正 右', name: 'visionR2',    placeholder: '0.0' },
+                          { label: '矯正 左', name: 'visionL2',    placeholder: '0.0' },
+                          { label: '色神',    name: 'colorVision', placeholder: '正常/異常' },
+                        ].map(({ label, name, placeholder }) => (
                           <div key={name} className="space-y-0.5">
                             <div className="text-[10px] text-slate-500 text-center">{label}</div>
-                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="0.0" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder={placeholder} className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         ))}
                       </div>
-                    </div>
-
-                    {/* 色神 */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">色神</label>
-                      <input type="text" name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} placeholder="正常 / 異常" className="w-full p-2 border rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     {/* 聴力 */}
@@ -2154,6 +2149,7 @@ export default function App() {
                                     if (!day || isDisabled) return;
                                     handleReset();
                                     setFormData(prev => ({ ...prev, date: dateStr }));
+                                    setLeftTab('reservation');
                                   }}
                                   className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
