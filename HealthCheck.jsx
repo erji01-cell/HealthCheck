@@ -97,6 +97,19 @@ const toWareki = (isoDate) => {
   return `${eraName}${eraYear}年${m}月${d}日`;
 };
 
+// ISO日付 → 和暦（西暦併記）表示
+const toWareikiWithWestern = (isoDate) => {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-').map(Number);
+  let eraName, eraYear;
+  if (y >= 2019)      { eraName = '令和'; eraYear = y - 2018; }
+  else if (y >= 1989) { eraName = '平成'; eraYear = y - 1988; }
+  else if (y >= 1926) { eraName = '昭和'; eraYear = y - 1925; }
+  else if (y >= 1912) { eraName = '大正'; eraYear = y - 1911; }
+  else                { eraName = '明治'; eraYear = y - 1867; }
+  return `${eraName}${eraYear}年(${y}年)${m}月${d}日`;
+};
+
 // 生年月日の元号コードを返す
 const getBirthEra = (isoDate) => {
   if (!isoDate) return '';
@@ -1485,7 +1498,7 @@ export default function App() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">健診希望日</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">健診受診日</label>
                         <input type="date" name="kDate" value={kenshinData.kDate} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
@@ -2439,7 +2452,7 @@ export default function App() {
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
-                <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '0.5em'}}>健　康　診　断　書</h1>
+                <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '0.25em'}}>健　康　診　断　書</h1>
 
                 {/* 患者情報 */}
                 <div className="mb-3" style={{border: '1.5px solid black'}}>
@@ -2479,10 +2492,12 @@ export default function App() {
                       })()}
                     </div>
                   </div>
-                  {/* 団体名 */}
+                  {/* 団体名 / 健診受診日 */}
                   <div className="flex" style={{minHeight: '28px'}}>
                     <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '78px', borderRight: '1.5px solid black', fontSize: '11px'}}>団体名</div>
-                    <div className="flex-1 flex items-center px-3" style={{fontSize: '13px'}}>{kenshinData.kCompanyName}</div>
+                    <div className="flex-1 flex items-center px-3" style={{fontSize: '13px', borderRight: '1px solid black'}}>{kenshinData.kCompanyName}</div>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold" style={{width: '72px', borderRight: '1px solid black', fontSize: '11px'}}>健診受診日</div>
+                    <div className="flex-1 flex items-center px-3" style={{fontSize: '12px'}}>{toWareikiWithWestern(kenshinData.kDate)}</div>
                   </div>
                 </div>
 
@@ -2689,13 +2704,16 @@ export default function App() {
                 </div>
 
                 {/* フッター */}
-                <div className="mt-4 space-y-1" style={{fontSize: '12px'}}>
-                  <div>上記のとおり診断します</div>
-                  <div>{kenshinData.issueDate ? toWareki(kenshinData.issueDate) : '　　　年　　月　　日'}</div>
-                  <div className="mt-2">鹿児島県志布志市志布志町志布志286-4</div>
-                  <div>医療法人一斉会　陽春堂内科診療所</div>
-                  <div>医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}　　㊞</div>
+                <div className="mt-4 flex justify-end" style={{paddingRight: '10mm'}}>
+                  <div className="space-y-1" style={{fontSize: '12px'}}>
+                    <div>上記のとおり診断します</div>
+                    {kenshinData.issueDate && <div>{toWareki(kenshinData.issueDate)}</div>}
+                    <div className="mt-2">鹿児島県志布志市志布志町志布志286-4</div>
+                    <div>医療法人一斉会　陽春堂内科診療所</div>
+                    <div>医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}　　㊞</div>
+                  </div>
                 </div>
+
 
               </div>
 
