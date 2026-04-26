@@ -217,6 +217,7 @@ export default function App() {
   const [kenshinModalQuery, setKenshinModalQuery] = useState('');
   const [kenshinModalResults, setKenshinModalResults] = useState([]);
   const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
+  const [highlightedField, setHighlightedField] = useState(null);
 
   // 診断結果入力：生年月日→年齢自動計算
   useEffect(() => {
@@ -1676,9 +1677,9 @@ export default function App() {
                             { label: 'ケトン体', name: 'urineKetone' },
                             { label: '潜血', name: 'urineOccultBlood' },
                           ].map(({ label, name }) => (
-                            <div key={name} className="space-y-0.5">
+                            <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                               <div className="text-xs text-slate-500 text-center">{label}</div>
-                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                             </div>
                           ))}
                         </div>
@@ -1729,9 +1730,9 @@ export default function App() {
                               { label: 'MCHC(%)', name: 'mchc' },
                               { label: 'PLT(×10⁴)', name: 'platelet' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="space-y-0.5">
+                              <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                               </div>
                             ))}
                           </div>
@@ -1769,9 +1770,9 @@ export default function App() {
                               { label: 'CK(IU/L)', name: 'ck' },
                               { label: 'Amy(IU/L)', name: 'amy' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="space-y-0.5">
+                              <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                               </div>
                             ))}
                           </div>
@@ -1788,9 +1789,9 @@ export default function App() {
                               { label: 'TG(mg/dL)', name: 'triglyceride' },
                               { label: 'L/H比', name: 'lhRatio' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="space-y-0.5">
+                              <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                               </div>
                             ))}
                           </div>
@@ -1806,9 +1807,9 @@ export default function App() {
                               { label: 'eGFR', name: 'egfr' },
                               { label: '尿酸(mg/dL)', name: 'uricAcid' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="space-y-0.5">
+                              <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                               </div>
                             ))}
                           </div>
@@ -1846,9 +1847,9 @@ export default function App() {
                               { label: 'RF(IU/mL)', name: 'rf' },
                               { label: 'ASO(IU/mL)', name: 'aso' },
                             ].map(({ label, name }) => (
-                              <div key={name} className="space-y-0.5">
+                              <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
                               </div>
                             ))}
                           </div>
@@ -2574,16 +2575,16 @@ export default function App() {
                       <div className="flex flex-col flex-1">
 
                         {[
-                          { group: '貧血検査', rows: [{ label: '白血球(10²/mm³)', val: kenshinData.wbc }, { label: '赤血球(万/mm³)', val: kenshinData.rbc }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin }, { label: 'ヘマトクリット(%)', val: kenshinData.ht }] },
-                          { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got }, { label: 'GPT(IU/L)', val: kenshinData.gpt }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp }] },
-                          { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride }] },
-                          { group: '血糖', rows: [{ label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose }, { label: 'HbA1c(%)', val: kenshinData.hba1c }] },
+                          { group: '貧血検査', rows: [{ label: '白血球(10²/mm³)', val: kenshinData.wbc, field: 'wbc' }, { label: '赤血球(万/mm³)', val: kenshinData.rbc, field: 'rbc' }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin, field: 'hemoglobin' }, { label: 'ヘマトクリット(%)', val: kenshinData.ht, field: 'ht' }] },
+                          { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got, field: 'got' }, { label: 'GPT(IU/L)', val: kenshinData.gpt, field: 'gpt' }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp, field: 'gammaGtp' }] },
+                          { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl, field: 'hdl' }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl, field: 'ldl' }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride, field: 'triglyceride' }] },
+                          { group: '血糖', rows: [{ label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose, field: 'bloodGlucose' }, { label: 'HbA1c(%)', val: kenshinData.hba1c, field: 'hba1c' }] },
                         ].map(({ group, rows }, idx, arr) => (
                           <div key={group} className="flex" style={{borderBottom: idx < arr.length - 1 ? '1px solid black' : 'none', flex: rows.length}}>
                             <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
                             <div className="flex flex-col flex-1">
-                              {rows.map(({ label, val }, i) => (
-                                <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                              {rows.map(({ label, val, field }, i) => (
+                                <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
                                   <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                   <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                                 </div>
@@ -2607,11 +2608,11 @@ export default function App() {
                           <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '38px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>腎機能</div>
                           <div className="flex flex-col flex-1">
                             {[
-                              { label: '尿酸(mg/dL)',           val: kenshinData.uricAcid },
-                              { label: '血清クレアチニン(mg/dL)', val: kenshinData.cre },
-                              { label: 'eGFR',                  val: kenshinData.egfr },
-                            ].map(({ label, val }, i, arr) => (
-                              <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                              { label: '尿酸(mg/dL)',           val: kenshinData.uricAcid, field: 'uricAcid' },
+                              { label: '血清クレアチニン(mg/dL)', val: kenshinData.cre,      field: 'cre' },
+                              { label: 'eGFR',                  val: kenshinData.egfr,     field: 'egfr' },
+                            ].map(({ label, val, field }, i, arr) => (
+                              <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
                                 <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                 <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                               </div>
@@ -2663,12 +2664,12 @@ export default function App() {
                       <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>尿検査</div>
                       <div className="flex flex-col flex-1">
                         {[
-                          { label: '糖',             val: kenshinData.urineGlucose },
-                          { label: '蛋白',           val: kenshinData.urineProtein },
-                          { label: 'ウロビリノーゲン', val: kenshinData.urineUrobilinogen },
-                          { label: '潜血',           val: kenshinData.urineOccultBlood },
-                        ].map(({ label, val }, i, arr) => (
-                          <div key={label} className="flex items-center gap-1 px-1" style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px'}}>
+                          { label: '糖',             val: kenshinData.urineGlucose,       field: 'urineGlucose' },
+                          { label: '蛋白',           val: kenshinData.urineProtein,        field: 'urineProtein' },
+                          { label: 'ウロビリノーゲン', val: kenshinData.urineUrobilinogen,  field: 'urineUrobilinogen' },
+                          { label: '潜血',           val: kenshinData.urineOccultBlood,   field: 'urineOccultBlood' },
+                        ].map(({ label, val, field }, i, arr) => (
+                          <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
                             <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                             <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                           </div>
