@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
@@ -1676,18 +1676,30 @@ export default function App() {
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                         <div className="grid grid-cols-4 gap-2">
                           {[
-                            { label: '糖', name: 'urineGlucose' },
-                            { label: '蛋白', name: 'urineProtein' },
-                            { label: 'ウロビリノーゲン', name: 'urineUrobilinogen' },
-                            { label: 'ビリルビン', name: 'urineBilirubin' },
-                            { label: '比重', name: 'urineSpecificGravity' },
-                            { label: 'pH', name: 'urinePh' },
-                            { label: 'ケトン体', name: 'urineKetone' },
-                            { label: '潜血', name: 'urineOccultBlood' },
-                          ].map(({ label, name }) => (
+                            { label: '糖',            name: 'urineGlucose',        select: true },
+                            { label: '蛋白',          name: 'urineProtein',         select: true },
+                            { label: 'ウロビリノーゲン', name: 'urineUrobilinogen',  select: true },
+                            { label: 'ビリルビン',    name: 'urineBilirubin',        select: true },
+                            { label: '比重',          name: 'urineSpecificGravity',  select: false },
+                            { label: 'pH',            name: 'urinePh',               select: false },
+                            { label: 'ケトン体',      name: 'urineKetone',           select: true },
+                            { label: '潜血',          name: 'urineOccultBlood',      select: true },
+                          ].map(({ label, name, select }) => (
                             <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                               <div className="text-xs text-slate-500 text-center">{label}</div>
-                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(−)" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                              {select ? (
+                                <select name={name} value={kenshinData[name]} onChange={handleKenshinChange} className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`}>
+                                  <option value="">　</option>
+                                  <option value="(-)">(-)</option>
+                                  <option value="(±)">(±)</option>
+                                  <option value="(1+)">(1+)</option>
+                                  <option value="(2+)">(2+)</option>
+                                  <option value="(3+)">(3+)</option>
+                                  <option value="(4+)">(4+)</option>
+                                </select>
+                              ) : (
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="(-)" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                              )}
                             </div>
                           ))}
                         </div>
@@ -2634,11 +2646,11 @@ export default function App() {
                     </div>
 
                     {/* 胸部X-P */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3, minHeight: '20px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>胸部X-P</div>
                       <div className="flex-1 flex flex-col justify-start p-1" style={{fontSize: '11px'}}>
                         {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　') && (
-                          <div className="text-slate-500" style={{fontSize: '10px'}}>
+                          <div className="text-black" style={{fontSize: '10px'}}>
                             {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　')}
                           </div>
                         )}
@@ -2689,13 +2701,13 @@ export default function App() {
                     </div>
 
                     {/* 診察所見 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '22px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2.5, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>診察所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.doctorFindings}</div>
                     </div>
 
                     {/* 総合所見 */}
-                    <div className="flex" style={{flex: 2}}>
+                    <div className="flex" style={{flex: 2.5}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>総合所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.overallFindings}</div>
                     </div>
@@ -2735,16 +2747,6 @@ export default function App() {
                 {/* 追加検査結果テーブル */}
                 <div className="border border-black" style={{borderCollapse: 'collapse'}}>
 
-                  {/* 血算（CBC） */}
-                  {[kenshinData.wbc, kenshinData.rbc, kenshinData.hemoglobin, kenshinData.ht, kenshinData.mcv, kenshinData.mch, kenshinData.mchc, kenshinData.platelet].some(Boolean) && (
-                    <div className="flex" style={{borderBottom: '1px solid black'}}>
-                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>血算（CBC）</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['WBC', kenshinData.wbc, '×10³/μL'], ['RBC', kenshinData.rbc, '万/μL'], ['Hb', kenshinData.hemoglobin, 'g/dL'], ['Ht', kenshinData.ht, '%'], ['MCV', kenshinData.mcv, 'fL'], ['MCH', kenshinData.mch, 'pg'], ['MCHC', kenshinData.mchc, '%'], ['PLT', kenshinData.platelet, '×10⁴/μL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
-                      </div>
-                    </div>
-                  )}
-
                   {/* 総蛋白・ビリルビン */}
                   {[kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
@@ -2755,32 +2757,32 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 肝機能・酵素 */}
-                  {[kenshinData.alp, kenshinData.ldh, kenshinData.got, kenshinData.gpt, kenshinData.gammaGtp, kenshinData.ck, kenshinData.amy].some(Boolean) && (
+                  {/* 肝機能・酵素（GOT/GPT/γ-GTPは1ページ目に掲載のため除外） */}
+                  {[kenshinData.alp, kenshinData.ldh, kenshinData.ck, kenshinData.amy].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>肝機能・酵素</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['ALP', kenshinData.alp], ['LDH', kenshinData.ldh], ['GOT', kenshinData.got], ['GPT', kenshinData.gpt], ['γ-GTP', kenshinData.gammaGtp], ['CK', kenshinData.ck], ['Amy', kenshinData.amy]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v} IU/L</span> : null)}
+                        {[['ALP', kenshinData.alp], ['LDH', kenshinData.ldh], ['CK', kenshinData.ck], ['Amy', kenshinData.amy]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v} IU/L</span> : null)}
                       </div>
                     </div>
                   )}
 
-                  {/* 脂質 */}
-                  {[kenshinData.tCho, kenshinData.hdl, kenshinData.ldl, kenshinData.triglyceride, kenshinData.lhRatio].some(Boolean) && (
+                  {/* 脂質（HDL/LDL/TGは1ページ目に掲載のため除外） */}
+                  {[kenshinData.tCho, kenshinData.lhRatio].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>脂質</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['T-Cho', kenshinData.tCho, 'mg/dL'], ['HDL', kenshinData.hdl, 'mg/dL'], ['LDL', kenshinData.ldl, 'mg/dL'], ['TG', kenshinData.triglyceride, 'mg/dL'], ['L/H比', kenshinData.lhRatio, '']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
+                        {[['T-Cho', kenshinData.tCho, 'mg/dL'], ['L/H比', kenshinData.lhRatio, '']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
                   )}
 
-                  {/* 腎機能 */}
-                  {[kenshinData.un, kenshinData.cre, kenshinData.egfr, kenshinData.uricAcid].some(Boolean) && (
+                  {/* 腎機能（尿酸/Cre/eGFRは1ページ目に掲載のため除外） */}
+                  {kenshinData.un && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腎機能</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['UN', kenshinData.un, 'mg/dL'], ['Cre', kenshinData.cre, 'mg/dL'], ['eGFR', kenshinData.egfr, ''], ['尿酸', kenshinData.uricAcid, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
+                        <span><b>UN</b>: {kenshinData.un} mg/dL</span>
                       </div>
                     </div>
                   )}
@@ -2795,12 +2797,12 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 免疫・糖尿病 */}
-                  {[kenshinData.bloodGlucose, kenshinData.hba1c, kenshinData.crp, kenshinData.rf, kenshinData.aso].some(Boolean) && (
+                  {/* 免疫（血糖/HbA1cは1ページ目に掲載のため除外） */}
+                  {[kenshinData.crp, kenshinData.rf, kenshinData.aso].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
-                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>免疫・糖尿病</div>
+                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>免疫</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['血糖', kenshinData.bloodGlucose, 'mg/dL'], ['HbA1c', kenshinData.hba1c, '%'], ['CRP', kenshinData.crp, 'mg/dL'], ['RF', kenshinData.rf, 'IU/mL'], ['ASO', kenshinData.aso, 'IU/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
+                        {[['CRP', kenshinData.crp, 'mg/dL'], ['RF', kenshinData.rf, 'IU/mL'], ['ASO', kenshinData.aso, 'IU/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -2825,25 +2827,16 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 尿検査（追加項目） */}
-                  {[kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone, kenshinData.urineOccultBlood].some(Boolean) && (
+                  {/* 尿検査（追加項目）（潜血は1ページ目に掲載のため除外） */}
+                  {[kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>尿検査（追加）</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['ビリルビン', kenshinData.urineBilirubin], ['比重', kenshinData.urineSpecificGravity], ['pH', kenshinData.urinePh], ['ケトン体', kenshinData.urineKetone], ['潜血', kenshinData.urineOccultBlood]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
+                        {[['ビリルビン', kenshinData.urineBilirubin], ['比重', kenshinData.urineSpecificGravity], ['pH', kenshinData.urinePh], ['ケトン体', kenshinData.urineKetone]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
                   )}
 
-                  {/* その他検査項目 */}
-                  {[kenshinData.endoscopyResult, kenshinData.echoResult, kenshinData.manganeseResult].some(Boolean) && (
-                    <div className="flex" style={{borderBottom: '1px solid black'}}>
-                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>その他検査</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['胃内視鏡', kenshinData.endoscopyResult], ['腹部エコー', kenshinData.echoResult], ['マンガン', kenshinData.manganeseResult]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
-                      </div>
-                    </div>
-                  )}
 
                   {/* 検便 */}
                   {[kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid].some(Boolean) && (
