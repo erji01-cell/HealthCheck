@@ -2441,7 +2441,7 @@ export default function App() {
                         {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
                         <div className="mt-3 flex gap-2">
                           <button
-                            onClick={() => handleLoadReservation(r.id, true)}
+                            onClick={() => { handleLoadReservation(r.id, true); setLeftTab('reservation'); }}
                             className="flex-1 bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
                           >
                             修正
