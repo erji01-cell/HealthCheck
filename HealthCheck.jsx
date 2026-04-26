@@ -1172,7 +1172,7 @@ export default function App() {
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
-            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム</h1>
+            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム<span className="text-[0.675rem] font-medium text-slate-400 ml-2">ver.2026.04.26</span></h1>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all"
