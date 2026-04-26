@@ -1378,7 +1378,7 @@ export default function App() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
+                        {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: bloodLabel }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
@@ -1403,6 +1403,14 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">その他採血項目</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' }).map(([key, label]) => (
+                          <label key={key} className={cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">その他健診</label>
+                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        {Object.entries({ hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
@@ -3025,10 +3033,11 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
+                      { label: 'その他健診', bg: 'bg-orange-50', border: 'border-orange-200', labelColor: 'text-orange-700', entries: { hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' } },
                     ].map(({ label, bg, border, labelColor, entries }) => (
                       <div key={label} className={`${bg} border ${border} rounded px-2 py-1`}>
                         <div className={`text-[9px] font-bold ${labelColor} mb-1`}>{label}</div>
