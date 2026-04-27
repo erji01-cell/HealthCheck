@@ -2118,7 +2118,7 @@ export default function App() {
                     📋 予約プレビュー
                   </button>
                   <button
-                    onClick={() => { setRightTab('calendar'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
+                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
                     className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                   >
                     📅 予約カレンダー
