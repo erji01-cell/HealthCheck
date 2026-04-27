@@ -2112,7 +2112,7 @@ export default function App() {
                 {/* グループ1：予約プレビュー・予約カレンダー */}
                 <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
                   <button
-                    onClick={() => setRightTab('preview')}
+                    onClick={() => { setRightTab('preview'); setLeftTab('reservation'); }}
                     className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
                   >
                     📋 予約プレビュー
