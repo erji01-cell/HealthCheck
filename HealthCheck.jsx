@@ -1648,34 +1648,41 @@ export default function App() {
                           { label: '裸眼 左', name: 'visionL',     placeholder: '0.0' },
                           { label: '矯正 右', name: 'visionR2',    placeholder: '0.0' },
                           { label: '矯正 左', name: 'visionL2',    placeholder: '0.0' },
-                          { label: '色神',    name: 'colorVision', placeholder: '正常/異常' },
                         ].map(({ label, name, placeholder }) => (
                           <div key={name} className="space-y-0.5">
                             <div className="text-[10px] text-slate-500 text-center">{label}</div>
                             <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder={placeholder} className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         ))}
+                        {/* 色神 ドロップダウン */}
+                        <div className="space-y-0.5">
+                          <div className="text-[10px] text-slate-500 text-center">色神</div>
+                          <select name="colorVision" value={kenshinData.colorVision} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                            <option value="">　</option>
+                            <option value="正常">正常</option>
+                            <option value="異常">異常</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
                     {/* 聴力 */}
                     <div className="grid grid-cols-4 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力1000Hz 右</label>
-                        <input type="text" name="hearingR" value={kenshinData.hearingR} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力1000Hz 左</label>
-                        <input type="text" name="hearingL" value={kenshinData.hearingL} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力4000Hz 右</label>
-                        <input type="text" name="hearing4000R" value={kenshinData.hearing4000R} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">聴力4000Hz 左</label>
-                        <input type="text" name="hearing4000L" value={kenshinData.hearing4000L} onChange={handleKenshinChange} placeholder="正常/異常" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                      </div>
+                      {[
+                        { label: '聴力1000Hz 右', name: 'hearingR' },
+                        { label: '聴力1000Hz 左', name: 'hearingL' },
+                        { label: '聴力4000Hz 右', name: 'hearing4000R' },
+                        { label: '聴力4000Hz 左', name: 'hearing4000L' },
+                      ].map(({ label, name }) => (
+                        <div key={name} className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">{label}</label>
+                          <select name={name} value={kenshinData[name]} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                            <option value="">　</option>
+                            <option value="正常">正常</option>
+                            <option value="異常">異常</option>
+                          </select>
+                        </div>
+                      ))}
                     </div>
 
                     {/* 尿検査 */}
@@ -2130,7 +2137,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+            <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper">
 
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
@@ -2738,6 +2745,23 @@ export default function App() {
               </div>
 
               {/* ===== 別紙（健康診断書に記載されていない追加検査項目） ===== */}
+              {(() => {
+                const hasBessiData = [
+                  kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil,
+                  kenshinData.alp, kenshinData.ldh, kenshinData.ck, kenshinData.amy,
+                  kenshinData.tCho, kenshinData.lhRatio,
+                  kenshinData.un,
+                  kenshinData.na, kenshinData.k, kenshinData.cl, kenshinData.ca, kenshinData.ip, kenshinData.mgElec, kenshinData.fe,
+                  kenshinData.crp, kenshinData.rf, kenshinData.aso,
+                  kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.bnp,
+                  kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph,
+                  kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone,
+                  kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid,
+                  kenshinData.methanol, kenshinData.normalHexane, kenshinData.methylHippuric,
+                  kenshinData.otherExams,
+                ].some(Boolean);
+                if (!hasBessiData) return null;
+                return (
               <div className="bessi-page-break bg-white text-black" style={{padding: '8mm 12mm', fontSize: '11px', width: '180mm', minHeight: '297mm', borderTop: '2px dashed #ccc', marginTop: '8mm'}}>
 
                 {/* 別紙タイトル */}
@@ -2882,6 +2906,8 @@ export default function App() {
                 </div>
 
               </div>
+                );
+              })()}
               </>
             )}
 
@@ -3155,8 +3181,8 @@ export default function App() {
 
       <style>{`
         .print-only { display: none; }
-        .kenshin-scroll-wrapper { overflow: visible !important; max-height: none !important; height: auto !important; }
         @media print {
+          .kenshin-scroll-wrapper { overflow: visible !important; max-height: none !important; height: auto !important; }
           .print-only { display: inline !important; }
           @page { size: A4 portrait; margin: 5mm 0 0 0; }
           html, body {
@@ -3165,6 +3191,8 @@ export default function App() {
             background: white !important;
           }
           body > div { padding: 0 !important; background: white !important; }
+          body > div > div { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+          body > div > div > div { min-height: 0 !important; height: auto !important; overflow: visible !important; }
           .print-hide { display: none !important; }
           .print-right { width: 210mm !important; max-width: 210mm !important; flex: none !important; }
           .print-right .sticky { position: static !important; top: auto !important; }
