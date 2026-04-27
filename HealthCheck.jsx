@@ -2539,15 +2539,24 @@ export default function App() {
                   {[
                     { label: '既往歴',   content: kenshinData.medicalHistory || 'なし' },
                     { label: '服薬歴',   content: [kenshinData.medBP && `血圧: ${kenshinData.medBP}`, kenshinData.medBG && `血糖: ${kenshinData.medBG}`, kenshinData.medLipid && `脂質: ${kenshinData.medLipid}`].filter(Boolean).join('　') || 'なし' },
-                    { label: '喫煙歴',   content: kenshinData.smokingHistory || 'なし' },
-                    { label: '飲酒',     content: kenshinData.drinkingHistory || 'なし' },
-                    { label: '自覚症状', content: kenshinData.subjective || 'なし' },
                   ].map(({ label, content }, i, arr) => (
                     <div key={label} className="flex" style={{borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{content}</div>
                     </div>
                   ))}
+                  {/* 喫煙歴・飲酒 同行表示 */}
+                  <div className="flex" style={{borderTop: '1px solid black', minHeight: '20px'}}>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>喫煙歴</div>
+                    <div className="flex items-center px-2" style={{fontSize: '11px', flex: 1, borderRight: '1px solid black'}}>{kenshinData.smokingHistory || 'なし'}</div>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '44px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>飲酒</div>
+                    <div className="flex items-center px-2" style={{fontSize: '11px', flex: 1}}>{kenshinData.drinkingHistory || 'なし'}</div>
+                  </div>
+                  {/* 自覚症状 */}
+                  <div className="flex" style={{borderTop: '1px solid black', minHeight: '20px'}}>
+                    <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>自覚症状</div>
+                    <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.subjective || 'なし'}</div>
+                  </div>
                 </div>
 
                 {/* メインテーブル */}
