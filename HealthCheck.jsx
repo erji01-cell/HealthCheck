@@ -2596,7 +2596,7 @@ export default function App() {
                               { side: '左', bare: kenshinData.visionL, corr: kenshinData.visionL2 },
                             ].map(({ side, bare, corr }, i) => (
                               <div key={side} className="flex items-center gap-1 pr-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px', paddingLeft: '10mm'}}>
-                                <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
+                                <span className="text-black font-bold" style={{width: '12px'}}>{side}</span>
                                 <span className="text-black font-bold">裸眼: {bare}</span>
                                 {corr && <span className="ml-3 text-black font-bold">矯正: {corr}</span>}
                               </div>
