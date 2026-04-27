@@ -2578,7 +2578,7 @@ export default function App() {
                     ].map(({ label, val }) => (
                       <div key={label} className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '22px'}}>
                         <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
-                        <div className="flex-1 flex items-center px-2 font-mono" style={{fontSize: '12px'}}>{val}</div>
+                        <div className="flex-1 flex items-center px-2 font-mono font-bold" style={{fontSize: '12px'}}>{val}</div>
                       </div>
                     ))}
 
