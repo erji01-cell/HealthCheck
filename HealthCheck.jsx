@@ -1737,7 +1737,11 @@ export default function App() {
                         </div>
                         <div className="space-y-1">
                           <div className="text-xs text-slate-500">撮影区分</div>
-                          <input type="text" name="xRayCategory" value={kenshinData.xRayCategory} onChange={handleKenshinChange} placeholder="直接・間接など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          <select name="xRayCategory" value={kenshinData.xRayCategory} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                            <option value="">　</option>
+                            <option value="直接">直接</option>
+                            <option value="間接">間接</option>
+                          </select>
                         </div>
                         <div className="space-y-1">
                           <div className="text-xs text-slate-500">結果</div>
