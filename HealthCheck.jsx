@@ -2597,8 +2597,8 @@ export default function App() {
                             ].map(({ side, bare, corr }, i) => (
                               <div key={side} className="flex items-center gap-1 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
                                 <span className="text-slate-600" style={{width: '12px'}}>{side}</span>
-                                <span className="text-black">裸眼: {bare}</span>
-                                {corr && <span className="ml-3 text-black">矯正: {corr}</span>}
+                                <span className="text-black font-bold">裸眼: {bare}</span>
+                                {corr && <span className="ml-3 text-black font-bold">矯正: {corr}</span>}
                               </div>
                             ))}
                           </div>
@@ -2620,8 +2620,8 @@ export default function App() {
                         ].map(({ hz, r, l }, i) => (
                           <div key={hz} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
                             <span className="text-slate-500" style={{width: '38px', flexShrink: 0}}>{hz}</span>
-                            <span className="text-black">右: {r}</span>
-                            <span className="ml-2 text-black">左: {l}</span>
+                            <span className="text-black font-bold">右: {r}</span>
+                            <span className="ml-2 text-black font-bold">左: {l}</span>
                           </div>
                         ))}
                       </div>
