@@ -43,7 +43,7 @@ const kenshinInitialState = {
   hearing4000R: '', hearing4000L: '',
   medicalHistory: '',
   medBP: '', medBG: '', medLipid: '',
-  smokingHistory: '',
+  smokingHistory: '', drinkingHistory: '',
   subjective: '',
   // 血算 (CBC)
   wbc: '', rbc: '', hemoglobin: '', ht: '', mcv: '', mch: '', mchc: '', platelet: '',
@@ -913,7 +913,7 @@ export default function App() {
       hearing4000R: r.hearing_4000r || '', hearing4000L: r.hearing_4000l || '',
       medicalHistory: r.medical_history || '',
       medBP: r.med_bp || '', medBG: r.med_bg || '', medLipid: r.med_lipid || '',
-      smokingHistory: r.smoking_history || '',
+      smokingHistory: r.smoking_history || '', drinkingHistory: r.drinking_history || '',
       subjective: r.subjective || '',
       wbc: r.wbc || '', rbc: r.rbc || '', hemoglobin: r.hemoglobin || '', ht: r.ht || '',
       mcv: r.mcv || '', mch: r.mch || '', mchc: r.mchc || '', platelet: r.platelet || '',
@@ -971,7 +971,7 @@ export default function App() {
       hearing_4000r: d.hearing4000R, hearing_4000l: d.hearing4000L,
       medical_history: d.medicalHistory,
       med_bp: d.medBP, med_bg: d.medBG, med_lipid: d.medLipid,
-      smoking_history: d.smokingHistory,
+      smoking_history: d.smokingHistory, drinking_history: d.drinkingHistory,
       subjective: d.subjective,
       wbc: d.wbc, rbc: d.rbc, hemoglobin: d.hemoglobin, ht: d.ht,
       mcv: d.mcv, mch: d.mch, mchc: d.mchc, platelet: d.platelet,
@@ -1570,7 +1570,7 @@ export default function App() {
 
                     {/* 既往歴・服薬歴・喫煙歴・自覚症状グループ */}
                     <div className="border border-emerald-200 rounded-xl p-3 space-y-3 bg-emerald-50/30">
-                      <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">既往歴・服薬歴・喫煙歴・自覚症状</div>
+                      <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">既往歴・服薬歴・喫煙歴・飲酒・自覚症状</div>
 
                       {/* 既往歴 */}
                       <div className="space-y-1">
@@ -1595,10 +1595,16 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* 喫煙歴 */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">喫煙歴</label>
-                        <input type="text" name="smokingHistory" value={kenshinData.smokingHistory} onChange={handleKenshinChange} placeholder="なし / 〇本×〇年など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                      {/* 喫煙歴・飲酒 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">喫煙歴</label>
+                          <input type="text" name="smokingHistory" value={kenshinData.smokingHistory} onChange={handleKenshinChange} placeholder="なし / 〇本×〇年など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">飲酒</label>
+                          <input type="text" name="drinkingHistory" value={kenshinData.drinkingHistory} onChange={handleKenshinChange} placeholder="なし / 〇合×週〇日など" className="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                        </div>
                       </div>
 
                       {/* 自覚症状 */}
@@ -2534,6 +2540,7 @@ export default function App() {
                     { label: '既往歴',   content: kenshinData.medicalHistory || 'なし' },
                     { label: '服薬歴',   content: [kenshinData.medBP && `血圧: ${kenshinData.medBP}`, kenshinData.medBG && `血糖: ${kenshinData.medBG}`, kenshinData.medLipid && `脂質: ${kenshinData.medLipid}`].filter(Boolean).join('　') || 'なし' },
                     { label: '喫煙歴',   content: kenshinData.smokingHistory || 'なし' },
+                    { label: '飲酒',     content: kenshinData.drinkingHistory || 'なし' },
                     { label: '自覚症状', content: kenshinData.subjective || 'なし' },
                   ].map(({ label, content }, i, arr) => (
                     <div key={label} className="flex" style={{borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', minHeight: '20px'}}>
