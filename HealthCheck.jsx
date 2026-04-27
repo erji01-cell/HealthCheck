@@ -30,6 +30,74 @@ const HOLIDAYS = new Set([
   '2027-10-11','2027-11-03','2027-11-23',
 ]);
 
+// 採血基準値テーブル（BML基準値）
+const BLOOD_REFERENCE_RANGES = {
+  wbc:          { min: 3.5,   max: 9.7 },
+  rbc:          { M: { min: 438, max: 577 }, F: { min: 376, max: 516 } },
+  hemoglobin:   { M: { min: 13.6, max: 15.3 }, F: { min: 11.2, max: 15.2 } },
+  ht:           { M: { min: 40.4, max: 51.9 }, F: { min: 34.3, max: 45.2 } },
+  mcv:          { min: 83,    max: 101 },
+  mch:          { M: { min: 28.2, max: 34.7 }, F: { min: 26.4, max: 34.3 } },
+  mchc:         { M: { min: 31.8, max: 36.4 }, F: { min: 31.3, max: 36.1 } },
+  platelet:     { min: 14.0,  max: 37.9 },
+  tp:           { min: 6.5,   max: 8.2 },
+  alb:          { min: 3.8,   max: 5.2 },
+  agRatio:      { min: 1.2,   max: 2.2 },
+  tBil:         { min: 0.3,   max: 1.2 },
+  dBil:         { max: 0.4 },
+  alp:          { min: 38,    max: 113 },
+  ldh:          { min: 120,   max: 245 },
+  got:          { min: 10,    max: 40 },
+  gpt:          { min: 5,     max: 45 },
+  gammaGtp:     { M: { max: 79 }, F: { max: 48 } },
+  ck:           { M: { min: 50, max: 230 }, F: { min: 50, max: 210 } },
+  amy:          { min: 39,    max: 134 },
+  tCho:         { min: 150,   max: 219 },
+  hdl:          { M: { min: 40, max: 80 }, F: { min: 40, max: 90 } },
+  ldl:          { min: 70,    max: 139 },
+  triglyceride: { min: 50,    max: 149 },
+  lhRatio:      { max: 2.0 },
+  un:           { min: 8.0,   max: 20.0 },
+  cre:          { M: { min: 0.65, max: 1.09 }, F: { min: 0.46, max: 0.82 } },
+  egfr:         { min: 60 },
+  uricAcid:     { M: { min: 3.6, max: 7.0 }, F: { min: 2.7, max: 7.0 } },
+  na:           { min: 135,   max: 145 },
+  k:            { min: 3.5,   max: 5.0 },
+  cl:           { min: 98,    max: 108 },
+  ca:           { min: 8.6,   max: 10.2 },
+  ip:           { min: 2.5,   max: 4.5 },
+  mgElec:       { min: 1.7,   max: 2.6 },
+  fe:           { M: { min: 60, max: 210 }, F: { min: 50, max: 170 } },
+  crp:          { max: 0.30 },
+  rf:           { max: 15 },
+  aso:          { max: 240 },
+  bloodGlucose: { min: 70,    max: 109 },
+  hba1c:        { min: 4.6,   max: 6.2 },
+  cea:          { max: 5.0 },
+  ca199:        { max: 37.0 },
+  psaValue:     { max: 4.0 },
+  bnp:          { max: 18.4 },
+};
+
+// 基準値比較 → '↑' / '↓' / ''
+const getBloodArrow = (name, value, gender) => {
+  const range = BLOOD_REFERENCE_RANGES[name];
+  if (!range || value === '' || value == null) return '';
+  const num = parseFloat(value);
+  if (isNaN(num)) return '';
+  const g = gender === '男' ? 'M' : gender === '女' ? 'F' : null;
+  let min, max;
+  if (range.M !== undefined || range.F !== undefined) {
+    const gr = (g && range[g]) ? range[g] : {};
+    min = gr.min; max = gr.max;
+  } else {
+    min = range.min; max = range.max;
+  }
+  if (max !== undefined && num > max) return '↑';
+  if (min !== undefined && num < min) return '↓';
+  return '';
+};
+
 // 健康診断書専用データの初期状態（診断結果入力タブ → 健康診断書と連動）
 const kenshinInitialState = {
   // 患者情報
@@ -1777,7 +1845,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1796,7 +1867,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1817,7 +1891,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1836,7 +1913,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1854,7 +1934,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1875,7 +1958,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1894,7 +1980,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 ${highlightedField === name ? 'ring-2 ring-orange-400 bg-orange-50' : 'bg-white'}`} />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1912,7 +2001,10 @@ export default function App() {
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                <div className="flex items-center gap-0.5">
+                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                  {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-sm font-bold flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -2645,6 +2737,7 @@ export default function App() {
                                 <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
                                   <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                   <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
+                                  {(() => { const a = getBloodArrow(field, val, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`} style={{fontSize: '11px'}}>{a}</span> : null; })()}
                                 </div>
                               ))}
                             </div>
@@ -2673,6 +2766,7 @@ export default function App() {
                               <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
                                 <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                 <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
+                                {(() => { const a = getBloodArrow(field, val, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`} style={{fontSize: '11px'}}>{a}</span> : null; })()}
                               </div>
                             ))}
                           </div>
@@ -2814,7 +2908,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>肝機能・酵素</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['ALP', kenshinData.alp], ['LDH', kenshinData.ldh], ['CK', kenshinData.ck], ['Amy', kenshinData.amy]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v} IU/L</span> : null)}
+                        {[['ALP', kenshinData.alp, 'alp'], ['LDH', kenshinData.ldh, 'ldh'], ['CK', kenshinData.ck, 'ck'], ['Amy', kenshinData.amy, 'amy']].map(([k, v, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} IU/L</span> : null)}
                       </div>
                     </div>
                   )}
@@ -2824,7 +2918,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>脂質</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['T-Cho', kenshinData.tCho, 'mg/dL'], ['L/H比', kenshinData.lhRatio, '']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
+                        {[['T-Cho', kenshinData.tCho, 'mg/dL', 'tCho'], ['L/H比', kenshinData.lhRatio, '', 'lhRatio']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -2834,7 +2928,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腎機能</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        <span><b>UN</b>: {kenshinData.un} mg/dL</span>
+                        <span><b>UN</b>: {kenshinData.un}{(() => { const a = getBloodArrow('un', kenshinData.un, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} mg/dL</span>
                       </div>
                     </div>
                   )}
@@ -2844,7 +2938,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>電解質</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['Na', kenshinData.na, 'mEq/L'], ['K', kenshinData.k, 'mEq/L'], ['Cl', kenshinData.cl, 'mEq/L'], ['Ca', kenshinData.ca, 'mg/dL'], ['IP', kenshinData.ip, 'mg/dL'], ['Mg', kenshinData.mgElec, 'mg/dL'], ['Fe', kenshinData.fe, 'μg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
+                        {[['Na', kenshinData.na, 'mEq/L', 'na'], ['K', kenshinData.k, 'mEq/L', 'k'], ['Cl', kenshinData.cl, 'mEq/L', 'cl'], ['Ca', kenshinData.ca, 'mg/dL', 'ca'], ['IP', kenshinData.ip, 'mg/dL', 'ip'], ['Mg', kenshinData.mgElec, 'mg/dL', 'mgElec'], ['Fe', kenshinData.fe, 'μg/dL', 'fe']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -2854,7 +2948,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>免疫</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['CRP', kenshinData.crp, 'mg/dL'], ['RF', kenshinData.rf, 'IU/mL'], ['ASO', kenshinData.aso, 'IU/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
+                        {[['CRP', kenshinData.crp, 'mg/dL', 'crp'], ['RF', kenshinData.rf, 'IU/mL', 'rf'], ['ASO', kenshinData.aso, 'IU/mL', 'aso']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -2864,7 +2958,7 @@ export default function App() {
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腫瘍マーカー</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['CEA', kenshinData.cea, 'ng/mL'], ['CA19-9', kenshinData.ca199, 'U/mL'], ['PSA', kenshinData.psaValue, 'ng/mL'], ['BNP', kenshinData.bnp, 'pg/mL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v} {u}</span> : null)}
+                        {[['CEA', kenshinData.cea, 'ng/mL', 'cea'], ['CA19-9', kenshinData.ca199, 'U/mL', 'ca199'], ['PSA', kenshinData.psaValue, 'ng/mL', 'psaValue'], ['BNP', kenshinData.bnp, 'pg/mL', 'bnp']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`font-bold ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
