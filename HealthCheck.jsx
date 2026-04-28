@@ -380,42 +380,52 @@ export default function App() {
 
   // 料金計算（料金表に基づくパッケージ制）
   const calcFee = (items) => {
-    const { basic, xRay, ecg, blood, stool, endoscopy } = items;
+    const { xRay, ecg, blood } = items;
 
-    // メインパッケージ（基本+組み合わせ）
+    // 基本健診：7項目のいずれか or X-P/心電図/採血のいずれかチェックで基本健診とみなす
+    const basic = !!(items.heightWeight || items.abdominalGirth || items.bloodPressure ||
+                     items.vision || items.colorVision || items.hearing || items.urine ||
+                     xRay || ecg || blood);
+
+    // 標準健診パターンの基本料金
     let base = 0;
     if (basic) {
-      if (xRay && blood)   base = 9400;
-      else if (blood)      base = 7900;
-      else if (xRay)       base = 4000;
-      else                 base = 2400;
-    } else {
-      if (xRay)  base += 2100;
-      if (blood) base += 5500;
+      if (xRay && ecg && blood) base = 10700;
+      else if (xRay && blood)   base = 9400;
+      else if (ecg && blood)    base = 9200;
+      else if (xRay && ecg)     base = 5300;
+      else if (blood)           base = 7900;
+      else if (xRay)            base = 4000;
+      else if (ecg)             base = 3700;
+      else                      base = 2400;
     }
 
-    const ecgFee        = ecg                  ?  1300 : 0;
-    const hba1cFee      = items.hba1c         ?   490 : 0;
-    const endoscopyFee  = endoscopy            ? 13800 : 0;
-    const echoFee       = items.echo           ?  5300 : 0;
-    const mangFee       = items.manganese      ?   500 : 0;
-    const stoolFee      = items.stool          ?  1500 : 0;
-    const norovirusFee  = items.norovirus      ?  2800 : 0;
-    const bacteria3Fee  = items.bacteria3      ?  2100 : 0;
-    const bacteria5Fee  = items.bacteria5      ?  2300 : 0;
-    const paratyphoidFee   = items.paratyphoid    ?    0 : 0;
-    const methanolFee      = items.methanol       ? 9200 : 0;
-    const hexaneFee        = items.hexane         ? 4800 : 0;
-    const methylHippuricFee = items.methylHippuric ? 3500 : 0;
-    const psaFee       = items.psa      ? 2650 : 0;
-    const hbsAgFee     = items.hbsAg   ? 1730 : 0;
-    const hbsAbFee     = items.hbsAb   ? 1840 : 0;
-    const hcvAbFee     = items.hcvAb   ? 2460 : 0;
-    const syphilisFee  = items.syphilis ? 1780 : 0;
-    const mrsaFee      = items.mrsa     ? 3750 : 0;
-    const otherBloodItems = [items.psa, items.hbsAg, items.hbsAb, items.hcvAb, items.syphilis];
-    const bloodBaseFee = !blood && otherBloodItems.some(Boolean) ? 400 : 0;
-    return base + ecgFee + hba1cFee + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee + psaFee + hbsAgFee + hbsAbFee + hcvAbFee + syphilisFee + mrsaFee + bloodBaseFee;
+    // 採血あり/なしで金額が変わる追加項目
+    const hba1cFee     = items.hba1c    ? (blood ?  490 : 2140) : 0; // 採血なし差額+1650
+    const psaFee       = items.psa      ? (blood ? 2650 : 3050) : 0; // 採血なし差額+400
+    const hbsAgFee     = items.hbsAg    ? (blood ? 1730 : 2130) : 0; // 採血なし差額+400
+    const hbsAbFee     = items.hbsAb    ? (blood ? 1840 : 2240) : 0; // 採血なし差額+400
+    const hcvAbFee     = items.hcvAb    ? (blood ? 2460 : 2860) : 0; // 採血なし差額+400
+    const syphilisFee  = items.syphilis ? (blood ? 1780 : 2180) : 0; // 採血なし差額+400
+    const mrsaFee      = items.mrsa     ? 3750 : 0;                   // 採血あり/なし同額
+
+    // ※ 心電図はbase料金に含まれるため個別加算なし
+    // PDFに記載なし（既存料金を維持）
+    const endoscopyFee       = items.endoscopy   ? 13800 : 0;
+    const echoFee            = items.echo        ?  5300 : 0;
+    const mangFee            = items.manganese   ?   500 : 0;
+    const stoolFee           = items.stool       ?  1500 : 0;
+    const norovirusFee       = items.norovirus   ?  2800 : 0;
+    const bacteria3Fee       = items.bacteria3   ?  2100 : 0;
+    const bacteria5Fee       = items.bacteria5   ?  2300 : 0;
+    const paratyphoidFee     = items.paratyphoid ?     0 : 0;
+    const methanolFee        = items.methanol    ?  9200 : 0;
+    const hexaneFee          = items.hexane      ?  4800 : 0;
+    const methylHippuricFee  = items.methylHippuric ? 3500 : 0;
+
+    return base + hba1cFee + psaFee + hbsAgFee + hbsAbFee + hcvAbFee + syphilisFee + mrsaFee
+         + endoscopyFee + echoFee + mangFee + stoolFee + norovirusFee + bacteria3Fee + bacteria5Fee
+         + paratyphoidFee + methanolFee + hexaneFee + methylHippuricFee;
   };
 
   // カレンダーデータ取得
