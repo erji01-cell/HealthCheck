@@ -246,7 +246,7 @@ export default function App() {
       abdominalGirth: true,
       bloodPressure: true,
       vision: true,
-      colorVision: true,
+      colorVision: false,
       hearing: true,
       urine: true,
       xRay: true,
@@ -586,6 +586,8 @@ export default function App() {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true }) }));
     } else if (formData.purpose === '入園児') {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true }) }));
+    } else if (['就職', '進学', '企業健診', 'その他'].includes(formData.purpose)) {
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, blood: true }) }));
     }
   }, [formData.purpose]);
 
