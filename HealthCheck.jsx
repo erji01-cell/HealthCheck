@@ -1736,7 +1736,7 @@ export default function App() {
 
                     {/* 血圧 */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 (mmHg)</label>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 <span className="normal-case">(mmHg)</span></label>
                       <div className="flex items-center gap-2 max-w-[240px]">
                         <input type="text" name="bpSys" value={kenshinData.bpSys} onChange={handleKenshinChange} placeholder="収縮期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                         <span className="text-slate-500 font-bold">/</span>
@@ -2698,7 +2698,7 @@ export default function App() {
                       { label: '身長/体重', val: kenshinData.height && kenshinData.weight ? `${kenshinData.height} cm / ${kenshinData.weight} kg` : '' },
                       { label: 'BMI',       val: kenshinData.bmi },
                       { label: '腹囲',      val: kenshinData.waist ? `${kenshinData.waist} cm` : '' },
-                      { label: '血圧(mmhg)',val: kenshinData.bpSys || kenshinData.bpDia ? `${kenshinData.bpSys || ''} / ${kenshinData.bpDia || ''}` : '' },
+                      { label: '血圧(mmHg)',val: kenshinData.bpSys || kenshinData.bpDia ? `${kenshinData.bpSys || ''} / ${kenshinData.bpDia || ''}` : '' },
                     ].map(({ label, val }) => (
                       <div key={label} className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '22px'}}>
                         <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
