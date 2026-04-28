@@ -242,7 +242,13 @@ export default function App() {
     purpose: '就職',
     hasHospitalForm: '無(当院用紙を使用)',
     items: {
-      basic: true,
+      heightWeight: true,
+      abdominalGirth: true,
+      bloodPressure: true,
+      vision: true,
+      colorVision: true,
+      hearing: true,
+      urine: true,
       xRay: true,
       ecg: true,
       blood: true,
@@ -420,7 +426,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_basic, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -457,7 +463,13 @@ export default function App() {
       contact: formData.contact,
       company_name: formData.companyName,
       purpose: formData.purpose,
-      item_basic: items.basic,
+      item_height_weight: items.heightWeight,
+      item_abdominal_girth: items.abdominalGirth,
+      item_blood_pressure: items.bloodPressure,
+      item_vision: items.vision,
+      item_color_vision: items.colorVision,
+      item_hearing: items.hearing,
+      item_urine: items.urine,
       item_x_ray: items.xRay,
       item_ecg: items.ecg,
       item_blood: items.blood,
@@ -567,11 +579,11 @@ export default function App() {
         Object.keys(formData.items).map(k => [k, overrides[k] ?? false])
       );
     if (['特定健診(国保)', '長寿健診'].includes(formData.purpose)) {
-      setFormData(prev => ({ ...prev, items: allOff({ basic: true, ecg: true, blood: true }) }));
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, colorVision: true, hearing: true, urine: true, ecg: true, blood: true }) }));
     } else if (formData.purpose === '特定健診(社保)') {
-      setFormData(prev => ({ ...prev, items: allOff({ basic: true, blood: true }) }));
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, colorVision: true, hearing: true, urine: true, blood: true }) }));
     } else if (formData.purpose === '入園児') {
-      setFormData(prev => ({ ...prev, items: allOff({ basic: true }) }));
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, colorVision: true, hearing: true, urine: true }) }));
     }
   }, [formData.purpose]);
 
@@ -826,7 +838,7 @@ export default function App() {
     setModalStep('reservations');
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, purpose, fee, payment_type, item_basic, item_x_ray, item_ecg, item_blood, item_endoscopy')
+      .select('id, date, day_of_week, purpose, fee, payment_type, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_endoscopy')
       .eq('patient_id', patient.patient_id)
       .order('date', { ascending: false })
       .limit(20);
@@ -1156,7 +1168,10 @@ export default function App() {
       purpose: data.purpose || '就職',
       hasHospitalForm: data.has_hospital_form || '無(当院用紙を使用)',
       items: {
-        basic: !!data.item_basic, xRay: !!data.item_x_ray, ecg: !!data.item_ecg,
+        heightWeight: !!data.item_height_weight, abdominalGirth: !!data.item_abdominal_girth,
+        bloodPressure: !!data.item_blood_pressure, vision: !!data.item_vision,
+        colorVision: !!data.item_color_vision, hearing: !!data.item_hearing, urine: !!data.item_urine,
+        xRay: !!data.item_x_ray, ecg: !!data.item_ecg,
         blood: !!data.item_blood, hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
         echo: !!data.item_echo, manganese: !!data.item_manganese, stool: !!data.item_stool,
         norovirus: !!data.item_norovirus, bacteria3: !!data.item_bacteria3, bacteria5: !!data.item_bacteria5,
@@ -1446,7 +1461,7 @@ export default function App() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ basic: '基本', xRay: 'X-P', ecg: '心電図', blood: bloodLabel }).map(([key, label]) => (
+                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', colorVision: '色神', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
@@ -2408,7 +2423,7 @@ export default function App() {
                         <div className="text-center text-slate-400 py-8 text-sm">予約情報なし</div>
                       )}
                       {!patientReservLoading && patientReservations.map((r, i) => {
-                        const items = [r.item_basic && '基本', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
+                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_color_vision && '色神', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
                         return (
                           <div
                             key={i}
@@ -2518,7 +2533,8 @@ export default function App() {
                   </div>
                   {(calendarData[selectedCalendarDate] || []).map((r, i) => {
                     const checkedItems = [
-                      r.item_basic && '基本', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血',
+                      r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_color_vision && '色神', r.item_hearing && '聴力', r.item_urine && '尿検査',
+                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血',
                       r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
                       r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                       r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
@@ -3173,7 +3189,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { basic: '基本', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', colorVision: '色神', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
