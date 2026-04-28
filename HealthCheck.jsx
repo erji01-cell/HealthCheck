@@ -3102,14 +3102,10 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 行: 連絡先 */}
+                {/* 行: 連絡先 + 団体名 */}
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">連絡先</div>
-                  <div className="flex-1 p-2 font-mono">{formData.contact || '　　-　　　-　　　'}</div>
-                </div>
-
-                {/* 行: 団体名 */}
-                <div className="flex border-b-[1.5px] border-black">
+                  <div className="flex-1 p-2 font-mono border-r-[1.5px] border-black">{formData.contact || '　　-　　　-　　　'}</div>
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">団体名</div>
                   <div className="flex-1 p-2">{formData.companyName || '　'}</div>
                 </div>
@@ -3293,7 +3289,7 @@ export default function App() {
                 </div>
 
                 {/* 行: 所見 */}
-                <div className="flex border-b-[1.5px] border-black min-h-[40px]">
+                <div className="flex border-b-[1.5px] border-black min-h-[60px]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">所見</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
                     {formData.findings}
@@ -3301,7 +3297,7 @@ export default function App() {
                 </div>
 
                 {/* 行: その他 */}
-                <div className="flex min-h-[90px]">
+                <div className="flex min-h-[60px]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">その他</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
                     {formData.others}
@@ -3310,8 +3306,7 @@ export default function App() {
               </div>
 
               {/* 下部 */}
-              <div className="mt-auto flex justify-between items-end pt-4 border-t border-slate-100">
-                <div className="text-[9px] text-slate-400 font-mono italic tracking-wider">RESERVATION_SYS_GEN_2.5</div>
+              <div className="mt-auto flex justify-end items-end pt-4 border-t border-slate-100">
                 <div className="text-right">
                   <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">陽春堂内科診療所</div>
                 </div>
