@@ -585,7 +585,7 @@ export default function App() {
     } else if (formData.purpose === '特定健診(社保)') {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true }) }));
     } else if (formData.purpose === '入園児') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, colorVision: true, hearing: true, urine: true }) }));
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true }) }));
     }
   }, [formData.purpose]);
 
