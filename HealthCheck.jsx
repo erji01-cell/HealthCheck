@@ -1477,7 +1477,7 @@ export default function App() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', colorVision: '色神', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel }).map(([key, label]) => (
+                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, colorVision: '色神' }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
@@ -2439,7 +2439,7 @@ export default function App() {
                         <div className="text-center text-slate-400 py-8 text-sm">予約情報なし</div>
                       )}
                       {!patientReservLoading && patientReservations.map((r, i) => {
-                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_color_vision && '色神', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
+                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_color_vision && '色神', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
                         return (
                           <div
                             key={i}
@@ -2549,8 +2549,8 @@ export default function App() {
                   </div>
                   {(calendarData[selectedCalendarDate] || []).map((r, i) => {
                     const checkedItems = [
-                      r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_color_vision && '色神', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血',
+                      r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
+                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_color_vision && '色神',
                       r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
                       r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                       r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
@@ -3201,7 +3201,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', colorVision: '色神', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', colorVision: '色神' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
