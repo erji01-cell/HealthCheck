@@ -2519,6 +2519,7 @@ export default function App() {
                           {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
                           {r.k_gender && <span>{r.k_gender}</span>}
                           {r.k_date && <span>健診日: {r.k_date}</span>}
+                          {r.k_company_name && <span>{r.k_company_name}</span>}
                         </div>
                       </div>
                     ))}
@@ -2535,6 +2536,7 @@ export default function App() {
                           {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
                           {r.k_gender && <span>{r.k_gender}</span>}
                           {r.k_date && <span>健診日: {r.k_date}</span>}
+                          {r.k_company_name && <span>{r.k_company_name}</span>}
                         </div>
                       </div>
                     ))}
