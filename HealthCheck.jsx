@@ -1475,7 +1475,23 @@ export default function App() {
                   })();
                   return (
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
+                      <div className="flex items-center gap-3">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
+                        <label className="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
+                          <input type="checkbox"
+                            checked={['heightWeight','abdominalGirth','bloodPressure','vision','hearing','urine','xRay','ecg','blood'].every(k => formData.items[k])}
+                            onChange={e => {
+                              const keys = ['heightWeight','abdominalGirth','bloodPressure','vision','hearing','urine','xRay','ecg','blood'];
+                              const next = {};
+                              keys.forEach(k => { next[k] = e.target.checked; });
+                              setFormData(prev => ({ ...prev, items: { ...prev.items, ...next } }));
+                            }}
+                            disabled={isSpecialPurpose}
+                            className="w-3.5 h-3.5 rounded border-slate-300"
+                          />
+                          （色神以外全て）
+                        </label>
+                      </div>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, colorVision: '色神' }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
