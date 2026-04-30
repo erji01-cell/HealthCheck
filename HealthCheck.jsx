@@ -966,7 +966,7 @@ export default function App() {
       const variants = getKanaVariants(q);
       const qNorm = variants[0];
       const kanaOr = variants.map(v => `k_yurigana.ilike.%${v}%`).join(',');
-      const orStr = [`k_id.ilike.%${qNorm}%`, `k_name.ilike.%${qNorm}%`, kanaOr, `k_company_name.ilike.%${qNorm}%`, `k_date.ilike.%${qNorm}%`].join(',');
+      const orStr = [`k_id.ilike.%${qNorm}%`, `k_name.ilike.%${qNorm}%`, kanaOr, `k_company_name.ilike.%${qNorm}%`].join(',');
 
       const promises = [
         supabase.from('health_data').select('*').or(orStr).order('k_date', { ascending: false }).limit(20)
@@ -974,6 +974,7 @@ export default function App() {
 
       const parsed = parseKBirthDate(q);
       if (parsed) {
+        // 生年月日として検索
         let bdQuery = supabase.from('health_data').select('*');
         if (parsed.type === 'exact') {
           bdQuery = bdQuery.eq('k_birth_date', parsed.date);
@@ -984,10 +985,22 @@ export default function App() {
           bdQuery = bdQuery.gte('k_birth_date', `${parsed.year}-${mm}-01`).lte('k_birth_date', `${parsed.year}-${mm}-31`);
         }
         promises.push(bdQuery.order('k_date', { ascending: false }).limit(20));
+
+        // 健診日としても検索
+        let kdQuery = supabase.from('health_data').select('*');
+        if (parsed.type === 'exact') {
+          kdQuery = kdQuery.eq('k_date', parsed.date);
+        } else if (parsed.type === 'year') {
+          kdQuery = kdQuery.gte('k_date', `${parsed.year}-01-01`).lte('k_date', `${parsed.year}-12-31`);
+        } else if (parsed.type === 'yearmonth') {
+          const mm = String(parsed.month).padStart(2, '0');
+          kdQuery = kdQuery.gte('k_date', `${parsed.year}-${mm}-01`).lte('k_date', `${parsed.year}-${mm}-31`);
+        }
+        promises.push(kdQuery.order('k_date', { ascending: false }).limit(20));
       }
 
       const results = await Promise.all(promises);
-      const merged = [...(results[0].data || []), ...(results[1]?.data || [])];
+      const merged = [...(results[0].data || []), ...(results[1]?.data || []), ...(results[2]?.data || [])];
       const deduped = [...new Map(merged.map(r => [r.id, r])).values()];
       setKenshinModalResults(deduped.slice(0, 20));
       setKenshinModalSearching(false);
