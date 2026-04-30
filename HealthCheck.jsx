@@ -966,7 +966,7 @@ export default function App() {
       const variants = getKanaVariants(q);
       const qNorm = variants[0];
       const kanaOr = variants.map(v => `k_yurigana.ilike.%${v}%`).join(',');
-      const orStr = [`k_id.ilike.%${qNorm}%`, `k_name.ilike.%${qNorm}%`, kanaOr].join(',');
+      const orStr = [`k_id.ilike.%${qNorm}%`, `k_name.ilike.%${qNorm}%`, kanaOr, `k_company_name.ilike.%${qNorm}%`, `k_date.ilike.%${qNorm}%`].join(',');
 
       const promises = [
         supabase.from('health_data').select('*').or(orStr).order('k_date', { ascending: false }).limit(20)
@@ -2405,7 +2405,7 @@ export default function App() {
                         type="text"
                         value={modalQuery}
                         onChange={e => setModalQuery(e.target.value)}
-                        placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
+                        placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日で検索..."
                         className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
                       />
                     </div>
@@ -2497,7 +2497,7 @@ export default function App() {
                       type="text"
                       value={kenshinModalQuery}
                       onChange={e => setKenshinModalQuery(e.target.value)}
-                      placeholder="ID・氏名・ヨミガナ・生年月日で検索..."
+                      placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日で検索..."
                       className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-emerald-400 bg-slate-50 outline-none focus:border-emerald-500 text-sm"
                     />
                   </div>
