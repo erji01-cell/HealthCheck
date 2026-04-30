@@ -303,6 +303,7 @@ export default function App() {
   const [showKenshinModal, setShowKenshinModal] = useState(false);
   const [kenshinModalQuery, setKenshinModalQuery] = useState('');
   const [kenshinModalResults, setKenshinModalResults] = useState([]);
+  const [kenshinModalAllResults, setKenshinModalAllResults] = useState([]);
   const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
   const [highlightedField, setHighlightedField] = useState(null);
 
@@ -2272,7 +2273,7 @@ export default function App() {
                     📄 診断書プレビュー
                   </button>
                   <button
-                    onClick={() => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); }}
+                    onClick={async () => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); const { data } = await supabase.from('health_data').select('*').order('k_date', { ascending: false }); setKenshinModalAllResults(data || []); }}
                     className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-500 hover:text-emerald-700 flex items-center gap-1"
                   >
                     <Search size={12} /> 診断書検索
@@ -2505,12 +2506,22 @@ export default function App() {
                     {!kenshinModalSearching && kenshinModalQuery.length > 0 && kenshinModalResults.length === 0 && (
                       <div className="text-center text-slate-400 py-6 text-sm">該当する診断書が見つかりません</div>
                     )}
-                    {!kenshinModalSearching && kenshinModalQuery.length === 0 && (
-                      <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
-                        <Search size={28} className="text-slate-600" />
-                        <span className="text-sm">IDまたは氏名・ヨミガナ・生年月日を入力してください</span>
+                    {!kenshinModalSearching && kenshinModalQuery.length === 0 && kenshinModalAllResults.map(r => (
+                      <div
+                        key={r.id}
+                        onClick={() => handleSelectKenshinRecord(r)}
+                        className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                      >
+                        <div className="font-bold text-sm">{r.k_name}</div>
+                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap">
+                          {r.k_yurigana && <span>{r.k_yurigana}</span>}
+                          {r.k_id && <span>ID: {r.k_id}</span>}
+                          {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
+                          {r.k_gender && <span>{r.k_gender}</span>}
+                          {r.k_date && <span>健診日: {r.k_date}</span>}
+                        </div>
                       </div>
-                    )}
+                    ))}
                     {!kenshinModalSearching && kenshinModalResults.map(r => (
                       <div
                         key={r.id}
