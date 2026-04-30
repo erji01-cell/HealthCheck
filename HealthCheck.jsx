@@ -2266,7 +2266,7 @@ export default function App() {
                 {/* グループ2：診断書プレビュー・診断書検索 */}
                 <div className="flex gap-1.5 bg-emerald-50 p-1 rounded-xl shadow-sm border border-emerald-200">
                   <button
-                    onClick={() => setRightTab('kenshin')}
+                    onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
                     className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-500 hover:text-emerald-700'}`}
                   >
                     📄 診断書プレビュー
