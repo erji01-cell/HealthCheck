@@ -1011,7 +1011,7 @@ export default function App() {
   // 診断書削除
   const handleDeleteKenshinRecord = async (r, e) => {
     e.stopPropagation();
-    if (!window.confirm(`${r.k_name || ''} 様の診断書（健診日：${r.k_date || '不明'}）を削除しますか？`)) return;
+    if (!window.confirm(`${r.k_name || ''} 様の診断書（健診日：${r.k_date || '不明'}）\n\n本当に削除しますか？`)) return;
     const { error } = await supabase.from('health_data').delete().eq('id', r.id);
     if (error) { console.error(error); alert('削除に失敗しました'); return; }
     setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
@@ -2538,9 +2538,9 @@ export default function App() {
                         <button
                           onClick={(e) => handleDeleteKenshinRecord(r, e)}
                           title="削除"
-                          className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                          className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-all"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                         <div className="font-bold text-sm pr-6">{r.k_name}</div>
                         <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap pr-6">
@@ -2562,9 +2562,9 @@ export default function App() {
                         <button
                           onClick={(e) => handleDeleteKenshinRecord(r, e)}
                           title="削除"
-                          className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                          className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-all"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                         <div className="font-bold text-sm pr-6">{r.k_name}</div>
                         <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap pr-6">
