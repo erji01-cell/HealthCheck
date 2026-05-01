@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut
+  ListTodo, Info, Search, LogIn, LogOut, Trash2
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -1007,6 +1007,16 @@ export default function App() {
     }, 300);
     return () => clearTimeout(timer);
   }, [kenshinModalQuery, session]);
+
+  // 診断書削除
+  const handleDeleteKenshinRecord = async (r, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`${r.k_name || ''} 様の診断書（健診日：${r.k_date || '不明'}）を削除しますか？`)) return;
+    const { error } = await supabase.from('health_data').delete().eq('id', r.id);
+    if (error) { console.error(error); alert('削除に失敗しました'); return; }
+    setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
+    setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
+  };
 
   // 診断書検索から選択してkenshinDataに復元
   const handleSelectKenshinRecord = (r) => {
@@ -2523,10 +2533,17 @@ export default function App() {
                       <div
                         key={r.id}
                         onClick={() => handleSelectKenshinRecord(r)}
-                        className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                        className="relative px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
                       >
-                        <div className="font-bold text-sm">{r.k_name}</div>
-                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap">
+                        <button
+                          onClick={(e) => handleDeleteKenshinRecord(r, e)}
+                          title="削除"
+                          className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                        <div className="font-bold text-sm pr-6">{r.k_name}</div>
+                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap pr-6">
                           {r.k_yurigana && <span>{r.k_yurigana}</span>}
                           {r.k_id && <span>ID: {r.k_id}</span>}
                           {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
@@ -2540,10 +2557,17 @@ export default function App() {
                       <div
                         key={r.id}
                         onClick={() => handleSelectKenshinRecord(r)}
-                        className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
+                        className="relative px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
                       >
-                        <div className="font-bold text-sm">{r.k_name}</div>
-                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap">
+                        <button
+                          onClick={(e) => handleDeleteKenshinRecord(r, e)}
+                          title="削除"
+                          className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                        <div className="font-bold text-sm pr-6">{r.k_name}</div>
+                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap pr-6">
                           {r.k_yurigana && <span>{r.k_yurigana}</span>}
                           {r.k_id && <span>ID: {r.k_id}</span>}
                           {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
