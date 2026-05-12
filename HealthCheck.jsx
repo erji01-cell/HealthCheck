@@ -207,6 +207,12 @@ export default function App() {
   const [patientSuggestions, setPatientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [patientSearching, setPatientSearching] = useState(false);
+  const [resultSearchMode, setResultSearchMode] = useState('reservation'); // 'reservation' | 'patient'
+  const [resultQuery, setResultQuery] = useState('');
+  const [resultSuggestions, setResultSuggestions] = useState([]);
+  const [showResultSuggestions, setShowResultSuggestions] = useState(false);
+  const [resultSearching, setResultSearching] = useState(false);
+  const [selectedKenshinReservation, setSelectedKenshinReservation] = useState(null);
   const [birthDateInput, setBirthDateInput] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [modalStep, setModalStep] = useState('search'); // 'search' | 'reservations'
@@ -217,6 +223,7 @@ export default function App() {
   const [modalSuggestions, setModalSuggestions] = useState([]);
   const [modalSearching, setModalSearching] = useState(false);
   const searchRef = useRef(null);
+  const resultSearchRef = useRef(null);
   const currentMonthRef = useRef(null);
   const modalSearchRef = useRef(null);
   const kenshinTopRef = useRef(null);
@@ -787,6 +794,62 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [modalQuery, session]);
 
+  // 診断結果入力タブ専用：予約者 / 患者マスタ検索
+  useEffect(() => {
+    if (!session || resultQuery.length < 1) {
+      setResultSuggestions([]);
+      setShowResultSuggestions(false);
+      setResultSearching(false);
+      return;
+    }
+    setResultSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const q = resultQuery.trim();
+        const variants = getKanaVariants(q);
+        const qNorm = variants[0];
+        const kanaOr = variants.map(v => `patient_name_kana.ilike.%${v}%`).join(',');
+        const dobCond = getDobSearchCondition(q);
+
+        if (resultSearchMode === 'reservation') {
+          const parsed = parseKBirthDate(q);
+          const birthCond = dobCond ? dobCond.replaceAll('patient_dob', 'birth_date') : null;
+          const orParts = [
+            `patient_name.ilike.%${qNorm}%`,
+            `patient_id.ilike.%${qNorm}%`,
+            kanaOr,
+            `company_name.ilike.%${qNorm}%`,
+            ...(parsed?.type === 'exact' ? [`date.eq.${parsed.date}`] : []),
+            ...(birthCond ? [birthCond] : []),
+          ];
+          const { data, error } = await supabase
+            .from('health_reserv')
+            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_name, purpose')
+            .or(orParts.join(','))
+            .order('date', { ascending: false })
+            .limit(100);
+          if (error) console.error('reservation search error:', error);
+          setResultSuggestions(!error && data ? data : []);
+        } else {
+          const orStr = [`patient_name.ilike.%${qNorm}%`, `patient_id.ilike.%${qNorm}%`, kanaOr, ...(dobCond ? [dobCond] : [])].join(',');
+          const { data, error } = await supabase
+            .from('patients')
+            .select('patient_id, patient_name, patient_name_kana, patient_dob, patient_gender, zipcode, address, phone_number')
+            .or(orStr)
+            .limit(100);
+          if (error) console.error('result patient search error:', error);
+          setResultSuggestions(!error && data ? data : []);
+        }
+        setShowResultSuggestions(true);
+      } catch (e) {
+        console.error('result search exception:', e);
+      } finally {
+        setResultSearching(false);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [resultQuery, resultSearchMode, session]);
+
   // カレンダー表示時に当月へスクロール
   useEffect(() => {
     if (rightTab === 'calendar') {
@@ -799,6 +862,9 @@ export default function App() {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSuggestions(false);
+      }
+      if (resultSearchRef.current && !resultSearchRef.current.contains(e.target)) {
+        setShowResultSuggestions(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -1020,6 +1086,12 @@ export default function App() {
 
   // 診断書検索から選択してkenshinDataに復元
   const handleSelectKenshinRecord = (r) => {
+    setSelectedKenshinReservation(r.reserv_id ? {
+      id: r.reserv_id,
+      date: r.k_date || '',
+      name: r.k_name || '',
+      purpose: '',
+    } : null);
     setKenshinData({
       kDate: r.k_date || '', kId: r.k_id || '', kName: r.k_name || '', kYurigana: r.k_yurigana || '',
       kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
@@ -1074,6 +1146,7 @@ export default function App() {
     const d = kenshinData;
     const record = {
       k_date: d.kDate || null,
+      reserv_id: selectedKenshinReservation?.id || null,
       k_id: d.kId || null,
       k_name: d.kName,
       k_yurigana: d.kYurigana,
@@ -1150,16 +1223,48 @@ export default function App() {
       kYurigana: p.patient_name_kana || '',
       kBirthDate: iso,
       kGender: p.patient_gender || '',
+      kContact: p.phone_number || '',
+      address: p.address || '',
     }));
     if (iso) setKenshinBirthDateInput(iso);
-    setPatientQuery('');
-    setShowSuggestions(false);
+    setSelectedKenshinReservation(null);
+    setResultQuery('');
+    setShowResultSuggestions(false);
+  };
+
+  // 診断結果入力用：予約から選択
+  const handleSelectKenshinReservation = (r) => {
+    const iso = r.birth_date ? parseDobToISO(r.birth_date) : '';
+    setKenshinData(prev => ({
+      ...prev,
+      kDate: r.date || prev.kDate,
+      kId: r.patient_id || '',
+      kName: r.patient_name || '',
+      kYurigana: r.patient_name_kana || '',
+      kBirthDate: iso,
+      kGender: r.patient_gender || '',
+      kContact: r.contact || '',
+      kCompanyName: r.company_name || '',
+    }));
+    if (iso) setKenshinBirthDateInput(iso);
+    setSelectedKenshinReservation({
+      id: r.id,
+      date: r.date || '',
+      name: r.patient_name || '',
+      purpose: r.purpose || '',
+    });
+    setResultQuery('');
+    setShowResultSuggestions(false);
   };
 
   const handleReset = () => {
     setFormData(initialState);
     setKenshinData(kenshinInitialState);
     setPatientQuery('');
+    setResultQuery('');
+    setResultSuggestions([]);
+    setShowResultSuggestions(false);
+    setSelectedKenshinReservation(null);
     setBirthDateInput('');
     setKenshinBirthDateInput('');
     setEditingReservationId(null);
@@ -1607,40 +1712,81 @@ export default function App() {
                   <div className="space-y-5">
                     <div ref={kenshinTopRef} />
 
-                    {/* 患者検索 */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">予約患者検索（氏名・ヨミガナ・ID・生年月日）</label>
+                    {/* 対象者検索 */}
+                    <div className="space-y-2" ref={resultSearchRef}>
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">対象者検索（氏名・ヨミガナ・ID・生年月日）</label>
+                        <div className="flex bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                          {[
+                            { key: 'reservation', label: '予約者' },
+                            { key: 'patient', label: '患者マスタ' },
+                          ].map(mode => (
+                            <button
+                              key={mode.key}
+                              type="button"
+                              onClick={() => {
+                                setResultSearchMode(mode.key);
+                                setResultQuery('');
+                                setResultSuggestions([]);
+                                setShowResultSuggestions(false);
+                              }}
+                              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${resultSearchMode === mode.key ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                              {mode.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="relative">
                         <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400" />
                         <input
                           type="text"
-                          value={patientQuery}
-                          onChange={e => setPatientQuery(e.target.value)}
-                          placeholder="氏名・ヨミガナ・ID・生年月日で検索..."
+                          value={resultQuery}
+                          onChange={e => setResultQuery(e.target.value)}
+                          placeholder={resultSearchMode === 'reservation' ? '予約者を検索...' : '患者マスタを検索...'}
                           className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-50"
                         />
-                        {patientSearching && patientQuery.length > 0 && (
+                        {resultSearching && resultQuery.length > 0 && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-xs text-slate-400">検索中...</div>
                         )}
-                        {showSuggestions && !patientSearching && (
+                        {showResultSuggestions && !resultSearching && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                            {patientSuggestions.map(p => (
+                            {resultSuggestions.length === 0 && (
+                              <div className="px-4 py-3 text-xs text-slate-400">該当するデータが見つかりません</div>
+                            )}
+                            {resultSuggestions.map(item => (
                               <div
-                                key={p.patient_id}
-                                onMouseDown={() => handleSelectKenshinPatient(p)}
+                                key={resultSearchMode === 'reservation' ? item.id : item.patient_id}
+                                onMouseDown={() => resultSearchMode === 'reservation' ? handleSelectKenshinReservation(item) : handleSelectKenshinPatient(item)}
                                 className="px-4 py-2.5 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0"
                               >
-                                <div className="font-bold text-sm">{p.patient_name}</div>
+                                <div className="font-bold text-sm">{item.patient_name}</div>
                                 <div className="text-xs text-slate-500 flex gap-3">
-                                  <span>{p.patient_name_kana}</span>
-                                  <span>ID: {p.patient_id}</span>
-                                  {p.patient_dob && <span>{p.patient_dob.replace(/-/g, '/')}</span>}
+                                  <span>{item.patient_name_kana}</span>
+                                  <span>ID: {item.patient_id}</span>
+                                  {resultSearchMode === 'reservation' && item.date && <span>予約日: {item.date.replace(/-/g, '/')}</span>}
+                                  {resultSearchMode === 'reservation' && item.purpose && <span>{item.purpose}</span>}
+                                  {resultSearchMode === 'patient' && item.patient_dob && <span>{item.patient_dob.replace(/-/g, '/')}</span>}
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
                       </div>
+                      {selectedKenshinReservation && (
+                        <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-800">
+                          <span className="font-bold">
+                            選択中の予約：{selectedKenshinReservation.name || '氏名未入力'} / {selectedKenshinReservation.date ? selectedKenshinReservation.date.replace(/-/g, '/') : '日付未入力'}{selectedKenshinReservation.purpose ? ` / ${selectedKenshinReservation.purpose}` : ''}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedKenshinReservation(null)}
+                            className="text-emerald-700 hover:text-emerald-900 font-bold"
+                          >
+                            解除
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
