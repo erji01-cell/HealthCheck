@@ -1433,8 +1433,9 @@ export default function App() {
                       <PlusCircle size={13} /> 予約詳細入力
                     </button>
                     <button
-                      onClick={() => { setLeftTab('result'); setRightTab('kenshin'); }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'result' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                      type="button"
+                      disabled
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 text-slate-300 cursor-not-allowed opacity-60"
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
@@ -2436,14 +2437,16 @@ export default function App() {
                 {/* グループ2：診断書プレビュー・診断書検索 */}
                 <div className="flex gap-1.5 bg-emerald-50 p-1 rounded-xl shadow-sm border border-emerald-200">
                   <button
-                    onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'kenshin' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-500 hover:text-emerald-700'}`}
+                    type="button"
+                    disabled
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60"
                   >
                     📄 診断書プレビュー
                   </button>
                   <button
-                    onClick={async () => { setKenshinModalQuery(''); setKenshinModalResults([]); setShowKenshinModal(true); const { data } = await supabase.from('health_data').select('*').order('k_date', { ascending: false }); setKenshinModalAllResults(data || []); }}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-500 hover:text-emerald-700 flex items-center gap-1"
+                    type="button"
+                    disabled
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1"
                   >
                     <Search size={12} /> 診断書検索
                   </button>
