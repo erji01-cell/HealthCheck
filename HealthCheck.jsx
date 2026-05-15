@@ -1520,7 +1520,7 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">健診時年齢</label>
                       <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
                         {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
                       </div>
@@ -1823,7 +1823,7 @@ export default function App() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-slate-400 uppercase">年齢</label>
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">健診時年齢</label>
                           <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
                             {kenshinData.kAge !== '' && kenshinData.kAge != null ? `${kenshinData.kAge} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
                           </div>
