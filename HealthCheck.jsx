@@ -21,6 +21,8 @@ const KURITAS_BLOOD_LABELS = {
   specific: '採血 クリタス 特定',
 };
 
+const KURITAS_PURPOSES = ['クリタス定期健診', 'クリタス特定業務'];
+
 const stripKuritasBloodNotes = (text = '') =>
   text
     .split('\n')
@@ -490,7 +492,8 @@ export default function App() {
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
     let fee = null;
-    if (zeroPurposes.includes(formData.purpose)) fee = 0;
+    if (KURITAS_PURPOSES.includes(formData.purpose)) fee = null;
+    else if (zeroPurposes.includes(formData.purpose)) fee = 0;
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
 
@@ -634,6 +637,10 @@ export default function App() {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true }) }));
     } else if (formData.purpose === '入園児') {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true }) }));
+    } else if (formData.purpose === 'クリタス定期健診') {
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, bloodKuritasRegular: true, hba1c: true }) }));
+    } else if (formData.purpose === 'クリタス特定業務') {
+      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, ecg: true, bloodKuritasSpecific: true }) }));
     } else if (['就職', '進学', '企業健診'].includes(formData.purpose)) {
       setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, blood: true }) }));
     } else if (formData.purpose === 'その他') {
@@ -1455,7 +1462,7 @@ export default function App() {
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
-            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム<span className="text-[0.675rem] font-medium text-slate-400 ml-2">ver.2026.04.26</span></h1>
+            <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム<span className="text-[0.675rem] font-medium text-slate-400 ml-2">ver.2026.05.17</span></h1>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all"
@@ -1590,7 +1597,7 @@ export default function App() {
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
                   <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                    {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他'].map(p => (
+                    {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'クリタス定期健診', 'クリタス特定業務', 'その他'].map(p => (
                       <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                         <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
                       </label>
@@ -1599,7 +1606,7 @@ export default function App() {
                 </div>
 
                 {(() => {
-                  const isSpecialPurpose = ['特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児'].includes(formData.purpose);
+                  const isSpecialPurpose = ['特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児', ...KURITAS_PURPOSES].includes(formData.purpose);
                   const bloodLabel = ['特定健診(国保)', '長寿健診'].includes(formData.purpose)
                     ? '採血 セット3'
                     : formData.purpose === '特定健診(社保)'
@@ -1616,7 +1623,12 @@ export default function App() {
                       <option value="会社請求">会社請求</option>
                     </select>
                   );
-                  const feeDisplay = zeroPurposes.includes(formData.purpose) ? (
+                  const feeDisplay = KURITAS_PURPOSES.includes(formData.purpose) ? (
+                    <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+                      <div className="text-sm font-bold text-emerald-700">同友会請求</div>
+                      <div className="text-xs text-emerald-500 font-bold">料金</div>
+                    </div>
+                  ) : zeroPurposes.includes(formData.purpose) ? (
                     <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
                       {paymentTypeSelector}
                       <div className="flex items-center gap-3">
@@ -1661,15 +1673,27 @@ export default function App() {
                             disabled={isSpecialPurpose}
                             className="w-3.5 h-3.5 rounded border-slate-300"
                           />
-                          （色神以外全て）
+                          （クリタス・色神以外すべて）
                         </label>
                       </div>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, bloodKuritasRegular: '採血 クリタス 定期', bloodKuritasSpecific: '採血 クリタス 特定', colorVision: '色神' }).map(([key, label]) => (
-                          <label key={key} className={cbClass}>
-                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
-                          </label>
-                        ))}
+                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, bloodKuritasRegular: '採血 クリタス 定期', bloodKuritasSpecific: '採血 クリタス 特定', colorVision: '色神' }).map(([key, label]) => {
+                          const isKuritasBloodOption = key === 'bloodKuritasRegular' || key === 'bloodKuritasSpecific';
+                          const disabled = isSpecialPurpose || isKuritasBloodOption;
+                          const lockedChecked = disabled && formData.items[key];
+                          return (
+                            <label key={key} className={disabled ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
+                              <input
+                                type="checkbox"
+                                name={`item_${key}`}
+                                checked={formData.items[key]}
+                                onChange={handleChange}
+                                disabled={disabled}
+                                className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`}
+                              /> {label}
+                            </label>
+                          );
+                        })}
                       </div>
                       <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -1697,11 +1721,14 @@ export default function App() {
                       </div>
                       <label className="text-[11px] font-bold text-slate-400 uppercase">その他健診</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => (
-                          <label key={key} className={cbClass}>
-                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
-                          </label>
-                        ))}
+                        {Object.entries({ hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => {
+                          const lockedChecked = isSpecialPurpose && formData.items[key];
+                          return (
+                            <label key={key} className={isSpecialPurpose ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
+                              <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`} /> {label}
+                            </label>
+                          );
+                        })}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -3518,22 +3545,28 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
-                      ¥ {(() => {
-                        const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
-                        if (zeroPurposes.includes(formData.purpose)) return '0';
-                        if (formData.purpose === '特定健診(社保)') return parseInt(shahoFee || 0).toLocaleString();
-                        const fee = calcFee(formData.items);
-                        return fee !== null ? fee.toLocaleString() : '0';
-                      })()} -
-                    </span>
-                    <div className="flex gap-4">
-                      {['当日支払', '後日支払', '会社請求'].map(type => (
-                        <span key={type} className={`px-2 py-0.5 border ${formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
-                          {type}
+                    {KURITAS_PURPOSES.includes(formData.purpose) ? (
+                      <span className="text-base font-bold">同友会請求</span>
+                    ) : (
+                      <>
+                        <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
+                          ¥ {(() => {
+                            const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                            if (zeroPurposes.includes(formData.purpose)) return '0';
+                            if (formData.purpose === '特定健診(社保)') return parseInt(shahoFee || 0).toLocaleString();
+                            const fee = calcFee(formData.items);
+                            return fee !== null ? fee.toLocaleString() : '0';
+                          })()} -
                         </span>
-                      ))}
-                    </div>
+                        <div className="flex gap-4">
+                          {['当日支払', '後日支払', '会社請求'].map(type => (
+                            <span key={type} className={`px-2 py-0.5 border ${formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -3556,7 +3589,7 @@ export default function App() {
                 {/* 行: 備考事項 */}
                 <div className="flex min-h-[60px]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">備考事項</div>
-                  <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
+                  <div className="flex-1 p-2 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-800">
                     {formData.others}
                   </div>
                 </div>
