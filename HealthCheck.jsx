@@ -1698,8 +1698,8 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
-                          <label key={key} className={cbClass}>
-                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          <label key={key} className={formData.purpose === 'クリタス定期健診' && key === 'stool' ? 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600' : cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose && !(formData.purpose === 'クリタス定期健診' && key === 'stool')} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
                         ))}
                       </div>
@@ -1714,18 +1714,19 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">その他採血項目</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' }).map(([key, label]) => (
-                          <label key={key} className={cbClass}>
-                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
+                          <label key={key} className={formData.purpose === 'クリタス定期健診' && key === 'psa' ? 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600' : cbClass}>
+                            <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose && !(formData.purpose === 'クリタス定期健診' && key === 'psa')} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
                         ))}
                       </div>
                       <label className="text-[11px] font-bold text-slate-400 uppercase">その他健診</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ hba1c: 'HbA1c', endoscopy: '胃内視鏡', echo: '腹部エコー', manganese: 'マンガン' }).map(([key, label]) => {
-                          const lockedChecked = isSpecialPurpose && formData.items[key];
+                          const isKuritasRegularOptional = formData.purpose === 'クリタス定期健診' && key === 'endoscopy';
+                          const lockedChecked = isSpecialPurpose && !isKuritasRegularOptional && formData.items[key];
                           return (
-                            <label key={key} className={isSpecialPurpose ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
-                              <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`} /> {label}
+                            <label key={key} className={isKuritasRegularOptional ? 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600' : isSpecialPurpose ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
+                              <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose && !isKuritasRegularOptional} className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`} /> {label}
                             </label>
                           );
                         })}
