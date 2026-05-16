@@ -11,6 +11,28 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_KEY
 );
 
+const KURITAS_BLOOD_ITEMS = {
+  regular: ['血液一般検査', 'AST(GOT)', 'ALT(GPT)', 'ALP', 'γ-GT(γGTP)', 'LDLコレステロール', '中性脂肪(TG)', 'HDLコレステロール', 'クレアチニン', '尿酸', '血糖', 'HbA1c'],
+  specific: ['血液一般検査', 'AST(GOT)', 'ALT(GPT)', 'γ-GT(γGTP)', 'LDLコレステロール', '中性脂肪(TG)', 'HDLコレステロール', 'クレアチニン', '血糖'],
+};
+
+const KURITAS_BLOOD_LABELS = {
+  regular: '採血 クリタス 定期',
+  specific: '採血 クリタス 特定',
+};
+
+const stripKuritasBloodNotes = (text = '') =>
+  text
+    .split('\n')
+    .filter(line => !Object.values(KURITAS_BLOOD_LABELS).some(label => line.startsWith(`${label}：`)))
+    .join('\n')
+    .trim();
+
+const buildKuritasBloodNotes = (items = {}) => [
+  items.bloodKuritasRegular && `${KURITAS_BLOOD_LABELS.regular}：${KURITAS_BLOOD_ITEMS.regular.join('、')}`,
+  items.bloodKuritasSpecific && `${KURITAS_BLOOD_LABELS.specific}：${KURITAS_BLOOD_ITEMS.specific.join('、')}`,
+].filter(Boolean);
+
 // 祝日・休日リスト（2025〜2027）
 const HOLIDAYS = new Set([
   // 2025
@@ -259,6 +281,8 @@ export default function App() {
       xRay: true,
       ecg: true,
       blood: true,
+      bloodKuritasRegular: false,
+      bloodKuritasSpecific: false,
       hba1c: false,
       endoscopy: false,
       echo: false,
@@ -389,32 +413,33 @@ export default function App() {
   // 料金計算（料金表に基づくパッケージ制）
   const calcFee = (items) => {
     const { xRay, ecg, blood } = items;
+    const hasBlood = !!(blood || items.bloodKuritasRegular || items.bloodKuritasSpecific);
 
     // 基本健診：7項目のいずれか or X-P/心電図/採血のいずれかチェックで基本健診とみなす
     const basic = !!(items.heightWeight || items.abdominalGirth || items.bloodPressure ||
                      items.vision || items.colorVision || items.hearing || items.urine ||
-                     xRay || ecg || blood);
+                     xRay || ecg || hasBlood);
 
     // 標準健診パターンの基本料金
     let base = 0;
     if (basic) {
-      if (xRay && ecg && blood) base = 10700;
-      else if (xRay && blood)   base = 9400;
-      else if (ecg && blood)    base = 9200;
+      if (xRay && ecg && hasBlood) base = 10700;
+      else if (xRay && hasBlood)   base = 9400;
+      else if (ecg && hasBlood)    base = 9200;
       else if (xRay && ecg)     base = 5300;
-      else if (blood)           base = 7900;
+      else if (hasBlood)        base = 7900;
       else if (xRay)            base = 4000;
       else if (ecg)             base = 3700;
       else                      base = 2400;
     }
 
     // 採血あり/なしで金額が変わる追加項目
-    const hba1cFee     = items.hba1c    ? (blood ?  490 : 2140) : 0; // 採血なし差額+1650
-    const psaFee       = items.psa      ? (blood ? 2650 : 3050) : 0; // 採血なし差額+400
-    const hbsAgFee     = items.hbsAg    ? (blood ? 1730 : 2130) : 0; // 採血なし差額+400
-    const hbsAbFee     = items.hbsAb    ? (blood ? 1840 : 2240) : 0; // 採血なし差額+400
-    const hcvAbFee     = items.hcvAb    ? (blood ? 2460 : 2860) : 0; // 採血なし差額+400
-    const syphilisFee  = items.syphilis ? (blood ? 1780 : 2180) : 0; // 採血なし差額+400
+    const hba1cFee     = items.hba1c    ? (hasBlood ?  490 : 2140) : 0; // 採血なし差額+1650
+    const psaFee       = items.psa      ? (hasBlood ? 2650 : 3050) : 0; // 採血なし差額+400
+    const hbsAgFee     = items.hbsAg    ? (hasBlood ? 1730 : 2130) : 0; // 採血なし差額+400
+    const hbsAbFee     = items.hbsAb    ? (hasBlood ? 1840 : 2240) : 0; // 採血なし差額+400
+    const hcvAbFee     = items.hcvAb    ? (hasBlood ? 2460 : 2860) : 0; // 採血なし差額+400
+    const syphilisFee  = items.syphilis ? (hasBlood ? 1780 : 2180) : 0; // 採血なし差額+400
     const mrsaFee      = items.mrsa     ? 3750 : 0;                   // 採血あり/なし同額
 
     // ※ 心電図はbase料金に含まれるため個別加算なし
@@ -444,7 +469,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -491,6 +516,8 @@ export default function App() {
       item_x_ray: items.xRay,
       item_ecg: items.ecg,
       item_blood: items.blood,
+      item_blood_kuritas_regular: items.bloodKuritasRegular,
+      item_blood_kuritas_specific: items.bloodKuritasSpecific,
       item_hba1c: items.hba1c,
       item_endoscopy: items.endoscopy,
       item_echo: items.echo,
@@ -514,6 +541,9 @@ export default function App() {
       has_dedicated_form: formData.hasDedicatedForm,
       payment_type: formData.paymentType,
       fee: fee,
+      medical_history: formData.medicalHistory,
+      findings: formData.findings,
+      others: formData.others,
       bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
       bp2_sys: formData.bp2Sys, bp2_dia: formData.bp2Dia,
       pulse: formData.pulse,
@@ -610,6 +640,15 @@ export default function App() {
       setFormData(prev => ({ ...prev, items: allOff() }));
     }
   }, [formData.purpose]);
+
+  useEffect(() => {
+    const notes = buildKuritasBloodNotes(formData.items);
+    setFormData(prev => {
+      const manual = stripKuritasBloodNotes(prev.others);
+      const nextOthers = [...(manual ? [manual] : []), ...notes].join('\n');
+      return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
+    });
+  }, [formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific]);
 
   // BMI自動計算（予約詳細入力）
   useEffect(() => {
@@ -921,7 +960,7 @@ export default function App() {
     setModalStep('reservations');
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, purpose, fee, payment_type, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_endoscopy')
+      .select('id, date, day_of_week, purpose, fee, payment_type, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_endoscopy')
       .eq('patient_id', patient.patient_id)
       .order('date', { ascending: false })
       .limit(20);
@@ -1317,7 +1356,10 @@ export default function App() {
         bloodPressure: !!data.item_blood_pressure, vision: !!data.item_vision,
         colorVision: !!data.item_color_vision, hearing: !!data.item_hearing, urine: !!data.item_urine,
         xRay: !!data.item_x_ray, ecg: !!data.item_ecg,
-        blood: !!data.item_blood, hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
+        blood: !!data.item_blood,
+        bloodKuritasRegular: !!data.item_blood_kuritas_regular,
+        bloodKuritasSpecific: !!data.item_blood_kuritas_specific,
+        hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
         echo: !!data.item_echo, manganese: !!data.item_manganese, stool: !!data.item_stool,
         norovirus: !!data.item_norovirus, bacteria3: !!data.item_bacteria3, bacteria5: !!data.item_bacteria5,
         paratyphoid: !!data.item_paratyphoid, methanol: !!data.item_methanol, hexane: !!data.item_hexane,
@@ -1623,7 +1665,7 @@ export default function App() {
                         </label>
                       </div>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, colorVision: '色神' }).map(([key, label]) => (
+                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, bloodKuritasRegular: '採血 クリタス 定期', bloodKuritasSpecific: '採血 クリタス 特定', colorVision: '色神' }).map(([key, label]) => (
                           <label key={key} className={cbClass}>
                             <input type="checkbox" name={`item_${key}`} checked={formData.items[key]} onChange={handleChange} disabled={isSpecialPurpose} className="w-3.5 h-3.5 rounded border-slate-300" /> {label}
                           </label>
@@ -2628,7 +2670,7 @@ export default function App() {
                         <div className="text-center text-slate-400 py-8 text-sm">予約情報なし</div>
                       )}
                       {!patientReservLoading && patientReservations.map((r, i) => {
-                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_color_vision && '色神', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
+                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
                         return (
                           <div
                             key={i}
@@ -2765,7 +2807,7 @@ export default function App() {
                   {(calendarData[selectedCalendarDate] || []).map((r, i) => {
                     const checkedItems = [
                       r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_color_vision && '色神',
+                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
                       r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
                       r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                       r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
@@ -3416,7 +3458,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', colorVision: '色神' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, colorVision: '色神' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
@@ -3511,9 +3553,9 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 行: その他 */}
+                {/* 行: 備考事項 */}
                 <div className="flex min-h-[60px]">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">その他</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">備考事項</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800 italic">
                     {formData.others}
                   </div>
