@@ -329,6 +329,7 @@ export default function App() {
 
   const [formData, setFormData] = useState(initialState);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
+  const [saveErrorMessage, setSaveErrorMessage] = useState('');
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
@@ -404,6 +405,19 @@ export default function App() {
     const existing = findHealthCompany(normalizedName);
     if (existing) return existing;
     return { id: null, name: normalizedName };
+  };
+
+  const formatSupabaseError = (error) => {
+    if (!error) return '';
+    return [error.message, error.details, error.hint, error.code ? `code: ${error.code}` : '']
+      .filter(Boolean)
+      .join(' / ');
+  };
+
+  const saveHealthReservationRecord = async (record) => {
+    return editingReservationId
+      ? supabase.from('health_reserv').update(record).eq('id', editingReservationId)
+      : supabase.from('health_reserv').insert(record);
   };
 
   const ensureHealthCompany = async (name) => {
@@ -671,6 +685,7 @@ export default function App() {
   // 実際の保存処理
   const performSave = async () => {
     setSaveStatus('saving');
+    setSaveErrorMessage('');
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
     let fee = null;
@@ -729,8 +744,6 @@ export default function App() {
       has_dedicated_form: formData.hasDedicatedForm,
       payment_type: formData.paymentType,
       fee: fee,
-      medical_history: formData.medicalHistory,
-      findings: formData.findings,
       others: formData.others,
       bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
       bp2_sys: formData.bp2Sys, bp2_dia: formData.bp2Dia,
@@ -745,11 +758,10 @@ export default function App() {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = editingReservationId
-      ? await supabase.from('health_reserv').update(record).eq('id', editingReservationId)
-      : await supabase.from('health_reserv').insert(record);
+    const { error } = await saveHealthReservationRecord(record);
     if (error) {
       console.error(error);
+      setSaveErrorMessage(formatSupabaseError(error));
       setSaveStatus('error');
     } else {
       setSaveStatus('saved');
@@ -2002,6 +2014,11 @@ export default function App() {
                   <Save size={18} />
                   {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '予約データを保存'}
                 </button>
+                {saveStatus === 'error' && saveErrorMessage && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                    {saveErrorMessage}
+                  </div>
+                )}
                 </>}
 
                 {/* ===== 診断結果入力タブ（健康診断書と連動） ===== */}
