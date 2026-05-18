@@ -1249,10 +1249,30 @@ export default function App() {
     }
   };
 
+  const handleReservationCompanySelect = (e) => {
+    const companyId = e.target.value;
+    const company = healthCompanies.find(c => c.id === companyId);
+    setFormData(prev => ({
+      ...prev,
+      companyId: company?.id || '',
+      companyName: company?.name || '',
+    }));
+  };
+
   // 健康診断書データ変更ハンドラ
   const handleKenshinChange = (e) => {
     const { name, value } = e.target;
     setKenshinData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleKenshinCompanySelect = (e) => {
+    const companyId = e.target.value;
+    const company = healthCompanies.find(c => c.id === companyId);
+    setKenshinData(prev => ({
+      ...prev,
+      kCompanyId: company?.id || '',
+      kCompanyName: company?.name || '',
+    }));
   };
 
   // 診断書検索
@@ -1789,9 +1809,14 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                      <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体選択/管理</button>
+                      <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
                     </div>
-                    <input type="text" name="companyName" value={formData.companyName} readOnly onClick={() => openCompanyModal('reservation')} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <select name="companyId" value={formData.companyId || ''} onChange={handleReservationCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">{formData.companyName || '団体名・学校名など'}</option>
+                      {healthCompanies.filter(company => company.is_active !== false).map(company => (
+                        <option key={company.id} value={company.id}>{company.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -2116,9 +2141,14 @@ export default function App() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体選択/管理</button>
+                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
                         </div>
-                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} readOnly onClick={() => openCompanyModal('kenshin')} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg bg-white cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <select name="kCompanyId" value={kenshinData.kCompanyId || ''} onChange={handleKenshinCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                          <option value="">{kenshinData.kCompanyName || '団体名・学校名など'}</option>
+                          {healthCompanies.filter(company => company.is_active !== false).map(company => (
+                            <option key={company.id} value={company.id}>{company.name}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
