@@ -347,6 +347,7 @@ export default function App() {
   const [highlightedField, setHighlightedField] = useState(null);
   const [healthCompanies, setHealthCompanies] = useState([]);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companyPickerTarget, setCompanyPickerTarget] = useState(null);
   const [companyEditValues, setCompanyEditValues] = useState({});
   const [companySearchQuery, setCompanySearchQuery] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
@@ -394,6 +395,17 @@ export default function App() {
     return healthCompanies.find(c => (c.name_key || getCompanyNameKey(c.name)) === key) || null;
   };
 
+  const resolveSelectedHealthCompany = (companyId, companyName) => {
+    const normalizedName = normalizeCompanyName(companyName);
+    if (companyId) {
+      const selected = healthCompanies.find(c => c.id === companyId);
+      return { id: companyId, name: selected?.name || normalizedName };
+    }
+    const existing = findHealthCompany(normalizedName);
+    if (existing) return existing;
+    return { id: null, name: normalizedName };
+  };
+
   const ensureHealthCompany = async (name) => {
     const normalizedName = normalizeCompanyName(name);
     if (!normalizedName) return { id: null, name: '' };
@@ -438,11 +450,27 @@ export default function App() {
     return inserted;
   };
 
-  const openCompanyModal = async () => {
+  const openCompanyModal = async (target = null) => {
     const companies = await fetchHealthCompanies();
     setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
+    setCompanyPickerTarget(target);
     setCompanySaveStatus('');
     setShowCompanyModal(true);
+  };
+
+  const closeCompanyModal = () => {
+    setShowCompanyModal(false);
+    setCompanyPickerTarget(null);
+  };
+
+  const handleSelectHealthCompany = (company) => {
+    if (companyPickerTarget === 'reservation') {
+      setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '' }));
+    }
+    if (companyPickerTarget === 'kenshin') {
+      setKenshinData(prev => ({ ...prev, kCompanyId: company.id || '', kCompanyName: company.name || '' }));
+    }
+    closeCompanyModal();
   };
 
   const refreshCompanyEditValues = async () => {
@@ -651,14 +679,7 @@ export default function App() {
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
 
-    let company;
-    try {
-      company = await ensureHealthCompany(formData.companyName);
-    } catch (e) {
-      console.error('health company save error:', e);
-      setSaveStatus('error');
-      return;
-    }
+    const company = resolveSelectedHealthCompany(formData.companyId, formData.companyName);
 
     const record = {
       date: formData.date || null,
@@ -1234,46 +1255,6 @@ export default function App() {
     setKenshinData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCompanyNameChange = (e) => {
-    const value = e.target.value;
-    const company = findHealthCompany(value);
-    setFormData(prev => ({
-      ...prev,
-      companyName: value,
-      companyId: company?.id || '',
-    }));
-  };
-
-  const handleCompanyNameBlur = () => {
-    const company = findHealthCompany(formData.companyName);
-    const normalizedName = company?.name || normalizeCompanyName(formData.companyName);
-    setFormData(prev => ({
-      ...prev,
-      companyName: normalizedName,
-      companyId: company?.id || '',
-    }));
-  };
-
-  const handleKenshinCompanyNameChange = (e) => {
-    const value = e.target.value;
-    const company = findHealthCompany(value);
-    setKenshinData(prev => ({
-      ...prev,
-      kCompanyName: value,
-      kCompanyId: company?.id || '',
-    }));
-  };
-
-  const handleKenshinCompanyNameBlur = () => {
-    const company = findHealthCompany(kenshinData.kCompanyName);
-    const normalizedName = company?.name || normalizeCompanyName(kenshinData.kCompanyName);
-    setKenshinData(prev => ({
-      ...prev,
-      kCompanyName: normalizedName,
-      kCompanyId: company?.id || '',
-    }));
-  };
-
   // 診断書検索
   useEffect(() => {
     if (!session || kenshinModalQuery.length < 1) { setKenshinModalResults([]); setKenshinModalSearching(false); return; }
@@ -1395,14 +1376,7 @@ export default function App() {
   const handleKenshinSave = async () => {
     setKenshinSaveStatus('saving');
     const d = kenshinData;
-    let company;
-    try {
-      company = await ensureHealthCompany(d.kCompanyName);
-    } catch (e) {
-      console.error('health company save error:', e);
-      setKenshinSaveStatus('error');
-      return;
-    }
+    const company = resolveSelectedHealthCompany(d.kCompanyId, d.kCompanyName);
     const record = {
       k_date: d.kDate || null,
       reserv_id: selectedKenshinReservation?.id || null,
@@ -1815,9 +1789,9 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                      <button type="button" onClick={openCompanyModal} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
+                      <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体選択/管理</button>
                     </div>
-                    <input type="text" list="health-company-options" name="companyName" value={formData.companyName} onChange={handleCompanyNameChange} onBlur={handleCompanyNameBlur} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="text" name="companyName" value={formData.companyName} readOnly onClick={() => openCompanyModal('reservation')} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
@@ -2142,9 +2116,9 @@ export default function App() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                          <button type="button" onClick={openCompanyModal} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
+                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体選択/管理</button>
                         </div>
-                        <input type="text" list="health-company-options" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinCompanyNameChange} onBlur={handleKenshinCompanyNameBlur} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} readOnly onClick={() => openCompanyModal('kenshin')} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg bg-white cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                     </div>
 
@@ -3038,17 +3012,17 @@ export default function App() {
                 .filter(company => company.is_active !== false)
                 .filter(company => !q || getCompanyNameKey(company.name).includes(q));
               return (
-                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowCompanyModal(false)}>
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={closeCompanyModal}>
                   <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-2xl" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-3">
                         <div className="bg-blue-600 p-2 rounded-lg"><ListTodo size={18} className="text-white" /></div>
                         <div>
-                          <h2 className="text-white font-bold text-lg">団体マスタ管理</h2>
-                          <p className="text-slate-400 text-xs">候補一覧の追加・名称修正・非表示化</p>
+                          <h2 className="text-white font-bold text-lg">{companyPickerTarget ? '団体選択/管理' : '団体マスタ管理'}</h2>
+                          <p className="text-slate-400 text-xs">{companyPickerTarget ? '候補一覧から団体を選択、または追加・名称修正・非表示化' : '候補一覧の追加・名称修正・非表示化'}</p>
                         </div>
                       </div>
-                      <button onClick={() => setShowCompanyModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                      <button onClick={closeCompanyModal} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 mb-3">
@@ -3098,6 +3072,15 @@ export default function App() {
                             onChange={e => setCompanyEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
                             className="flex-1 min-w-0 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
                           />
+                          {companyPickerTarget && (
+                            <button
+                              type="button"
+                              onClick={() => handleSelectHealthCompany(company)}
+                              className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                            >
+                              選択
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleUpdateHealthCompany(company)}
