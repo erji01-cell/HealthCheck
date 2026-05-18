@@ -539,23 +539,6 @@ export default function App() {
     setTimeout(() => setCompanySaveStatus(''), 2500);
   };
 
-  const handleDeactivateHealthCompany = async (company) => {
-    if (!window.confirm(`「${company.name}」を候補一覧から非表示にしますか？\n過去の予約・診断結果の団体名は残ります。`)) return;
-    setCompanySaveStatus('saving');
-    const { error } = await supabase
-      .from('health_companies')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('id', company.id);
-    if (error) {
-      console.error('health company deactivate error:', error);
-      setCompanySaveStatus('error');
-    } else {
-      await refreshCompanyEditValues();
-      setCompanySaveStatus('saved');
-    }
-    setTimeout(() => setCompanySaveStatus(''), 2500);
-  };
-
   // セッション監視
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -3066,7 +3049,7 @@ export default function App() {
                         <div className="bg-blue-600 p-2 rounded-lg"><ListTodo size={18} className="text-white" /></div>
                         <div>
                           <h2 className="text-white font-bold text-lg">{companyPickerTarget ? '団体選択/管理' : '団体マスタ管理'}</h2>
-                          <p className="text-slate-400 text-xs">{companyPickerTarget ? '候補一覧から団体を選択、または追加・名称修正・非表示化' : '候補一覧の追加・名称修正・非表示化'}</p>
+                          <p className="text-slate-400 text-xs">{companyPickerTarget ? '候補一覧から団体を選択、または追加・名称修正' : '候補一覧の追加・名称修正'}</p>
                         </div>
                       </div>
                       <button onClick={closeCompanyModal} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
@@ -3135,14 +3118,6 @@ export default function App() {
                             className="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-40"
                           >
                             保存
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeactivateHealthCompany(company)}
-                            disabled={companySaveStatus === 'saving'}
-                            className="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-200 disabled:opacity-40"
-                          >
-                            非表示
                           </button>
                         </div>
                       ))}
