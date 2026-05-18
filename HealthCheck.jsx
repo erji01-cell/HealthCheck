@@ -35,6 +35,11 @@ const buildKuritasBloodNotes = (items = {}) => [
   items.bloodKuritasSpecific && `${KURITAS_BLOOD_LABELS.specific}：${KURITAS_BLOOD_ITEMS.specific.join('、')}`,
 ].filter(Boolean);
 
+const normalizeCompanyName = (value = '') =>
+  value.replace(/\u3000/g, ' ').replace(/\s+/g, ' ').trim();
+
+const getCompanyNameKey = (value = '') => normalizeCompanyName(value).toLowerCase();
+
 // 祝日・休日リスト（2025〜2027）
 const HOLIDAYS = new Set([
   // 2025
@@ -125,7 +130,7 @@ const getBloodArrow = (name, value, gender) => {
 // 健康診断書専用データの初期状態（診断結果入力タブ → 健康診断書と連動）
 const kenshinInitialState = {
   // 患者情報
-  kDate: '', kId: '', kName: '', kYurigana: '', kBirthDate: '', kAge: '', kGender: '', kContact: '', kCompanyName: '',
+  kDate: '', kId: '', kName: '', kYurigana: '', kBirthDate: '', kAge: '', kGender: '', kContact: '', kCompanyName: '', kCompanyId: '',
   address: '',
   bpSys: '', bpDia: '',
   height: '', weight: '', bmi: '', waist: '',
@@ -270,6 +275,7 @@ export default function App() {
     gender: '',
     contact: '',
     companyName: '',
+    companyId: '',
     purpose: '就職',
     hasHospitalForm: '無(当院用紙を使用)',
     items: {
@@ -339,6 +345,12 @@ export default function App() {
   const [kenshinModalAllResults, setKenshinModalAllResults] = useState([]);
   const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
   const [highlightedField, setHighlightedField] = useState(null);
+  const [healthCompanies, setHealthCompanies] = useState([]);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companyEditValues, setCompanyEditValues] = useState({});
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [companySaveStatus, setCompanySaveStatus] = useState('');
 
   // 診断結果入力：生年月日→年齢自動計算
   useEffect(() => {
@@ -362,6 +374,146 @@ export default function App() {
     await supabase.from('health_reserv').delete().lt('date', cutoffDate);
   };
 
+  const fetchHealthCompanies = async () => {
+    const { data, error } = await supabase
+      .from('health_companies')
+      .select('id, name, name_key, is_active')
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('health_companies fetch error:', error);
+      return [];
+    }
+    const companies = data || [];
+    setHealthCompanies(companies);
+    return companies;
+  };
+
+  const findHealthCompany = (name) => {
+    const key = getCompanyNameKey(name);
+    if (!key) return null;
+    return healthCompanies.find(c => (c.name_key || getCompanyNameKey(c.name)) === key) || null;
+  };
+
+  const ensureHealthCompany = async (name) => {
+    const normalizedName = normalizeCompanyName(name);
+    if (!normalizedName) return { id: null, name: '' };
+
+    const key = getCompanyNameKey(normalizedName);
+    const existing = findHealthCompany(normalizedName);
+    if (existing) return existing;
+
+    const { data: found, error: findError } = await supabase
+      .from('health_companies')
+      .select('id, name, name_key, is_active')
+      .eq('name_key', key)
+      .maybeSingle();
+    if (!findError && found) {
+      const activeCompany = found.is_active ? found : { ...found, is_active: true };
+      if (!found.is_active) {
+        await supabase.from('health_companies').update({ is_active: true, updated_at: new Date().toISOString() }).eq('id', found.id);
+      }
+      setHealthCompanies(prev => prev.some(c => c.id === found.id)
+        ? prev.map(c => c.id === found.id ? activeCompany : c).sort((a, b) => a.name.localeCompare(b.name, 'ja'))
+        : [...prev, activeCompany].sort((a, b) => a.name.localeCompare(b.name, 'ja')));
+      return activeCompany;
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('health_companies')
+      .insert({ name: normalizedName, name_key: key })
+      .select('id, name, name_key, is_active')
+      .single();
+
+    if (insertError) {
+      const { data: retry } = await supabase
+        .from('health_companies')
+        .select('id, name, name_key, is_active')
+        .eq('name_key', key)
+        .maybeSingle();
+      if (retry) return retry;
+      throw insertError;
+    }
+
+    setHealthCompanies(prev => [...prev, inserted].sort((a, b) => a.name.localeCompare(b.name, 'ja')));
+    return inserted;
+  };
+
+  const openCompanyModal = async () => {
+    const companies = await fetchHealthCompanies();
+    setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
+    setCompanySaveStatus('');
+    setShowCompanyModal(true);
+  };
+
+  const refreshCompanyEditValues = async () => {
+    const companies = await fetchHealthCompanies();
+    setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
+  };
+
+  const handleAddHealthCompany = async () => {
+    const normalizedName = normalizeCompanyName(newCompanyName);
+    if (!normalizedName) return;
+    setCompanySaveStatus('saving');
+    try {
+      await ensureHealthCompany(normalizedName);
+      setNewCompanyName('');
+      await refreshCompanyEditValues();
+      setCompanySaveStatus('saved');
+    } catch (e) {
+      console.error('health company add error:', e);
+      setCompanySaveStatus('error');
+    }
+    setTimeout(() => setCompanySaveStatus(''), 2500);
+  };
+
+  const handleUpdateHealthCompany = async (company) => {
+    const normalizedName = normalizeCompanyName(companyEditValues[company.id]);
+    if (!normalizedName) return;
+    const key = getCompanyNameKey(normalizedName);
+    if (normalizedName === company.name && key === company.name_key) return;
+
+    setCompanySaveStatus('saving');
+    const { error } = await supabase
+      .from('health_companies')
+      .update({ name: normalizedName, name_key: key, updated_at: new Date().toISOString() })
+      .eq('id', company.id);
+
+    if (error) {
+      console.error('health company update error:', error);
+      setCompanySaveStatus('error');
+      setTimeout(() => setCompanySaveStatus(''), 2500);
+      return;
+    }
+
+    await Promise.all([
+      supabase.from('health_reserv').update({ company_name: normalizedName }).eq('company_id', company.id),
+      supabase.from('health_data').update({ k_company_name: normalizedName }).eq('company_id', company.id),
+    ]);
+
+    await refreshCompanyEditValues();
+    setFormData(prev => prev.companyId === company.id ? { ...prev, companyName: normalizedName } : prev);
+    setKenshinData(prev => prev.kCompanyId === company.id ? { ...prev, kCompanyName: normalizedName } : prev);
+    setCompanySaveStatus('saved');
+    setTimeout(() => setCompanySaveStatus(''), 2500);
+  };
+
+  const handleDeactivateHealthCompany = async (company) => {
+    if (!window.confirm(`「${company.name}」を候補一覧から非表示にしますか？\n過去の予約・診断結果の団体名は残ります。`)) return;
+    setCompanySaveStatus('saving');
+    const { error } = await supabase
+      .from('health_companies')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', company.id);
+    if (error) {
+      console.error('health company deactivate error:', error);
+      setCompanySaveStatus('error');
+    } else {
+      await refreshCompanyEditValues();
+      setCompanySaveStatus('saved');
+    }
+    setTimeout(() => setCompanySaveStatus(''), 2500);
+  };
+
   // セッション監視
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -369,6 +521,7 @@ export default function App() {
       if (session) {
         deleteOldReservations();
         fetchCalendarData();
+        fetchHealthCompanies();
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -376,6 +529,7 @@ export default function App() {
       if (session) {
         deleteOldReservations();
         fetchCalendarData();
+        fetchHealthCompanies();
       }
     });
     return () => subscription.unsubscribe();
@@ -471,7 +625,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -497,6 +651,15 @@ export default function App() {
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
 
+    let company;
+    try {
+      company = await ensureHealthCompany(formData.companyName);
+    } catch (e) {
+      console.error('health company save error:', e);
+      setSaveStatus('error');
+      return;
+    }
+
     const record = {
       date: formData.date || null,
       day_of_week: formData.dayOfWeek,
@@ -507,7 +670,8 @@ export default function App() {
       birth_date: formData.birthDate ? formData.birthDate.replace(/-/g, '') : null,
       age: formData.age,
       contact: formData.contact,
-      company_name: formData.companyName,
+      company_id: company.id,
+      company_name: company.name,
       purpose: formData.purpose,
       item_height_weight: items.heightWeight,
       item_abdominal_girth: items.abdominalGirth,
@@ -568,6 +732,7 @@ export default function App() {
       setSaveStatus('error');
     } else {
       setSaveStatus('saved');
+      setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '' }));
       if (editingReservationId) setEditingReservationId(null);
       await fetchCalendarData();
       // patients テーブルへの自動同期（患者IDがある場合のみ）
@@ -870,7 +1035,7 @@ export default function App() {
           ];
           const { data, error } = await supabase
             .from('health_reserv')
-            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_name, purpose')
+            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_id, company_name, purpose')
             .or(orParts.join(','))
             .order('date', { ascending: false })
             .limit(100);
@@ -1069,6 +1234,46 @@ export default function App() {
     setKenshinData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleCompanyNameChange = (e) => {
+    const value = e.target.value;
+    const company = findHealthCompany(value);
+    setFormData(prev => ({
+      ...prev,
+      companyName: value,
+      companyId: company?.id || '',
+    }));
+  };
+
+  const handleCompanyNameBlur = () => {
+    const company = findHealthCompany(formData.companyName);
+    const normalizedName = company?.name || normalizeCompanyName(formData.companyName);
+    setFormData(prev => ({
+      ...prev,
+      companyName: normalizedName,
+      companyId: company?.id || '',
+    }));
+  };
+
+  const handleKenshinCompanyNameChange = (e) => {
+    const value = e.target.value;
+    const company = findHealthCompany(value);
+    setKenshinData(prev => ({
+      ...prev,
+      kCompanyName: value,
+      kCompanyId: company?.id || '',
+    }));
+  };
+
+  const handleKenshinCompanyNameBlur = () => {
+    const company = findHealthCompany(kenshinData.kCompanyName);
+    const normalizedName = company?.name || normalizeCompanyName(kenshinData.kCompanyName);
+    setKenshinData(prev => ({
+      ...prev,
+      kCompanyName: normalizedName,
+      kCompanyId: company?.id || '',
+    }));
+  };
+
   // 診断書検索
   useEffect(() => {
     if (!session || kenshinModalQuery.length < 1) { setKenshinModalResults([]); setKenshinModalSearching(false); return; }
@@ -1141,7 +1346,7 @@ export default function App() {
     setKenshinData({
       kDate: r.k_date || '', kId: r.k_id || '', kName: r.k_name || '', kYurigana: r.k_yurigana || '',
       kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
-      kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: r.k_company_name || '',
+      kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: r.k_company_name || '', kCompanyId: r.company_id || '',
       address: r.address || '',
       bpSys: r.bp_sys || '', bpDia: r.bp_dia || '',
       height: r.height || '', weight: r.weight || '', bmi: r.bmi || '', waist: r.waist || '',
@@ -1190,6 +1395,14 @@ export default function App() {
   const handleKenshinSave = async () => {
     setKenshinSaveStatus('saving');
     const d = kenshinData;
+    let company;
+    try {
+      company = await ensureHealthCompany(d.kCompanyName);
+    } catch (e) {
+      console.error('health company save error:', e);
+      setKenshinSaveStatus('error');
+      return;
+    }
     const record = {
       k_date: d.kDate || null,
       reserv_id: selectedKenshinReservation?.id || null,
@@ -1200,7 +1413,8 @@ export default function App() {
       k_age: d.kAge !== '' && d.kAge != null ? parseInt(d.kAge) : null,
       k_gender: d.kGender,
       k_contact: d.kContact,
-      k_company_name: d.kCompanyName,
+      company_id: company.id,
+      k_company_name: company.name,
       address: d.address,
       bp_sys: d.bpSys, bp_dia: d.bpDia,
       height: d.height, weight: d.weight, bmi: d.bmi, waist: d.waist,
@@ -1241,7 +1455,10 @@ export default function App() {
       ? await supabase.from('health_data').upsert(record, { onConflict: 'k_id,k_date' })
       : await supabase.from('health_data').insert(record);
     if (error) { console.error(error); setKenshinSaveStatus('error'); }
-    else { setKenshinSaveStatus('saved'); }
+    else {
+      setKenshinData(prev => ({ ...prev, kCompanyId: company.id || '', kCompanyName: company.name || '' }));
+      setKenshinSaveStatus('saved');
+    }
     setTimeout(() => setKenshinSaveStatus(''), 3000);
   };
 
@@ -1291,6 +1508,7 @@ export default function App() {
       kGender: r.patient_gender || '',
       kContact: r.contact || '',
       kCompanyName: r.company_name || '',
+      kCompanyId: r.company_id || '',
     }));
     if (iso) setKenshinBirthDateInput(iso);
     setSelectedKenshinReservation({
@@ -1356,6 +1574,7 @@ export default function App() {
       age: data.age || '',
       contact: data.contact || '',
       companyName: data.company_name || '',
+      companyId: data.company_id || '',
       purpose: data.purpose || '就職',
       hasHospitalForm: data.has_hospital_form || '無(当院用紙を使用)',
       items: {
@@ -1455,6 +1674,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden">
+      <datalist id="health-company-options">
+        {healthCompanies.filter(company => company.is_active !== false).map(company => (
+          <option key={company.id} value={company.name} />
+        ))}
+      </datalist>
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
@@ -1589,8 +1813,11 @@ export default function App() {
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                    <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
+                      <button type="button" onClick={openCompanyModal} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
+                    </div>
+                    <input type="text" list="health-company-options" name="companyName" value={formData.companyName} onChange={handleCompanyNameChange} onBlur={handleCompanyNameBlur} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
@@ -1913,8 +2140,11 @@ export default function App() {
                         <input type="text" name="kContact" value={kenshinData.kContact} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                        <input type="text" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinChange} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
+                          <button type="button" onClick={openCompanyModal} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
+                        </div>
+                        <input type="text" list="health-company-options" name="kCompanyName" value={kenshinData.kCompanyName} onChange={handleKenshinCompanyNameChange} onBlur={handleKenshinCompanyNameBlur} placeholder="団体名・学校名など" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                     </div>
 
@@ -2800,6 +3030,97 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* 団体マスタ管理モーダル */}
+            {showCompanyModal && (() => {
+              const q = getCompanyNameKey(companySearchQuery);
+              const companies = healthCompanies
+                .filter(company => company.is_active !== false)
+                .filter(company => !q || getCompanyNameKey(company.name).includes(q));
+              return (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowCompanyModal(false)}>
+                  <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-600 p-2 rounded-lg"><ListTodo size={18} className="text-white" /></div>
+                        <div>
+                          <h2 className="text-white font-bold text-lg">団体マスタ管理</h2>
+                          <p className="text-slate-400 text-xs">候補一覧の追加・名称修正・非表示化</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowCompanyModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={newCompanyName}
+                        onChange={e => setNewCompanyName(e.target.value)}
+                        placeholder="新しい団体名を追加"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddHealthCompany}
+                        disabled={!normalizeCompanyName(newCompanyName) || companySaveStatus === 'saving'}
+                        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-40"
+                      >
+                        追加
+                      </button>
+                    </div>
+
+                    <div className="relative mb-3">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={companySearchQuery}
+                        onChange={e => setCompanySearchQuery(e.target.value)}
+                        placeholder="団体名を検索"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {companySaveStatus && (
+                      <div className={`mb-3 text-xs font-bold ${companySaveStatus === 'saved' ? 'text-emerald-300' : companySaveStatus === 'error' ? 'text-red-300' : 'text-slate-300'}`}>
+                        {companySaveStatus === 'saving' ? '保存中...' : companySaveStatus === 'saved' ? '保存しました' : '保存に失敗しました。同じ団体名がないか確認してください。'}
+                      </div>
+                    )}
+
+                    <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+                      {companies.length === 0 && (
+                        <div className="text-center text-slate-400 py-8 text-sm">表示できる団体がありません</div>
+                      )}
+                      {companies.map(company => (
+                        <div key={company.id} className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={companyEditValues[company.id] ?? company.name}
+                            onChange={e => setCompanyEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
+                            className="flex-1 min-w-0 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateHealthCompany(company)}
+                            disabled={companySaveStatus === 'saving' || normalizeCompanyName(companyEditValues[company.id] ?? company.name) === company.name}
+                            className="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-40"
+                          >
+                            保存
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeactivateHealthCompany(company)}
+                            disabled={companySaveStatus === 'saving'}
+                            className="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-200 disabled:opacity-40"
+                          >
+                            非表示
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 確認ダイアログ */}
             {confirmDialog.show && (
