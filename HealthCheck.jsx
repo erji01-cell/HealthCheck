@@ -3094,33 +3094,42 @@ export default function App() {
                       {companies.length === 0 && (
                         <div className="text-center text-slate-400 py-8 text-sm">表示できる団体がありません</div>
                       )}
-                      {companies.map(company => (
-                        <div key={company.id} className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={companyEditValues[company.id] ?? company.name}
-                            onChange={e => setCompanyEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
-                            className="flex-1 min-w-0 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          {companyPickerTarget && (
+                      {companies.map(company => {
+                        const editedName = normalizeCompanyName(companyEditValues[company.id] ?? company.name);
+                        const hasNameChanged = editedName && editedName !== normalizeCompanyName(company.name);
+                        return (
+                          <div key={company.id} className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={companyEditValues[company.id] ?? company.name}
+                              onChange={e => setCompanyEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && hasNameChanged && companySaveStatus !== 'saving') {
+                                  handleUpdateHealthCompany(company);
+                                }
+                              }}
+                              className="flex-1 min-w-0 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {companyPickerTarget && (
+                              <button
+                                type="button"
+                                onClick={() => handleSelectHealthCompany(company)}
+                                className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                              >
+                                選択
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={() => handleSelectHealthCompany(company)}
-                              className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                              onClick={() => handleUpdateHealthCompany(company)}
+                              disabled={companySaveStatus === 'saving' || !hasNameChanged}
+                              className={`px-3 py-2 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-45 ${hasNameChanged ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-500'}`}
                             >
-                              選択
+                              {hasNameChanged ? '保存' : '変更なし'}
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateHealthCompany(company)}
-                            disabled={companySaveStatus === 'saving' || normalizeCompanyName(companyEditValues[company.id] ?? company.name) === company.name}
-                            className="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold disabled:opacity-40"
-                          >
-                            保存
-                          </button>
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
