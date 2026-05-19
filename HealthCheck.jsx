@@ -3080,7 +3080,7 @@ export default function App() {
                         value={companySearchQuery}
                         onChange={e => setCompanySearchQuery(e.target.value)}
                         placeholder="団体名を検索"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-blue-100 bg-blue-50 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
