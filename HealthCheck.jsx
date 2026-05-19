@@ -1807,7 +1807,7 @@ export default function App() {
                       <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
                     </div>
                     <select name="companyId" value={formData.companyId || ''} onChange={handleReservationCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">{formData.companyName || '団体名・学校名など'}</option>
+                      <option value="">団体名なし</option>
                       {healthCompanies.filter(company => company.is_active !== false).map(company => (
                         <option key={company.id} value={company.id}>{company.name}</option>
                       ))}
@@ -2144,7 +2144,7 @@ export default function App() {
                           <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
                         </div>
                         <select name="kCompanyId" value={kenshinData.kCompanyId || ''} onChange={handleKenshinCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                          <option value="">{kenshinData.kCompanyName || '団体名・学校名など'}</option>
+                          <option value="">団体名なし</option>
                           {healthCompanies.filter(company => company.is_active !== false).map(company => (
                             <option key={company.id} value={company.id}>{company.name}</option>
                           ))}
