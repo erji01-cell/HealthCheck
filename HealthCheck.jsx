@@ -1869,7 +1869,7 @@ export default function App() {
 
                 {leftTab === 'reservation' && <>
                 {/* 患者検索 */}
-                <div className="space-y-1 mb-[3mm]" ref={searchRef}>
+                <div className="space-y-1 pb-[3mm]" ref={searchRef}>
                   <label className="text-[11px] font-bold text-slate-400 uppercase">予約患者検索（氏名・ヨミガナ・ID・生年月日）</label>
                   <div className="relative">
                     <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
