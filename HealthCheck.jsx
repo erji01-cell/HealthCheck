@@ -1957,9 +1957,9 @@ export default function App() {
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between">
+                    <div className="h-[16px] flex items-start justify-between">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                      <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
+                      <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] leading-none font-bold text-blue-500 hover:text-blue-700">団体管理</button>
                     </div>
                     {renderCompanyCombobox({
                       value: formData.companyName,
@@ -2297,9 +2297,9 @@ export default function App() {
                         <input type="text" name="kContact" value={kenshinData.kContact} onChange={handleKenshinChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
                       </div>
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between">
+                        <div className="h-[16px] flex items-start justify-between">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
+                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] leading-none font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
                         </div>
                         {renderCompanyCombobox({
                           value: kenshinData.kCompanyName,
