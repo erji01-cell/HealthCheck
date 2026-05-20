@@ -3375,6 +3375,7 @@ export default function App() {
                           </div>
                           <div className="text-right text-xs text-slate-500">
                             <div>{r.purpose}</div>
+                            {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
                             <div className="font-bold text-blue-600">{r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} {r.payment_type}</div>
                           </div>
                         </div>
