@@ -253,6 +253,8 @@ export default function App() {
   const [modalSearching, setModalSearching] = useState(false);
   const searchRef = useRef(null);
   const resultSearchRef = useRef(null);
+  const reservationCompanyRef = useRef(null);
+  const kenshinCompanyRef = useRef(null);
   const currentMonthRef = useRef(null);
   const modalSearchRef = useRef(null);
   const kenshinTopRef = useRef(null);
@@ -350,9 +352,13 @@ export default function App() {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [companyPickerTarget, setCompanyPickerTarget] = useState(null);
   const [companyEditValues, setCompanyEditValues] = useState({});
+  const [companyNoEditValues, setCompanyNoEditValues] = useState({});
   const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [newCompanyNo, setNewCompanyNo] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [companySaveStatus, setCompanySaveStatus] = useState('');
+  const [showReservationCompanyOptions, setShowReservationCompanyOptions] = useState(false);
+  const [showKenshinCompanyOptions, setShowKenshinCompanyOptions] = useState(false);
 
   // 診断結果入力：生年月日→年齢自動計算
   useEffect(() => {
@@ -379,13 +385,14 @@ export default function App() {
   const fetchHealthCompanies = async () => {
     const { data, error } = await supabase
       .from('health_companies')
-      .select('id, name, name_key, is_active')
+      .select('id, display_no, name, name_key, is_active')
+      .order('display_no', { ascending: true, nullsFirst: false })
       .order('name', { ascending: true });
     if (error) {
       console.error('health_companies fetch error:', error);
       return [];
     }
-    const companies = data || [];
+    const companies = sortHealthCompanies(data || []);
     setHealthCompanies(companies);
     return companies;
   };
@@ -396,15 +403,52 @@ export default function App() {
     return healthCompanies.find(c => (c.name_key || getCompanyNameKey(c.name)) === key) || null;
   };
 
+  const sortHealthCompanies = (companies) =>
+    [...companies].sort((a, b) => {
+      const aNo = Number(a.display_no);
+      const bNo = Number(b.display_no);
+      const aHasNo = Number.isInteger(aNo);
+      const bHasNo = Number.isInteger(bNo);
+      if (aHasNo && bHasNo && aNo !== bNo) return aNo - bNo;
+      if (aHasNo !== bHasNo) return aHasNo ? -1 : 1;
+      return (a.name || '').localeCompare(b.name || '', 'ja');
+    });
+
+  const getActiveHealthCompanies = () =>
+    healthCompanies.filter(company => company.is_active !== false);
+
+  const getFilteredHealthCompanies = (query) => {
+    const key = getCompanyNameKey(query);
+    const activeCompanies = getActiveHealthCompanies();
+    if (!key) return activeCompanies;
+    return activeCompanies.filter(company =>
+      String(company.display_no || '').includes(key) ||
+      getCompanyNameKey(company.name).includes(key) ||
+      (company.name_key || '').includes(key)
+    );
+  };
+
+  const findHealthCompanyByDisplayNo = (value) => {
+    const no = parseInt(String(value).trim(), 10);
+    if (!Number.isInteger(no)) return null;
+    return getActiveHealthCompanies().find(company => Number(company.display_no) === no) || null;
+  };
+
+  const getNextCompanyDisplayNo = () => {
+    const maxNo = healthCompanies.reduce((max, company) => {
+      const no = Number(company.display_no);
+      return Number.isInteger(no) && no > max ? no : max;
+    }, 0);
+    return maxNo + 1;
+  };
+
   const resolveSelectedHealthCompany = (companyId, companyName) => {
     const normalizedName = normalizeCompanyName(companyName);
     if (companyId) {
       const selected = healthCompanies.find(c => c.id === companyId);
       return { id: companyId, name: selected?.name || normalizedName };
     }
-    const existing = findHealthCompany(normalizedName);
-    if (existing) return existing;
-    return { id: null, name: normalizedName };
+    return { id: null, name: '' };
   };
 
   const formatSupabaseError = (error) => {
@@ -430,7 +474,7 @@ export default function App() {
 
     const { data: found, error: findError } = await supabase
       .from('health_companies')
-      .select('id, name, name_key, is_active')
+      .select('id, display_no, name, name_key, is_active')
       .eq('name_key', key)
       .maybeSingle();
     if (!findError && found) {
@@ -438,35 +482,36 @@ export default function App() {
       if (!found.is_active) {
         await supabase.from('health_companies').update({ is_active: true, updated_at: new Date().toISOString() }).eq('id', found.id);
       }
-      setHealthCompanies(prev => prev.some(c => c.id === found.id)
-        ? prev.map(c => c.id === found.id ? activeCompany : c).sort((a, b) => a.name.localeCompare(b.name, 'ja'))
-        : [...prev, activeCompany].sort((a, b) => a.name.localeCompare(b.name, 'ja')));
+      setHealthCompanies(prev => sortHealthCompanies(prev.some(c => c.id === found.id)
+        ? prev.map(c => c.id === found.id ? activeCompany : c)
+        : [...prev, activeCompany]));
       return activeCompany;
     }
 
     const { data: inserted, error: insertError } = await supabase
       .from('health_companies')
-      .insert({ name: normalizedName, name_key: key })
-      .select('id, name, name_key, is_active')
+      .insert({ display_no: getNextCompanyDisplayNo(), name: normalizedName, name_key: key })
+      .select('id, display_no, name, name_key, is_active')
       .single();
 
     if (insertError) {
       const { data: retry } = await supabase
         .from('health_companies')
-        .select('id, name, name_key, is_active')
+        .select('id, display_no, name, name_key, is_active')
         .eq('name_key', key)
         .maybeSingle();
       if (retry) return retry;
       throw insertError;
     }
 
-    setHealthCompanies(prev => [...prev, inserted].sort((a, b) => a.name.localeCompare(b.name, 'ja')));
+    setHealthCompanies(prev => sortHealthCompanies([...prev, inserted]));
     return inserted;
   };
 
   const openCompanyModal = async (target = null) => {
     const companies = await fetchHealthCompanies();
     setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
+    setCompanyNoEditValues(Object.fromEntries(companies.map(c => [c.id, c.display_no ?? ''])));
     setCompanyPickerTarget(target);
     setCompanySaveStatus('');
     setShowCompanyModal(true);
@@ -487,9 +532,50 @@ export default function App() {
     closeCompanyModal();
   };
 
+  const handleReservationCompanyInput = (e) => {
+    const value = e.target.value;
+    const company = findHealthCompany(value);
+    setFormData(prev => ({
+      ...prev,
+      companyName: value,
+      companyId: company?.id || '',
+    }));
+    setShowReservationCompanyOptions(true);
+  };
+
+  const handleReservationCompanyOptionSelect = (company) => {
+    setFormData(prev => ({
+      ...prev,
+      companyId: company?.id || '',
+      companyName: company?.name || '',
+    }));
+    setShowReservationCompanyOptions(false);
+  };
+
+  const handleKenshinCompanyInput = (e) => {
+    const value = e.target.value;
+    const company = findHealthCompany(value);
+    setKenshinData(prev => ({
+      ...prev,
+      kCompanyName: value,
+      kCompanyId: company?.id || '',
+    }));
+    setShowKenshinCompanyOptions(true);
+  };
+
+  const handleKenshinCompanyOptionSelect = (company) => {
+    setKenshinData(prev => ({
+      ...prev,
+      kCompanyId: company?.id || '',
+      kCompanyName: company?.name || '',
+    }));
+    setShowKenshinCompanyOptions(false);
+  };
+
   const refreshCompanyEditValues = async () => {
     const companies = await fetchHealthCompanies();
     setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
+    setCompanyNoEditValues(Object.fromEntries(companies.map(c => [c.id, c.display_no ?? ''])));
   };
 
   const handleAddHealthCompany = async () => {
@@ -497,8 +583,17 @@ export default function App() {
     if (!normalizedName) return;
     setCompanySaveStatus('saving');
     try {
-      await ensureHealthCompany(normalizedName);
+      const company = await ensureHealthCompany(normalizedName);
+      const displayNo = parseInt(String(newCompanyNo).trim(), 10);
+      if (Number.isInteger(displayNo) && displayNo > 0 && company.display_no !== displayNo) {
+        const { error } = await supabase
+          .from('health_companies')
+          .update({ display_no: displayNo, updated_at: new Date().toISOString() })
+          .eq('id', company.id);
+        if (error) throw error;
+      }
       setNewCompanyName('');
+      setNewCompanyNo('');
       await refreshCompanyEditValues();
       setCompanySaveStatus('saved');
     } catch (e) {
@@ -512,12 +607,20 @@ export default function App() {
     const normalizedName = normalizeCompanyName(companyEditValues[company.id]);
     if (!normalizedName) return;
     const key = getCompanyNameKey(normalizedName);
-    if (normalizedName === company.name && key === company.name_key) return;
+    const displayNoValue = String(companyNoEditValues[company.id] ?? '').trim();
+    const displayNo = displayNoValue ? parseInt(displayNoValue, 10) : null;
+    if (displayNoValue && (!Number.isInteger(displayNo) || displayNo <= 0)) {
+      setCompanySaveStatus('error');
+      setTimeout(() => setCompanySaveStatus(''), 2500);
+      return;
+    }
+    const hasNoChanged = (company.display_no ?? null) !== displayNo;
+    if (normalizedName === company.name && key === company.name_key && !hasNoChanged) return;
 
     setCompanySaveStatus('saving');
     const { error } = await supabase
       .from('health_companies')
-      .update({ name: normalizedName, name_key: key, updated_at: new Date().toISOString() })
+      .update({ display_no: displayNo, name: normalizedName, name_key: key, updated_at: new Date().toISOString() })
       .eq('id', company.id);
 
     if (error) {
@@ -1093,6 +1196,12 @@ export default function App() {
       if (resultSearchRef.current && !resultSearchRef.current.contains(e.target)) {
         setShowResultSuggestions(false);
       }
+      if (reservationCompanyRef.current && !reservationCompanyRef.current.contains(e.target)) {
+        setShowReservationCompanyOptions(false);
+      }
+      if (kenshinCompanyRef.current && !kenshinCompanyRef.current.contains(e.target)) {
+        setShowKenshinCompanyOptions(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -1244,30 +1353,10 @@ export default function App() {
     }
   };
 
-  const handleReservationCompanySelect = (e) => {
-    const companyId = e.target.value;
-    const company = healthCompanies.find(c => c.id === companyId);
-    setFormData(prev => ({
-      ...prev,
-      companyId: company?.id || '',
-      companyName: company?.name || '',
-    }));
-  };
-
   // 健康診断書データ変更ハンドラ
   const handleKenshinChange = (e) => {
     const { name, value } = e.target;
     setKenshinData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleKenshinCompanySelect = (e) => {
-    const companyId = e.target.value;
-    const company = healthCompanies.find(c => c.id === companyId);
-    setKenshinData(prev => ({
-      ...prev,
-      kCompanyId: company?.id || '',
-      kCompanyName: company?.name || '',
-    }));
   };
 
   // 診断書検索
@@ -1661,13 +1750,79 @@ export default function App() {
     );
   }
 
+  const renderCompanyCombobox = ({
+    value,
+    showOptions,
+    setShowOptions,
+    onInput,
+    onSelect,
+    focusClass,
+    inputRef,
+  }) => {
+    const filteredCompanies = getFilteredHealthCompanies(value);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowOptions(false);
+        return;
+      }
+      if (e.key !== 'Enter') return;
+      const companyByNo = findHealthCompanyByDisplayNo(e.currentTarget.value);
+      if (companyByNo) {
+        e.preventDefault();
+        onSelect(companyByNo);
+      }
+    };
+    return (
+      <div className="relative" ref={inputRef}>
+        <input
+          type="text"
+          value={value || ''}
+          onChange={onInput}
+          onFocus={() => setShowOptions(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="団体名なし"
+          className={`w-full p-2 pr-8 border rounded-lg bg-white text-sm outline-none ${focusClass}`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowOptions(prev => !prev)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 text-xs"
+          aria-label="団体一覧を開く"
+        >
+          ▼
+        </button>
+        {showOptions && (
+          <div className="absolute z-30 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+            <button
+              type="button"
+              onMouseDown={e => { e.preventDefault(); onSelect(null); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 text-slate-500"
+            >
+              団体名なし
+            </button>
+            {filteredCompanies.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-slate-400">一致する団体がありません</div>
+            ) : (
+              filteredCompanies.map(company => (
+                <button
+                  key={company.id}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); onSelect(company); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-b-0 flex items-center gap-2"
+                >
+                  {company.display_no != null && <span className="w-8 shrink-0 text-[11px] font-bold text-blue-600">{company.display_no}</span>}
+                  <span className="truncate">{company.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden">
-      <datalist id="health-company-options">
-        {healthCompanies.filter(company => company.is_active !== false).map(company => (
-          <option key={company.id} value={company.name} />
-        ))}
-      </datalist>
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
@@ -1806,12 +1961,15 @@ export default function App() {
                       <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
                       <button type="button" onClick={() => openCompanyModal('reservation')} className="text-[11px] font-bold text-blue-500 hover:text-blue-700">団体管理</button>
                     </div>
-                    <select name="companyId" value={formData.companyId || ''} onChange={handleReservationCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">団体名なし</option>
-                      {healthCompanies.filter(company => company.is_active !== false).map(company => (
-                        <option key={company.id} value={company.id}>{company.name}</option>
-                      ))}
-                    </select>
+                    {renderCompanyCombobox({
+                      value: formData.companyName,
+                      showOptions: showReservationCompanyOptions,
+                      setShowOptions: setShowReservationCompanyOptions,
+                      onInput: handleReservationCompanyInput,
+                      onSelect: handleReservationCompanyOptionSelect,
+                      focusClass: 'focus:ring-2 focus:ring-blue-500',
+                      inputRef: reservationCompanyRef,
+                    })}
                   </div>
                 </div>
 
@@ -2143,12 +2301,15 @@ export default function App() {
                           <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
                           <button type="button" onClick={() => openCompanyModal('kenshin')} className="text-[11px] font-bold text-emerald-500 hover:text-emerald-700">団体管理</button>
                         </div>
-                        <select name="kCompanyId" value={kenshinData.kCompanyId || ''} onChange={handleKenshinCompanySelect} className="w-full p-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                          <option value="">団体名なし</option>
-                          {healthCompanies.filter(company => company.is_active !== false).map(company => (
-                            <option key={company.id} value={company.id}>{company.name}</option>
-                          ))}
-                        </select>
+                        {renderCompanyCombobox({
+                          value: kenshinData.kCompanyName,
+                          showOptions: showKenshinCompanyOptions,
+                          setShowOptions: setShowKenshinCompanyOptions,
+                          onInput: handleKenshinCompanyInput,
+                          onSelect: handleKenshinCompanyOptionSelect,
+                          focusClass: 'focus:ring-2 focus:ring-emerald-500',
+                          inputRef: kenshinCompanyRef,
+                        })}
                       </div>
                     </div>
 
@@ -3040,7 +3201,7 @@ export default function App() {
               const q = getCompanyNameKey(companySearchQuery);
               const companies = healthCompanies
                 .filter(company => company.is_active !== false)
-                .filter(company => !q || getCompanyNameKey(company.name).includes(q));
+                .filter(company => !q || String(company.display_no || '').includes(q) || getCompanyNameKey(company.name).includes(q));
               return (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={closeCompanyModal}>
                   <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-2xl" onClick={e => e.stopPropagation()}>
@@ -3055,7 +3216,15 @@ export default function App() {
                       <button onClick={closeCompanyModal} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 mb-3">
+                    <div className="grid grid-cols-[90px_1fr_auto] gap-2 mb-3">
+                      <input
+                        type="number"
+                        min="1"
+                        value={newCompanyNo}
+                        onChange={e => setNewCompanyNo(e.target.value)}
+                        placeholder="番号"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                       <input
                         type="text"
                         value={newCompanyName}
@@ -3086,7 +3255,7 @@ export default function App() {
 
                     {companySaveStatus && (
                       <div className={`mb-3 text-xs font-bold ${companySaveStatus === 'saved' ? 'text-emerald-300' : companySaveStatus === 'error' ? 'text-red-300' : 'text-slate-300'}`}>
-                        {companySaveStatus === 'saving' ? '保存中...' : companySaveStatus === 'saved' ? '保存しました' : '保存に失敗しました。同じ団体名がないか確認してください。'}
+                        {companySaveStatus === 'saving' ? '保存中...' : companySaveStatus === 'saved' ? '保存しました' : '保存に失敗しました。同じ番号または団体名がないか確認してください。'}
                       </div>
                     )}
 
@@ -3096,15 +3265,31 @@ export default function App() {
                       )}
                       {companies.map(company => {
                         const editedName = normalizeCompanyName(companyEditValues[company.id] ?? company.name);
+                        const editedNoText = String(companyNoEditValues[company.id] ?? '').trim();
+                        const editedNo = editedNoText ? parseInt(editedNoText, 10) : null;
+                        const hasNoChanged = (company.display_no ?? null) !== editedNo;
                         const hasNameChanged = editedName && editedName !== normalizeCompanyName(company.name);
+                        const hasCompanyChanged = hasNameChanged || hasNoChanged;
                         return (
                           <div key={company.id} className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              value={companyNoEditValues[company.id] ?? ''}
+                              onChange={e => setCompanyNoEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && hasCompanyChanged && companySaveStatus !== 'saving') {
+                                  handleUpdateHealthCompany(company);
+                                }
+                              }}
+                              className="w-[72px] shrink-0 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                            />
                             <input
                               type="text"
                               value={companyEditValues[company.id] ?? company.name}
                               onChange={e => setCompanyEditValues(prev => ({ ...prev, [company.id]: e.target.value }))}
                               onKeyDown={e => {
-                                if (e.key === 'Enter' && hasNameChanged && companySaveStatus !== 'saving') {
+                                if (e.key === 'Enter' && hasCompanyChanged && companySaveStatus !== 'saving') {
                                   handleUpdateHealthCompany(company);
                                 }
                               }}
@@ -3122,10 +3307,10 @@ export default function App() {
                             <button
                               type="button"
                               onClick={() => handleUpdateHealthCompany(company)}
-                              disabled={companySaveStatus === 'saving' || !hasNameChanged}
-                              className={`px-3 py-2 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-45 ${hasNameChanged ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-500'}`}
+                              disabled={companySaveStatus === 'saving' || !hasCompanyChanged}
+                              className={`px-3 py-2 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-45 ${hasCompanyChanged ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-500'}`}
                             >
-                              {hasNameChanged ? '保存' : '変更なし'}
+                              {hasCompanyChanged ? '保存' : '変更なし'}
                             </button>
                           </div>
                         );
