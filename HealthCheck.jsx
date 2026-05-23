@@ -3249,36 +3249,36 @@ export default function App() {
             {showBackupModal && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBackupModal(false)}>
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto" style={{minHeight: '80vh'}} onClick={e => e.stopPropagation()}>
-                  <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                  <div className="px-8 pt-8 pb-5 border-b border-slate-100">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-[10px] tracking-widest text-purple-500 font-bold">BACKUP &amp; RESTORE</div>
-                        <h2 className="text-xl font-black text-slate-800 mt-0.5">バックアップ管理</h2>
-                        <p className="text-xs text-slate-500 mt-1">データを JSON 形式で保存・復元します</p>
+                        <div className="text-xs tracking-widest text-purple-500 font-bold">BACKUP &amp; RESTORE</div>
+                        <h2 className="text-3xl font-black text-slate-800 mt-1">バックアップ管理</h2>
+                        <p className="text-sm text-slate-500 mt-1.5">データを JSON 形式で保存・復元します</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           disabled={backupBusy}
                           onClick={handleManualBackup}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                         >
-                          <Save size={13} /> 今すぐバックアップ
+                          <Save size={16} /> 今すぐバックアップ
                         </button>
                         <button
                           disabled={backupBusy}
                           onClick={() => restoreInputRef.current?.click()}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                         >
-                          <Upload size={13} /> ファイルから復元
+                          <Upload size={16} /> ファイルから復元
                         </button>
                         <button
                           disabled={backupListLoading}
                           onClick={refreshBackupList}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                         >
-                          <RefreshCw size={13} /> 一覧を更新
+                          <RefreshCw size={16} /> 一覧を更新
                         </button>
-                        <button onClick={() => setShowBackupModal(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold ml-1">✕</button>
+                        <button onClick={() => setShowBackupModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold ml-2">✕</button>
                       </div>
                     </div>
                     <input
@@ -3289,13 +3289,13 @@ export default function App() {
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleRestoreFromFile(f); e.target.value = ''; }}
                     />
                   </div>
-                  <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-sm">
+                    <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={autoBackupOn}
                         onChange={e => { setAutoBackupOn(e.target.checked); setAutoBackupEnabled(e.target.checked); }}
-                        className="w-4 h-4"
+                        className="w-5 h-5"
                       />
                       <span className="font-bold text-slate-700">自動バックアップ（1日1回）</span>
                       <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
@@ -3303,21 +3303,21 @@ export default function App() {
                     <span className="text-slate-400">① Storage 保存 ② ローカル DL ③ 古い分を自動削除（最大30件）</span>
                   </div>
                   {backupMessage && (
-                    <div className="px-6 py-2 text-xs text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
+                    <div className="px-8 py-3 text-sm text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
                   )}
-                  <div className="px-6 py-4">
-                    <div className="text-xs font-bold text-slate-600 mb-2">Storage 内のバックアップ（{backupList.length} 件 / 最大30件保持）</div>
+                  <div className="px-8 py-5">
+                    <div className="text-sm font-bold text-slate-600 mb-3">Storage 内のバックアップ（{backupList.length} 件 / 最大30件保持）</div>
                     {backupListLoading && <div className="text-center text-slate-400 py-6 text-sm">読み込み中...</div>}
                     {!backupListLoading && backupList.length === 0 && (
                       <div className="text-center text-slate-400 py-8 text-sm">バックアップがありません</div>
                     )}
                     {!backupListLoading && backupList.length > 0 && (
-                      <table className="w-full text-xs">
+                      <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-slate-100 text-slate-600">
-                            <th className="text-left px-3 py-2">日時</th>
-                            <th className="text-left px-3 py-2">ファイル名</th>
-                            <th className="text-right px-3 py-2">操作</th>
+                            <th className="text-left px-4 py-3">日時</th>
+                            <th className="text-left px-4 py-3">ファイル名</th>
+                            <th className="text-right px-4 py-3">操作</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3326,21 +3326,21 @@ export default function App() {
                             const dt = ts ? new Date(ts).toLocaleString('ja-JP') : '';
                             return (
                               <tr key={item.name} className="border-t border-slate-100 hover:bg-slate-50">
-                                <td className="px-3 py-2 font-mono text-slate-700">{dt}</td>
-                                <td className="px-3 py-2 font-mono text-slate-500 break-all">{item.name}</td>
-                                <td className="px-3 py-2 text-right whitespace-nowrap">
+                                <td className="px-4 py-3 font-mono text-slate-700">{dt}</td>
+                                <td className="px-4 py-3 font-mono text-slate-500 break-all">{item.name}</td>
+                                <td className="px-4 py-3 text-right whitespace-nowrap">
                                   <button
                                     onClick={() => handleDownloadFromStorage(item.name)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 mr-1"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 mr-2"
                                   >
-                                    <Download size={11} /> DL
+                                    <Download size={13} /> DL
                                   </button>
                                   <button
                                     disabled={backupBusy}
                                     onClick={() => handleRestoreFromStorage(item.name)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                                   >
-                                    <Upload size={11} /> 復元
+                                    <Upload size={13} /> 復元
                                   </button>
                                 </td>
                               </tr>
