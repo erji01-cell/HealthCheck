@@ -3,8 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw
 } from 'lucide-react';
+import {
+  performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
+  getLastBackupTime, isAutoBackupEnabled, setAutoBackupEnabled, shouldRunAutoBackup
+} from './lib/backup.js';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -348,6 +352,15 @@ export default function App() {
   const [kenshinModalAllResults, setKenshinModalAllResults] = useState([]);
   const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
   const [highlightedField, setHighlightedField] = useState(null);
+  // バックアップ管理
+  const [showBackupModal, setShowBackupModal] = useState(false);
+  const [backupList, setBackupList] = useState([]);
+  const [backupListLoading, setBackupListLoading] = useState(false);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMessage, setBackupMessage] = useState('');
+  const [autoBackupOn, setAutoBackupOn] = useState(isAutoBackupEnabled());
+  const [lastBackupAt, setLastBackupAt] = useState(getLastBackupTime());
+  const restoreInputRef = useRef(null);
   const [healthCompanies, setHealthCompanies] = useState([]);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [companyPickerTarget, setCompanyPickerTarget] = useState(null);
@@ -670,6 +683,108 @@ export default function App() {
     }, 30 * 60 * 1000);
     return () => clearInterval(keepAlive);
   }, []);
+
+  // 自動バックアップ（ログイン後・1日1回）
+  useEffect(() => {
+    if (!session) return;
+    if (!shouldRunAutoBackup()) return;
+    (async () => {
+      try {
+        await performBackup(session, { downloadLocal: false, prune: true });
+        setLastBackupAt(getLastBackupTime());
+      } catch (err) {
+        console.error('自動バックアップ失敗:', err);
+      }
+    })();
+  }, [session]);
+
+  // バックアップ一覧取得
+  const refreshBackupList = async () => {
+    if (!session) return;
+    setBackupListLoading(true);
+    try {
+      const list = await listStorageBackups(session);
+      setBackupList(list);
+    } catch (err) {
+      setBackupMessage(`一覧取得失敗: ${err.message}`);
+    } finally {
+      setBackupListLoading(false);
+    }
+  };
+
+  // 手動バックアップ
+  const handleManualBackup = async () => {
+    if (!session || backupBusy) return;
+    setBackupBusy(true);
+    setBackupMessage('バックアップ中...');
+    try {
+      const { fileName, pruneResult } = await performBackup(session, { downloadLocal: true, prune: true });
+      setLastBackupAt(getLastBackupTime());
+      const pruneMsg = pruneResult?.deleted ? `（古い ${pruneResult.deleted} 件を削除）` : '';
+      setBackupMessage(`完了: ${fileName.split('/').pop()} ${pruneMsg}`);
+      await refreshBackupList();
+    } catch (err) {
+      setBackupMessage(`失敗: ${err.message}`);
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  // ファイルから復元
+  const handleRestoreFromFile = async (file) => {
+    if (!file || !session) return;
+    if (!window.confirm(`${file.name} から復元します。既存データに上書き（merge）されます。続行しますか？`)) return;
+    setBackupBusy(true);
+    setBackupMessage('復元中...');
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      const results = await restoreFromPayload(payload, session);
+      const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
+      setBackupMessage(`復元完了: ${summary}`);
+    } catch (err) {
+      setBackupMessage(`復元失敗: ${err.message}`);
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  // Storageから復元
+  const handleRestoreFromStorage = async (fileName) => {
+    if (!session) return;
+    if (!window.confirm(`${fileName} から復元します。既存データに上書き（merge）されます。続行しますか？`)) return;
+    setBackupBusy(true);
+    setBackupMessage('復元中...');
+    try {
+      const payload = await downloadStorageBackup(session, fileName);
+      const results = await restoreFromPayload(payload, session);
+      const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
+      setBackupMessage(`復元完了: ${summary}`);
+    } catch (err) {
+      setBackupMessage(`復元失敗: ${err.message}`);
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  // Storageからダウンロード
+  const handleDownloadFromStorage = async (fileName) => {
+    if (!session) return;
+    try {
+      const payload = await downloadStorageBackup(session, fileName);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName.split('/').pop();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setBackupMessage(`ダウンロード失敗: ${err.message}`);
+    }
+  };
 
   // 生年月日と健診希望日から年齢を計算
   useEffect(() => {
@@ -2917,11 +3032,20 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {(rightTab === 'preview' || rightTab === 'kenshin') && (
-                <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
-                  <Printer size={14} /> 用紙を印刷
+              <div className="flex items-center gap-2 print-hide">
+                {(rightTab === 'preview' || rightTab === 'kenshin') && (
+                  <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
+                    <Printer size={14} /> 用紙を印刷
+                  </button>
+                )}
+                <button
+                  onClick={async () => { setShowBackupModal(true); setBackupMessage(''); await refreshBackupList(); }}
+                  className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-4 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all"
+                  title="バックアップ管理"
+                >
+                  <Database size={14} /> バックアップ
                 </button>
-              )}
+              </div>
             </div>
 
             <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper">
@@ -3112,6 +3236,115 @@ export default function App() {
                     </div>
                   </>)}
 
+                </div>
+              </div>
+            )}
+
+            {/* バックアップ管理モーダル */}
+            {showBackupModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBackupModal(false)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[10px] tracking-widest text-purple-500 font-bold">BACKUP &amp; RESTORE</div>
+                        <h2 className="text-xl font-black text-slate-800 mt-0.5">バックアップ管理</h2>
+                        <p className="text-xs text-slate-500 mt-1">データを JSON 形式で保存・復元します</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={backupBusy}
+                          onClick={handleManualBackup}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                        >
+                          <Save size={13} /> 今すぐバックアップ
+                        </button>
+                        <button
+                          disabled={backupBusy}
+                          onClick={() => restoreInputRef.current?.click()}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                        >
+                          <Upload size={13} /> ファイルから復元
+                        </button>
+                        <button
+                          disabled={backupListLoading}
+                          onClick={refreshBackupList}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                        >
+                          <RefreshCw size={13} /> 一覧を更新
+                        </button>
+                        <button onClick={() => setShowBackupModal(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold ml-1">✕</button>
+                      </div>
+                    </div>
+                    <input
+                      ref={restoreInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleRestoreFromFile(f); e.target.value = ''; }}
+                    />
+                  </div>
+                  <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoBackupOn}
+                        onChange={e => { setAutoBackupOn(e.target.checked); setAutoBackupEnabled(e.target.checked); }}
+                        className="w-4 h-4"
+                      />
+                      <span className="font-bold text-slate-700">自動バックアップ（1日1回）</span>
+                      <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
+                    </label>
+                    <span className="text-slate-400">① Storage 保存 ② ローカル DL ③ 古い分を自動削除（最大30件）</span>
+                  </div>
+                  {backupMessage && (
+                    <div className="px-6 py-2 text-xs text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
+                  )}
+                  <div className="px-6 py-4">
+                    <div className="text-xs font-bold text-slate-600 mb-2">Storage 内のバックアップ（{backupList.length} 件 / 最大30件保持）</div>
+                    {backupListLoading && <div className="text-center text-slate-400 py-6 text-sm">読み込み中...</div>}
+                    {!backupListLoading && backupList.length === 0 && (
+                      <div className="text-center text-slate-400 py-8 text-sm">バックアップがありません</div>
+                    )}
+                    {!backupListLoading && backupList.length > 0 && (
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600">
+                            <th className="text-left px-3 py-2">日時</th>
+                            <th className="text-left px-3 py-2">ファイル名</th>
+                            <th className="text-right px-3 py-2">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {backupList.map(item => {
+                            const ts = item.updated_at || item.created_at;
+                            const dt = ts ? new Date(ts).toLocaleString('ja-JP') : '';
+                            return (
+                              <tr key={item.name} className="border-t border-slate-100 hover:bg-slate-50">
+                                <td className="px-3 py-2 font-mono text-slate-700">{dt}</td>
+                                <td className="px-3 py-2 font-mono text-slate-500 break-all">{item.name}</td>
+                                <td className="px-3 py-2 text-right whitespace-nowrap">
+                                  <button
+                                    onClick={() => handleDownloadFromStorage(item.name)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 mr-1"
+                                  >
+                                    <Download size={11} /> DL
+                                  </button>
+                                  <button
+                                    disabled={backupBusy}
+                                    onClick={() => handleRestoreFromStorage(item.name)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                                  >
+                                    <Upload size={11} /> 復元
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
