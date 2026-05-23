@@ -3248,7 +3248,7 @@ export default function App() {
             {/* バックアップ管理モーダル */}
             {showBackupModal && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBackupModal(false)}>
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto" style={{minHeight: '70vh'}} onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto" style={{minHeight: '80vh'}} onClick={e => e.stopPropagation()}>
                   <div className="px-6 pt-6 pb-4 border-b border-slate-100">
                     <div className="flex items-start justify-between gap-4">
                       <div>
