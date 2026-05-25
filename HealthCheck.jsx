@@ -3615,7 +3615,11 @@ export default function App() {
                           <div className="text-right text-xs text-slate-500">
                             <div>{r.purpose}</div>
                             {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
-                            <div className="font-bold text-blue-600">{r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} {r.payment_type}</div>
+                            <div className="font-bold text-blue-600">
+                              {KURITAS_PURPOSES.includes(r.purpose)
+                                ? '同友会請求'
+                                : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
+                            </div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
