@@ -3039,7 +3039,7 @@ export default function App() {
               <div className="flex items-center gap-2 print-hide">
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
                   <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
-                    <Printer size={14} /> 用紙を印刷
+                    <Printer size={14} /> 用紙印刷
                   </button>
                 )}
                 <button
