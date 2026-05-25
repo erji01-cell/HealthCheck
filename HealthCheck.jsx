@@ -687,8 +687,11 @@ export default function App() {
   // 自動バックアップ（ログイン後・1日1回）
   useEffect(() => {
     if (!session) return;
-    if (!shouldRunAutoBackup()) return;
     (async () => {
+      if (!(await shouldRunAutoBackup(session))) {
+        setLastBackupAt(getLastBackupTime());
+        return;
+      }
       try {
         await performBackup(session, { downloadLocal: false, prune: true });
         setLastBackupAt(getLastBackupTime());
