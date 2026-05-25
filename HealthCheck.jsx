@@ -894,6 +894,7 @@ export default function App() {
     else if (zeroPurposes.includes(formData.purpose)) fee = 0;
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
+    const paymentType = KURITAS_PURPOSES.includes(formData.purpose) ? '同友会請求' : formData.paymentType;
 
     const company = resolveSelectedHealthCompany(formData.companyId, formData.companyName);
 
@@ -943,7 +944,7 @@ export default function App() {
       deadline_type: formData.deadlineType,
       deadline_date: formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate : null,
       has_dedicated_form: formData.hasDedicatedForm,
-      payment_type: formData.paymentType,
+      payment_type: paymentType,
       fee: fee,
       others: formData.others,
       bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
@@ -966,7 +967,7 @@ export default function App() {
       setSaveStatus('error');
     } else {
       setSaveStatus('saved');
-      setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '' }));
+      setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '', paymentType }));
       if (editingReservationId) setEditingReservationId(null);
       await fetchCalendarData();
       // patients テーブルへの自動同期（患者IDがある場合のみ）
