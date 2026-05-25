@@ -3001,36 +3001,33 @@ export default function App() {
         {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0">
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
-            <div className="flex justify-between items-center mb-4 px-2 print-hide lg:shrink-0">
-              <div className="flex items-center gap-2">
-                {/* グループ1：予約プレビュー・予約カレンダー */}
-                <div className="flex gap-1.5 bg-blue-100 p-1 rounded-xl shadow-sm border border-blue-200">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 print-hide lg:shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
+                <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                   <button
                     onClick={() => { setRightTab('preview'); setLeftTab('reservation'); }}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                   >
-                    📋 予約プレビュー
+                    <ListTodo size={12} /> 予約プレビュー
                   </button>
                   <button
                     onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-400 hover:text-blue-600'}`}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                   >
-                    📅 予約カレンダー
-                  </button>
-                </div>
-                {/* グループ2：診断書プレビュー・診断書検索 */}
-                <div className="flex gap-1.5 bg-emerald-50 p-1 rounded-xl shadow-sm border border-emerald-200">
-                  <button
-                    type="button"
-                    disabled
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60"
-                  >
-                    📄 診断書プレビュー
+                    <Calendar size={12} /> 予約カレンダー
                   </button>
                   <button
                     type="button"
                     disabled
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1"
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <ClipboardCheck size={12} /> 診断書プレビュー
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1.5 whitespace-nowrap"
                   >
                     <Search size={12} /> 診断書検索
                   </button>
@@ -3038,7 +3035,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2 print-hide">
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
-                  <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all">
+                  <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
                     <Printer size={14} /> 用紙印刷
                   </button>
                 )}
@@ -3049,7 +3046,7 @@ export default function App() {
                     if (pw !== '0125') { alert('パスワードが違います'); return; }
                     setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
                   }}
-                  className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-4 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all"
+                  className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap"
                   title="バックアップ管理"
                 >
                   <Database size={14} /> バックアップ
