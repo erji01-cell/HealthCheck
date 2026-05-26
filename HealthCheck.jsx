@@ -3128,6 +3128,9 @@ export default function App() {
                       </option>
                     ))}
                   </select>
+                  <div className="min-w-[58px] text-right text-xs font-black text-indigo-600 whitespace-nowrap">
+                    {Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
+                  </div>
                 </div>
                 {calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
