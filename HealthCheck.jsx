@@ -3044,9 +3044,21 @@ export default function App() {
           )}
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0">
+        <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative">
+          <button
+            onClick={async () => {
+              const pw = window.prompt('バックアップ管理のパスワードを入力してください');
+              if (pw === null) return;
+              if (pw !== '0125') { alert('パスワードが違います'); return; }
+              setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
+            }}
+            className="absolute right-2 top-0 z-20 flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap print-hide"
+            title="バックアップ管理"
+          >
+            <Database size={14} /> バックアップ
+          </button>
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 print-hide lg:shrink-0">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[118px] print-hide lg:shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
                 <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
@@ -3084,18 +3096,6 @@ export default function App() {
                     <Printer size={14} /> 用紙印刷
                   </button>
                 )}
-                <button
-                  onClick={async () => {
-                    const pw = window.prompt('バックアップ管理のパスワードを入力してください');
-                    if (pw === null) return;
-                    if (pw !== '0125') { alert('パスワードが違います'); return; }
-                    setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
-                  }}
-                  className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap"
-                  title="バックアップ管理"
-                >
-                  <Database size={14} /> バックアップ
-                </button>
               </div>
             </div>
 
