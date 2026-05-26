@@ -2009,7 +2009,7 @@ export default function App() {
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="sticky top-0 z-30 -mx-6 -mt-6 flex items-center justify-between border-b bg-white px-6 pt-6 pb-4 shadow-sm">
+                <div className="sticky -top-6 z-40 -mx-6 -mt-6 flex items-center justify-between border-b bg-white px-6 pt-3 pb-4 shadow-sm">
                   <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
                       onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
