@@ -3128,7 +3128,7 @@ export default function App() {
                       </option>
                     ))}
                   </select>
-                  <div className="min-w-[64px] text-right text-sm font-black text-indigo-600 whitespace-nowrap">
+                  <div className="min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
                     {Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
                   </div>
                   <button
