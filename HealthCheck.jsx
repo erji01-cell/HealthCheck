@@ -2009,7 +2009,7 @@ export default function App() {
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="flex items-center justify-between border-b pb-4">
+                <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-white pb-4">
                   <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
                       onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
@@ -3108,7 +3108,7 @@ export default function App() {
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
               <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4">
-                <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
                   <label className="text-xs font-black text-slate-500 whitespace-nowrap">団体フィルター</label>
                   <select
                     value={calendarCompanyId}
