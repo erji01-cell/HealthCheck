@@ -343,6 +343,7 @@ export default function App() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
   const [calendarDetailError, setCalendarDetailError] = useState('');
+  const [calendarCompanyId, setCalendarCompanyId] = useState('');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
@@ -867,17 +868,19 @@ export default function App() {
   };
 
   // カレンダーデータ取得
-  const fetchCalendarData = async () => {
+  const fetchCalendarData = async (companyId = calendarCompanyId) => {
     setCalendarLoading(true);
     const today = new Date();
     const start = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
     const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
-    const { data, error } = await supabase
+    let query = supabase
       .from('health_reserv')
       .select('id, date, patient_name, patient_gender')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
+    if (companyId) query = query.eq('company_id', companyId);
+    const { data, error } = await query;
     if (!error && data) {
       const grouped = {};
       data.forEach(r => {
@@ -903,11 +906,12 @@ export default function App() {
     const fetchCalendarDetails = async () => {
       setCalendarDetailLoading(true);
       setCalendarDetailError('');
-      const { data, error } = await supabase
+      let detailQuery = supabase
         .from('health_reserv')
         .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
-        .eq('date', selectedCalendarDate)
-        .order('patient_name', { ascending: true });
+        .eq('date', selectedCalendarDate);
+      if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
+      const { data, error } = await detailQuery.order('patient_name', { ascending: true });
 
       if (cancelled) return;
       if (error) {
@@ -921,7 +925,7 @@ export default function App() {
     fetchCalendarDetails();
 
     return () => { cancelled = true; };
-  }, [selectedCalendarDate, calendarDetailData]);
+  }, [selectedCalendarDate, calendarDetailData, calendarCompanyId]);
 
   // 実際の保存処理
   const performSave = async () => {
@@ -3104,6 +3108,27 @@ export default function App() {
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
               <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <label className="text-xs font-black text-slate-500 whitespace-nowrap">団体フィルター</label>
+                  <select
+                    value={calendarCompanyId}
+                    onChange={e => {
+                      const companyId = e.target.value;
+                      setCalendarCompanyId(companyId);
+                      setSelectedCalendarDate(null);
+                      setCalendarDetailData({});
+                      fetchCalendarData(companyId);
+                    }}
+                    className="flex-1 max-w-[420px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">すべての団体</option>
+                    {getActiveHealthCompanies().map(company => (
+                      <option key={company.id} value={company.id}>
+                        {company.display_no != null ? `${company.display_no} ` : ''}{company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
