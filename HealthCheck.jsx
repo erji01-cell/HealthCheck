@@ -3119,7 +3119,7 @@ export default function App() {
                       setCalendarDetailData({});
                       fetchCalendarData(companyId);
                     }}
-                    className="flex-1 max-w-[420px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 max-w-[360px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="">すべての団体</option>
                     {getActiveHealthCompanies().map(company => (
@@ -3128,9 +3128,22 @@ export default function App() {
                       </option>
                     ))}
                   </select>
-                  <div className="min-w-[58px] text-right text-xs font-black text-indigo-600 whitespace-nowrap">
+                  <div className="min-w-[64px] text-right text-sm font-black text-indigo-600 whitespace-nowrap">
                     {Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalendarCompanyId('');
+                      setSelectedCalendarDate(null);
+                      setCalendarDetailData({});
+                      fetchCalendarData('');
+                    }}
+                    disabled={!calendarCompanyId}
+                    className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    リセット
+                  </button>
                 </div>
                 {calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
