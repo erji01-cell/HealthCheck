@@ -339,7 +339,10 @@ export default function App() {
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
+  const [calendarDetailData, setCalendarDetailData] = useState({}); // { 'YYYY-MM-DD': [detailed reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
+  const [calendarDetailError, setCalendarDetailError] = useState('');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
@@ -871,7 +874,7 @@ export default function App() {
     const end = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+      .select('id, date, patient_name, patient_gender')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -882,9 +885,43 @@ export default function App() {
         grouped[r.date].push(r);
       });
       setCalendarData(grouped);
+      setCalendarDetailData({});
     }
     setCalendarLoading(false);
   };
+
+  // カレンダー詳細は日付を開いた時だけ取得して、一覧表示を軽くする
+  useEffect(() => {
+    if (!selectedCalendarDate) {
+      setCalendarDetailLoading(false);
+      setCalendarDetailError('');
+      return;
+    }
+    if (calendarDetailData[selectedCalendarDate]) return;
+
+    let cancelled = false;
+    const fetchCalendarDetails = async () => {
+      setCalendarDetailLoading(true);
+      setCalendarDetailError('');
+      const { data, error } = await supabase
+        .from('health_reserv')
+        .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+        .eq('date', selectedCalendarDate)
+        .order('patient_name', { ascending: true });
+
+      if (cancelled) return;
+      if (error) {
+        setCalendarDetailError('予約詳細の取得に失敗しました。');
+      } else {
+        setCalendarDetailData(prev => ({ ...prev, [selectedCalendarDate]: data || [] }));
+      }
+      setCalendarDetailLoading(false);
+    };
+
+    fetchCalendarDetails();
+
+    return () => { cancelled = true; };
+  }, [selectedCalendarDate, calendarDetailData]);
 
   // 実際の保存処理
   const performSave = async () => {
@@ -1747,6 +1784,14 @@ export default function App() {
         if (!updated[selectedCalendarDate] || updated[selectedCalendarDate].length === 0) {
           setSelectedCalendarDate(null);
         }
+        return updated;
+      });
+      setCalendarDetailData(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(date => {
+          updated[date] = updated[date].filter(r => r.id !== reservationId);
+          if (updated[date].length === 0) delete updated[date];
+        });
         return updated;
       });
     }
@@ -3591,7 +3636,13 @@ export default function App() {
                     <h2 className="font-black text-lg">{selectedCalendarDate.replace(/-/g, '/')} の予約</h2>
                     <button onClick={() => setSelectedCalendarDate(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
                   </div>
-                  {(calendarData[selectedCalendarDate] || []).map((r, i) => {
+                  {calendarDetailLoading && (
+                    <div className="text-center text-slate-400 py-8 text-sm font-bold">予約詳細を読み込み中...</div>
+                  )}
+                  {calendarDetailError && (
+                    <div className="text-center text-red-500 py-8 text-sm font-bold">{calendarDetailError}</div>
+                  )}
+                  {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                     const checkedItems = [
                       r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
                       r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
