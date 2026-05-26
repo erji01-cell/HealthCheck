@@ -1995,26 +1995,12 @@ export default function App() {
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
             <h1 className="text-[1.35rem] font-black text-slate-700 tracking-wide ml-[5mm]">健康診断予約・診断書作成システム<span className="text-[0.675rem] font-medium text-slate-400 ml-2">ver.2026.05.17</span></h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  const pw = window.prompt('バックアップ管理のパスワードを入力してください');
-                  if (pw === null) return;
-                  if (pw !== '0125') { alert('パスワードが違います'); return; }
-                  setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
-                }}
-                className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-4 py-2 rounded-xl text-sm font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap"
-                title="バックアップ管理"
-              >
-                <Database size={16} /> バックアップ
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all whitespace-nowrap"
-              >
-                <LogOut size={16} /> ログアウト
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-red-400 hover:text-red-600 font-bold text-sm rounded-xl border border-pink-200 transition-all"
+            >
+              <LogOut size={16} /> ログアウト
+            </button>
           </div>
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
@@ -3060,10 +3046,10 @@ export default function App() {
         {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0">
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
-            <div className="flex items-center justify-end gap-2 mb-4 px-2 print-hide lg:shrink-0">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 print-hide lg:shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
-                <div className="flex flex-nowrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
+                <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                   <button
                     onClick={() => { setRightTab('preview'); setLeftTab('reservation'); }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
@@ -3098,6 +3084,18 @@ export default function App() {
                     <Printer size={14} /> 用紙印刷
                   </button>
                 )}
+                <button
+                  onClick={async () => {
+                    const pw = window.prompt('バックアップ管理のパスワードを入力してください');
+                    if (pw === null) return;
+                    if (pw !== '0125') { alert('パスワードが違います'); return; }
+                    setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
+                  }}
+                  className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap"
+                  title="バックアップ管理"
+                >
+                  <Database size={14} /> バックアップ
+                </button>
               </div>
             </div>
 
