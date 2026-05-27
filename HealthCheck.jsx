@@ -3048,7 +3048,7 @@ export default function App() {
           )}
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[671px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative">
+        <div className="w-full lg:w-[690px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative">
           <button
             onClick={async () => {
               const pw = window.prompt('バックアップ管理のパスワードを入力してください');
