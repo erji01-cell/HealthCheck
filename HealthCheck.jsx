@@ -1067,30 +1067,31 @@ export default function App() {
     await performSave();
   };
 
-  // 健診目的に応じた検査項目の自動チェック
-  useEffect(() => {
+  // 健診目的をユーザーが変更した時だけ検査項目を自動セットする
+  const getItemsForPurpose = (purpose, currentItems) => {
     const allOff = (overrides = {}) =>
       Object.fromEntries(
-        Object.keys(formData.items).map(k => [k, overrides[k] ?? false])
+        Object.keys(currentItems).map(k => [k, overrides[k] ?? false])
       );
-    if (formData.purpose === '特定健診(国保)') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true, ecg: true }) }));
-    } else if (formData.purpose === '長寿健診') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, bloodPressure: true, urine: true, blood: true, ecg: true }) }));
-    } else if (formData.purpose === '特定健診(社保)') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true }) }));
-    } else if (formData.purpose === '入園児') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true }) }));
-    } else if (formData.purpose === 'クリタス定期健診') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, bloodKuritasRegular: true, hba1c: true }) }));
-    } else if (formData.purpose === 'クリタス特定業務') {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, ecg: true, bloodKuritasSpecific: true }) }));
-    } else if (['就職', '進学', '企業健診'].includes(formData.purpose)) {
-      setFormData(prev => ({ ...prev, items: allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, blood: true }) }));
-    } else if (formData.purpose === 'その他') {
-      setFormData(prev => ({ ...prev, items: allOff() }));
+    if (purpose === '特定健診(国保)') {
+      return allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true, ecg: true });
+    } else if (purpose === '長寿健診') {
+      return allOff({ heightWeight: true, bloodPressure: true, urine: true, blood: true, ecg: true });
+    } else if (purpose === '特定健診(社保)') {
+      return allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, urine: true, blood: true });
+    } else if (purpose === '入園児') {
+      return allOff({ heightWeight: true });
+    } else if (purpose === 'クリタス定期健診') {
+      return allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, bloodKuritasRegular: true, hba1c: true });
+    } else if (purpose === 'クリタス特定業務') {
+      return allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, ecg: true, bloodKuritasSpecific: true });
+    } else if (['就職', '進学', '企業健診'].includes(purpose)) {
+      return allOff({ heightWeight: true, abdominalGirth: true, bloodPressure: true, vision: true, hearing: true, urine: true, xRay: true, ecg: true, blood: true });
+    } else if (purpose === 'その他') {
+      return allOff();
     }
-  }, [formData.purpose]);
+    return currentItems;
+  };
 
   useEffect(() => {
     const notes = buildKuritasBloodNotes(formData.items);
@@ -1507,6 +1508,12 @@ export default function App() {
       setFormData(prev => ({
         ...prev,
         items: { ...prev.items, [itemName]: checked }
+      }));
+    } else if (name === 'purpose') {
+      setFormData(prev => ({
+        ...prev,
+        purpose: value,
+        items: getItemsForPurpose(value, prev.items)
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
