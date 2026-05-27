@@ -3093,73 +3093,68 @@ export default function App() {
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
               <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4">
-                <div className="sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex flex-col gap-3 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="text-xs font-black text-slate-500 whitespace-nowrap">団体フィルター</label>
-                    <select
-                      value={calendarCompanyId}
-                      onChange={e => {
-                        const companyId = e.target.value;
-                        setCalendarCompanyId(companyId);
-                        setSelectedCalendarDate(null);
-                        setCalendarDetailData({});
-                        setCalendarListData([]);
-                        setCalendarListError('');
-                        fetchCalendarData(companyId);
-                      }}
-                      className="flex-1 max-w-[360px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="">すべての団体</option>
-                      {getActiveHealthCompanies().map(company => (
-                        <option key={company.id} value={company.id}>
-                          {company.display_no != null ? `${company.display_no} ` : ''}{company.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
-                      {calendarViewMode === 'list'
-                        ? calendarListData.length
-                        : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
-                    </div>
+                <div className="sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex items-center gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
+                  <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
                       type="button"
-                      onClick={() => {
-                        setCalendarCompanyId('');
-                        setSelectedCalendarDate(null);
-                        setCalendarDetailData({});
-                        setCalendarListData([]);
-                        setCalendarListError('');
-                        fetchCalendarData('');
-                      }}
-                      disabled={!calendarCompanyId}
-                      className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      onClick={() => setCalendarViewMode('calendar')}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                     >
-                      リセット
+                      <Calendar size={12} /> カレンダー
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode('list')}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'list' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-white'}`}
+                    >
+                      <ListTodo size={12} /> 団体一覧
                     </button>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
-                      <button
-                        type="button"
-                        onClick={() => setCalendarViewMode('calendar')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
-                      >
-                        <Calendar size={12} /> カレンダー
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCalendarViewMode('list')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'list' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-white'}`}
-                      >
-                        <ListTodo size={12} /> 団体一覧
-                      </button>
-                    </div>
-                    {calendarViewMode === 'list' && (
-                      <div className="text-xs font-black text-slate-500 whitespace-nowrap">
-                        合計 <span className="text-indigo-600">{formatReservationFee(getCalendarListTotalFee())}</span>
-                      </div>
-                    )}
+                  <select
+                    value={calendarCompanyId}
+                    onChange={e => {
+                      const companyId = e.target.value;
+                      setCalendarCompanyId(companyId);
+                      setSelectedCalendarDate(null);
+                      setCalendarDetailData({});
+                      setCalendarListData([]);
+                      setCalendarListError('');
+                      fetchCalendarData(companyId);
+                    }}
+                    className="w-[245px] min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">すべての団体</option>
+                    {getActiveHealthCompanies().map(company => (
+                      <option key={company.id} value={company.id}>
+                        {company.display_no != null ? `${company.display_no} ` : ''}{company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
+                    {calendarViewMode === 'list'
+                      ? calendarListData.length
+                      : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
                   </div>
+                  {calendarViewMode === 'list' && (
+                    <div className="text-[11px] font-black text-slate-500 whitespace-nowrap">
+                      合計 <span className="text-indigo-600">{formatReservationFee(getCalendarListTotalFee())}</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalendarCompanyId('');
+                      setSelectedCalendarDate(null);
+                      setCalendarDetailData({});
+                      setCalendarListData([]);
+                      setCalendarListError('');
+                      fetchCalendarData('');
+                    }}
+                    disabled={!calendarCompanyId}
+                    className="shrink-0 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    リセット
+                  </button>
                 </div>
                 {calendarViewMode === 'calendar' ? (calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
