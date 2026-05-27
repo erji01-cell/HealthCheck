@@ -3734,19 +3734,13 @@ export default function App() {
                             onClick={() => handleLoadReservation(r.id, true)}
                             className="flex-1 bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
                           >
-                            修正
+                            修正・プレビュー
                           </button>
                           <button
                             onClick={() => handleDeleteReservation(r.id, r.patient_name)}
                             className="flex-1 bg-red-500 text-white text-xs font-bold py-2 rounded-lg hover:bg-red-600 transition-all"
                           >
                             削除
-                          </button>
-                          <button
-                            onClick={() => handleLoadReservation(r.id, false)}
-                            className="flex-1 bg-slate-500 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-600 transition-all"
-                          >
-                            プレビュー
                           </button>
                         </div>
                       </div>
