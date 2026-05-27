@@ -808,14 +808,13 @@ export default function App() {
     setCalendarLoading(false);
   };
 
-  // カレンダー詳細は日付を開いた時だけ取得して、一覧表示を軽くする
+  // カレンダー詳細はモーダルを開くたびに、現在の団体フィルターで取り直す
   useEffect(() => {
     if (!selectedCalendarDate) {
       setCalendarDetailLoading(false);
       setCalendarDetailError('');
       return;
     }
-    if (calendarDetailData[selectedCalendarDate]) return;
 
     let cancelled = false;
     const fetchCalendarDetails = async () => {
@@ -840,7 +839,7 @@ export default function App() {
     fetchCalendarDetails();
 
     return () => { cancelled = true; };
-  }, [selectedCalendarDate, calendarDetailData, calendarCompanyId]);
+  }, [selectedCalendarDate, calendarCompanyId]);
 
   // 実際の保存処理
   const performSave = async () => {
