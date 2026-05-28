@@ -1947,6 +1947,7 @@ export default function App() {
       .eq('id', reservationId)
       .single();
     if (error || !data) return;
+    const birthDateIso = data.birth_date ? parseDobToISO(data.birth_date) : '';
     setFormData({
       date: data.date || tomorrowStr,
       dayOfWeek: data.day_of_week || '',
@@ -1954,7 +1955,7 @@ export default function App() {
       id: data.patient_id || '',
       name: data.patient_name || '',
       gender: data.patient_gender || '',
-      birthDate: data.birth_date ? parseDobToISO(data.birth_date) : '',
+      birthDate: birthDateIso,
       age: data.age || '',
       contact: data.contact || '',
       companyName: data.company_name || '',
@@ -1994,6 +1995,7 @@ export default function App() {
       hearingR2: data.hearing_r2 || '', hearingL2: data.hearing_l2 || '',
       colorVision: data.color_vision || '',
     });
+    setBirthDateInput(birthDateIso);
     setPatientQuery(data.patient_name || '');
     setEditingReservationId(editMode ? reservationId : null);
     setSelectedCalendarDate(null);
