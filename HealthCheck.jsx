@@ -3381,10 +3381,10 @@ export default function App() {
                             <div className="text-right">料金</div>
                           </div>
                           <div className="divide-y divide-slate-100">
-                            {getSortedCalendarListData().map(r => {
+                            {getSortedCalendarListData().map((r, i) => {
                               const itemLabels = getReservationItemLabels(r);
                               return (
-                                <div key={r.id} className="company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-2 text-xs hover:bg-blue-50">
+                                <div key={r.id} className={`company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-2 text-xs hover:bg-blue-50 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
                                   <div>
                                     <div className="font-black text-slate-700">{r.date ? r.date.replace(/-/g, '/') : ''}</div>
                                     {r.day_of_week && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{r.day_of_week}</div>}
