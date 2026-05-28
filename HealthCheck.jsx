@@ -3372,14 +3372,8 @@ export default function App() {
                                     <>
                                       <div className="flex justify-between items-center mb-0.5">
                                         <span className={`font-bold ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
-                                        {reservations.length > 4 && (
-                                          <span
-                                            onClick={e => { e.stopPropagation(); setSelectedCalendarDate(dateStr); }}
-                                            className="text-[10px] text-emerald-600 font-bold cursor-pointer hover:text-emerald-800"
-                                          >他{reservations.length - 4}名</span>
-                                        )}
                                       </div>
-                                      {(() => { const show = 4; return reservations.slice(0, show).map((r, ri) => {
+                                      {reservations.map((r, ri) => {
                                         const gender = (r.patient_gender || '').trim();
                                         const isMale = gender === '男';
                                         const isFemale = gender === '女';
@@ -3394,7 +3388,7 @@ export default function App() {
                                           <span className="font-bold">{r.patient_name}</span>
                                         </div>
                                         );
-                                      }); })()}
+                                      })}
                                     </>
                                   )}
                                 </div>
