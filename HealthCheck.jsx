@@ -314,6 +314,7 @@ export default function App() {
   const [calendarListData, setCalendarListData] = useState([]);
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
+  const [printMode, setPrintMode] = useState('');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
@@ -839,6 +840,18 @@ export default function App() {
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
 
+  const getSelectedCalendarCompanyName = () => {
+    const company = healthCompanies.find(c => c.id === calendarCompanyId);
+    if (!company) return '';
+    return `${company.display_no != null ? `${company.display_no} ` : ''}${company.name}`;
+  };
+
+  const handlePrintCompanyList = () => {
+    if (!calendarCompanyId || calendarViewMode !== 'list') return;
+    setPrintMode('companyList');
+    setTimeout(() => window.print(), 50);
+  };
+
   // カレンダーデータ取得
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
     setCalendarLoading(true);
@@ -897,6 +910,12 @@ export default function App() {
     fetchCalendarListData(calendarCompanyId);
   }, [rightTab, calendarViewMode, calendarCompanyId]);
 
+  useEffect(() => {
+    const clearPrintMode = () => setPrintMode('');
+    window.addEventListener('afterprint', clearPrintMode);
+    return () => window.removeEventListener('afterprint', clearPrintMode);
+  }, []);
+
   // カレンダー詳細はモーダルを開くたびに、現在の団体フィルターで取り直す
   useEffect(() => {
     if (!selectedCalendarDate) {
@@ -911,7 +930,7 @@ export default function App() {
       setCalendarDetailError('');
       let detailQuery = supabase
         .from('health_reserv')
-        .select('id, date, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
         .eq('date', selectedCalendarDate);
       if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
       const { data, error } = await detailQuery.order('patient_name', { ascending: true });
@@ -1975,7 +1994,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden">
+    <div className={`min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden ${printMode === 'companyList' ? 'print-company-list-active' : ''}`}>
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
@@ -3092,8 +3111,8 @@ export default function App() {
 
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
-              <div className="bg-white shadow-xl rounded-xl border border-slate-200 p-4">
-                <div className="sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex items-center gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
+              <div className="company-calendar-card bg-white shadow-xl rounded-xl border border-slate-200 p-4">
+                <div className="company-list-print-hide sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex items-center gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
                   <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
                       type="button"
@@ -3121,7 +3140,7 @@ export default function App() {
                       setCalendarListError('');
                       fetchCalendarData(companyId);
                     }}
-                    className="w-[245px] min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-[218px] min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="">すべての団体</option>
                     {getActiveHealthCompanies().map(company => (
@@ -3135,11 +3154,6 @@ export default function App() {
                       ? calendarListData.length
                       : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
                   </div>
-                  {calendarViewMode === 'list' && (
-                    <div className="text-[11px] font-black text-slate-500 whitespace-nowrap">
-                      合計 <span className="text-indigo-600">{formatReservationFee(getCalendarListTotalFee())}</span>
-                    </div>
-                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -3155,6 +3169,16 @@ export default function App() {
                   >
                     リセット
                   </button>
+                  {calendarViewMode === 'list' && (
+                    <button
+                      type="button"
+                      onClick={handlePrintCompanyList}
+                      disabled={!calendarCompanyId || calendarListLoading || calendarListData.length === 0}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      <Printer size={13} /> 印刷
+                    </button>
+                  )}
                 </div>
                 {calendarViewMode === 'calendar' ? (calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
@@ -3245,7 +3269,7 @@ export default function App() {
                     })}
                   </div>
                 )) : (
-                  <div className="space-y-3">
+                  <div className="company-list-print-area space-y-3">
                     {!calendarCompanyId ? (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center">
                         <div className="text-sm font-black text-slate-600">団体を選択してください</div>
@@ -3261,7 +3285,12 @@ export default function App() {
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="company-list-print-header hidden">
+                          <div className="text-xl font-black text-slate-800">団体別 健康診断予約一覧</div>
+                          <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}</div>
+                          <div className="mt-1 text-xs text-slate-400">印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
+                        </div>
+                        <div className="company-list-summary grid grid-cols-3 gap-2">
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">件数</div>
                             <div className="text-lg font-black text-slate-700">{calendarListData.length}件</div>
@@ -3275,8 +3304,8 @@ export default function App() {
                             <div className="text-sm font-black text-slate-700">健診日順</div>
                           </div>
                         </div>
-                        <div className="overflow-hidden rounded-xl border border-slate-200">
-                          <div className="grid grid-cols-[88px_1fr_92px_88px] gap-2 bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-500">
+                        <div className="company-list-table overflow-hidden rounded-xl border border-slate-200">
+                          <div className="company-list-table-header grid grid-cols-[88px_1fr_92px_88px] gap-2 bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-500">
                             <div>健診日</div>
                             <div>患者・健診目的</div>
                             <div className="text-right">支払い</div>
@@ -3286,7 +3315,7 @@ export default function App() {
                             {calendarListData.map(r => {
                               const itemLabels = getReservationItemLabels(r);
                               return (
-                                <div key={r.id} className="grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-3 text-xs hover:bg-blue-50">
+                                <div key={r.id} className="company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-3 text-xs hover:bg-blue-50">
                                   <div>
                                     <div className="font-black text-slate-700">{r.date ? r.date.replace(/-/g, '/') : ''}</div>
                                     {r.day_of_week && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{r.day_of_week}</div>}
@@ -3755,33 +3784,35 @@ export default function App() {
             {/* 詳細モーダル */}
             {selectedCalendarDate && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCalendarDate(null)}>
-                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                  <div className="shrink-0 flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
                     <h2 className="font-black text-lg">{selectedCalendarDate.replace(/-/g, '/')} の予約</h2>
                     <button onClick={() => setSelectedCalendarDate(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
                   </div>
-                  {calendarDetailLoading && (
-                    <div className="text-center text-slate-400 py-8 text-sm font-bold">予約詳細を読み込み中...</div>
-                  )}
-                  {calendarDetailError && (
-                    <div className="text-center text-red-500 py-8 text-sm font-bold">{calendarDetailError}</div>
-                  )}
-                  {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
-                    const checkedItems = [
-                      r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                      r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
-                      r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
-                      r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
-                      r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
-                      r.item_psa && 'PSA', r.item_hbs_ag && 'HBs抗原', r.item_hbs_ab && 'HBs抗体', r.item_hcv_ab && 'HCV抗体', r.item_syphilis && '梅毒STS', r.item_mrsa && 'MRSA',
-                    ].filter(Boolean);
-                    return (
-                      <div key={i} className="border border-slate-200 rounded-xl p-4 mb-3">
+                  <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {calendarDetailLoading && (
+                      <div className="text-center text-slate-400 py-8 text-sm font-bold">予約詳細を読み込み中...</div>
+                    )}
+                    {calendarDetailError && (
+                      <div className="text-center text-red-500 py-8 text-sm font-bold">{calendarDetailError}</div>
+                    )}
+                    {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
+                      const checkedItems = [
+                        r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
+                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
+                        r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
+                        r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
+                        r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
+                        r.item_psa && 'PSA', r.item_hbs_ag && 'HBs抗原', r.item_hbs_ab && 'HBs抗体', r.item_hcv_ab && 'HCV抗体', r.item_syphilis && '梅毒STS', r.item_mrsa && 'MRSA',
+                      ].filter(Boolean);
+                      return (
+                        <div key={i} className="border border-slate-200 rounded-xl p-4 mb-3">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
                             <div className="font-black text-lg">{r.patient_name}</div>
                             <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
+                              {r.patient_id && <span>ID: {r.patient_id}</span>}
                               {r.patient_gender && <span>{r.patient_gender}</span>}
                               {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
                               {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
@@ -3819,8 +3850,9 @@ export default function App() {
                           </button>
                         </div>
                       </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -4611,6 +4643,52 @@ export default function App() {
             background: white !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          .print-company-list-active .company-list-print-hide {
+            display: none !important;
+          }
+          .print-company-list-active .company-calendar-card {
+            width: 210mm !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .print-company-list-active .company-list-print-area {
+            width: 210mm !important;
+            box-sizing: border-box !important;
+            padding: 6mm 8mm !important;
+            color: #0f172a !important;
+            background: white !important;
+          }
+          .print-company-list-active .company-list-print-header {
+            display: block !important;
+            margin-bottom: 5mm !important;
+            padding-bottom: 3mm !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+          }
+          .print-company-list-active .company-list-summary {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 2mm !important;
+            margin-bottom: 4mm !important;
+          }
+          .print-company-list-active .company-list-table {
+            overflow: visible !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0 !important;
+          }
+          .print-company-list-active .company-list-table-header {
+            background: #f1f5f9 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print-company-list-active .company-list-row {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
