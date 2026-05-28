@@ -3467,6 +3467,7 @@ export default function App() {
                                   <div className="min-w-0">
                                     <div className="flex items-baseline gap-3 min-w-0">
                                       <div className="font-black text-slate-800 truncate">{r.patient_name}</div>
+                                      {r.patient_id && <div className="shrink-0 text-[10px] font-black text-slate-400">ID: {r.patient_id}</div>}
                                       <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
                                     </div>
                                     {r.patient_name_kana && <div className="text-[10px] font-bold text-slate-400 truncate leading-tight">{r.patient_name_kana}</div>}
