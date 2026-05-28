@@ -929,7 +929,7 @@ export default function App() {
             <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
             <div className="font-black text-lg">{r.patient_name}</div>
             <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
-              {r.patient_id && <span>ID: {r.patient_id}</span>}
+              {r.patient_id && <span className="font-black text-emerald-600">ID: {r.patient_id}</span>}
               {r.patient_gender && <span>{r.patient_gender}</span>}
               {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
               {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
@@ -3992,7 +3992,7 @@ export default function App() {
                             <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
                             <div className="font-black text-lg">{r.patient_name}</div>
                             <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
-                              {r.patient_id && <span>ID: {r.patient_id}</span>}
+                              {r.patient_id && <span className="font-black text-emerald-600">ID: {r.patient_id}</span>}
                               {r.patient_gender && <span>{r.patient_gender}</span>}
                               {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
                               {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
