@@ -28,6 +28,15 @@ const normalizeCompanyName = (value = '') =>
   value.replace(/\u3000/g, ' ').replace(/\s+/g, ' ').trim();
 
 const getCompanyNameKey = (value = '') => normalizeCompanyName(value).toLowerCase();
+const CALENDAR_COMPANY_STORAGE_KEY = 'health_check_calendar_company_id';
+
+const getStoredCalendarCompanyId = () => {
+  try {
+    return window.localStorage.getItem(CALENDAR_COMPANY_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+};
 
 // 採血基準値テーブル（BML基準値）
 const BLOOD_REFERENCE_RANGES = {
@@ -309,7 +318,7 @@ export default function App() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
   const [calendarDetailError, setCalendarDetailError] = useState('');
-  const [calendarCompanyId, setCalendarCompanyId] = useState('');
+  const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
   const [calendarListLoading, setCalendarListLoading] = useState(false);
@@ -909,6 +918,18 @@ export default function App() {
     if (rightTab !== 'calendar' || calendarViewMode !== 'list') return;
     fetchCalendarListData(calendarCompanyId);
   }, [rightTab, calendarViewMode, calendarCompanyId]);
+
+  useEffect(() => {
+    try {
+      if (calendarCompanyId) {
+        window.localStorage.setItem(CALENDAR_COMPANY_STORAGE_KEY, calendarCompanyId);
+      } else {
+        window.localStorage.removeItem(CALENDAR_COMPANY_STORAGE_KEY);
+      }
+    } catch {
+      // localStorageが使えない環境では通常の画面内状態だけで動かす
+    }
+  }, [calendarCompanyId]);
 
   useEffect(() => {
     const clearPrintMode = () => setPrintMode('');
