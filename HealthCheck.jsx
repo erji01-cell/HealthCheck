@@ -936,7 +936,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, patient_name, patient_name_kana, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa')
+      .select('id, date, day_of_week, patient_name, patient_name_kana, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .eq('company_id', companyId)
       .gte('date', start)
       .lte('date', end)
@@ -990,7 +990,7 @@ export default function App() {
       setCalendarDetailError('');
       let detailQuery = supabase
         .from('health_reserv')
-        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form')
+        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
         .eq('date', selectedCalendarDate);
       if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
       const { data, error } = await detailQuery.order('patient_name', { ascending: true });
@@ -3404,6 +3404,11 @@ export default function App() {
                                         ))}
                                       </div>
                                     )}
+                                    {r.others && (
+                                      <div className="mt-0.5 text-[10px] font-bold text-amber-700 whitespace-pre-wrap">
+                                        備考: {r.others}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="text-right font-bold text-slate-500">{r.payment_type || '-'}</div>
                                   <div className="text-right font-black text-blue-600">{formatReservationFee(r.fee)}</div>
@@ -3905,6 +3910,11 @@ export default function App() {
                         </div>
                         {r.has_dedicated_form && <div className="mt-2 text-[10px] text-orange-600 font-bold">専用診断用紙あり</div>}
                         {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
+                        {r.others && (
+                          <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 px-2 py-1.5 text-[11px] font-bold text-amber-700 whitespace-pre-wrap">
+                            備考: {r.others}
+                          </div>
+                        )}
                         <div className="mt-3 flex gap-2">
                           <button
                             onClick={() => handleLoadReservation(r.id, true)}
