@@ -3058,7 +3058,7 @@ export default function App() {
                     <ListTodo size={12} /> 予約プレビュー
                   </button>
                   <button
-                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
+                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                   >
                     <Calendar size={12} /> 予約カレンダー
@@ -3097,7 +3097,7 @@ export default function App() {
                   <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                     <button
                       type="button"
-                      onClick={() => setCalendarViewMode('calendar')}
+                      onClick={() => { setCalendarViewMode('calendar'); fetchCalendarData(calendarCompanyId); }}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                     >
                       <Calendar size={12} /> カレンダー
