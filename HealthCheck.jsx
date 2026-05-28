@@ -3384,23 +3384,22 @@ export default function App() {
                             {getSortedCalendarListData().map(r => {
                               const itemLabels = getReservationItemLabels(r);
                               return (
-                                <div key={r.id} className="company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-3 text-xs hover:bg-blue-50">
+                                <div key={r.id} className="company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-2 text-xs hover:bg-blue-50">
                                   <div>
                                     <div className="font-black text-slate-700">{r.date ? r.date.replace(/-/g, '/') : ''}</div>
                                     {r.day_of_week && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{r.day_of_week}</div>}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="font-black text-slate-800 truncate">{r.patient_name}</div>
-                                    {r.patient_name_kana && <div className="text-[10px] font-bold text-slate-400 truncate">{r.patient_name_kana}</div>}
-                                    <div className="mt-1 text-[11px] font-bold text-slate-600 truncate">{r.purpose}</div>
+                                    <div className="flex items-baseline gap-3 min-w-0">
+                                      <div className="font-black text-slate-800 truncate">{r.patient_name}</div>
+                                      <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
+                                    </div>
+                                    {r.patient_name_kana && <div className="text-[10px] font-bold text-slate-400 truncate leading-tight">{r.patient_name_kana}</div>}
                                     {itemLabels.length > 0 && (
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {itemLabels.slice(0, 5).map(item => (
+                                      <div className="mt-0.5 flex flex-wrap gap-0.5">
+                                        {itemLabels.map(item => (
                                           <span key={item} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{item}</span>
                                         ))}
-                                        {itemLabels.length > 5 && (
-                                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">他{itemLabels.length - 5}</span>
-                                        )}
                                       </div>
                                     )}
                                   </div>
