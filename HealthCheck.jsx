@@ -318,6 +318,9 @@ export default function App() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
   const [calendarDetailError, setCalendarDetailError] = useState('');
+  const [singleReservationDetail, setSingleReservationDetail] = useState(null);
+  const [singleReservationLoading, setSingleReservationLoading] = useState(false);
+  const [singleReservationError, setSingleReservationError] = useState('');
   const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
@@ -898,6 +901,78 @@ export default function App() {
     if (!calendarCompanyId || calendarViewMode !== 'list') return;
     setPrintMode('companyList');
     setTimeout(() => window.print(), 50);
+  };
+
+  const fetchReservationDetailById = async (reservationId) => {
+    setSingleReservationDetail(null);
+    setSingleReservationError('');
+    setSingleReservationLoading(true);
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+      .eq('id', reservationId)
+      .single();
+    if (error || !data) {
+      setSingleReservationError('予約詳細の取得に失敗しました。');
+    } else {
+      setSingleReservationDetail(data);
+    }
+    setSingleReservationLoading(false);
+  };
+
+  const renderReservationDetailCard = (r, key = r.id) => {
+    const checkedItems = getReservationItemLabels(r);
+    return (
+      <div key={key} className="border border-slate-200 rounded-xl p-4 mb-3">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <div className="text-xs text-slate-400">{r.patient_name_kana}</div>
+            <div className="font-black text-lg">{r.patient_name}</div>
+            <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
+              {r.patient_id && <span>ID: {r.patient_id}</span>}
+              {r.patient_gender && <span>{r.patient_gender}</span>}
+              {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
+              {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+            </div>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            <div>{r.purpose}</div>
+            {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
+            <div className="font-bold text-blue-600">
+              {KURITAS_PURPOSES.includes(r.purpose)
+                ? '同友会請求'
+                : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {checkedItems.map(item => (
+            <span key={item} className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{item}</span>
+          ))}
+        </div>
+        {r.has_dedicated_form && <div className="mt-2 text-[10px] text-orange-600 font-bold">専用診断用紙あり</div>}
+        {r.deadline_type === '有' && r.deadline_date && <div className="mt-1 text-[10px] text-red-600">提出期限: {r.deadline_date}</div>}
+        {r.others && (
+          <div className="mt-2 rounded-lg bg-amber-50 border border-amber-100 px-2 py-1.5 text-[11px] font-bold text-amber-700 whitespace-pre-wrap">
+            備考: {r.others}
+          </div>
+        )}
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => { setSingleReservationDetail(null); setSingleReservationError(''); handleLoadReservation(r.id, true); }}
+            className="flex-1 bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 transition-all"
+          >
+            修正・プレビュー
+          </button>
+          <button
+            onClick={() => { setSingleReservationDetail(null); setSingleReservationError(''); handleDeleteReservation(r.id, r.patient_name); }}
+            className="flex-1 bg-red-500 text-white text-xs font-bold py-2 rounded-lg hover:bg-red-600 transition-all"
+          >
+            削除
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // カレンダーデータ取得
@@ -3386,7 +3461,11 @@ export default function App() {
                             {getSortedCalendarListData().map((r, i) => {
                               const itemLabels = getReservationItemLabels(r);
                               return (
-                                <div key={r.id} className={`company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-2 text-xs hover:bg-blue-50 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                <div
+                                  key={r.id}
+                                  onClick={() => fetchReservationDetailById(r.id)}
+                                  className={`company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-2 text-xs cursor-pointer hover:bg-blue-50 ${i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}
+                                >
                                   <div>
                                     <div className="font-black text-slate-700">{r.date ? r.date.replace(/-/g, '/') : ''}</div>
                                     {r.day_of_week && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{r.day_of_week}</div>}
@@ -3851,6 +3930,37 @@ export default function App() {
                     >
                       OK
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 団体一覧から開く単独予約詳細モーダル */}
+            {(singleReservationLoading || singleReservationError || singleReservationDetail) && (
+              <div
+                className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                onClick={() => { setSingleReservationDetail(null); setSingleReservationError(''); setSingleReservationLoading(false); }}
+              >
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                  <div className="shrink-0 flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+                    <h2 className="font-black text-lg">
+                      {singleReservationDetail?.date ? `${singleReservationDetail.date.replace(/-/g, '/')} の予約詳細` : '予約詳細'}
+                    </h2>
+                    <button
+                      onClick={() => { setSingleReservationDetail(null); setSingleReservationError(''); setSingleReservationLoading(false); }}
+                      className="text-slate-400 hover:text-slate-600 text-xl font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {singleReservationLoading && (
+                      <div className="text-center text-slate-400 py-8 text-sm font-bold">予約詳細を読み込み中...</div>
+                    )}
+                    {singleReservationError && (
+                      <div className="text-center text-red-500 py-8 text-sm font-bold">{singleReservationError}</div>
+                    )}
+                    {!singleReservationLoading && !singleReservationError && singleReservationDetail && renderReservationDetailCard(singleReservationDetail, 'single-reservation-detail')}
                   </div>
                 </div>
               </div>
