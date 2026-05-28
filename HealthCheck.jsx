@@ -3936,7 +3936,7 @@ export default function App() {
                 className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
                 onClick={() => { setSingleReservationDetail(null); setSingleReservationError(''); setSingleReservationLoading(false); }}
               >
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[550px] max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                   <div className="shrink-0 flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
                     <h2 className="font-black text-lg">
                       {singleReservationDetail?.date ? `${singleReservationDetail.date.replace(/-/g, '/')} の予約詳細` : '予約詳細'}
@@ -3964,7 +3964,7 @@ export default function App() {
             {/* 詳細モーダル */}
             {selectedCalendarDate && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCalendarDate(null)}>
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[550px] max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                   <div className="shrink-0 flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
                     <h2 className="font-black text-lg">{selectedCalendarDate.replace(/-/g, '/')} の予約</h2>
                     <button onClick={() => setSelectedCalendarDate(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
