@@ -321,6 +321,7 @@ export default function App() {
   const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
+  const [calendarListSort, setCalendarListSort] = useState('date');
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
@@ -848,6 +849,44 @@ export default function App() {
       const num = Number(r.fee);
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
+
+  const getCalendarListSortLabel = () => ({
+    date: '健診日順',
+    kana: '読み仮名順',
+    feeDesc: '金額 高い順',
+    feeAsc: '金額 低い順',
+  }[calendarListSort] || '健診日順');
+
+  const compareCalendarListByDate = (a, b) =>
+    String(a.date || '').localeCompare(String(b.date || '')) ||
+    String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja');
+
+  const getCalendarListFeeValue = (r) => {
+    const num = Number(r.fee);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const getSortedCalendarListData = () => {
+    const list = [...calendarListData];
+    if (calendarListSort === 'kana') {
+      return list.sort((a, b) =>
+        String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja') ||
+        compareCalendarListByDate(a, b)
+      );
+    }
+    if (calendarListSort === 'feeDesc' || calendarListSort === 'feeAsc') {
+      return list.sort((a, b) => {
+        const aFee = getCalendarListFeeValue(a);
+        const bFee = getCalendarListFeeValue(b);
+        if (aFee == null && bFee == null) return compareCalendarListByDate(a, b);
+        if (aFee == null) return 1;
+        if (bFee == null) return -1;
+        const feeCompare = calendarListSort === 'feeDesc' ? bFee - aFee : aFee - bFee;
+        return feeCompare || compareCalendarListByDate(a, b);
+      });
+    }
+    return list.sort(compareCalendarListByDate);
+  };
 
   const getSelectedCalendarCompanyName = () => {
     const company = healthCompanies.find(c => c.id === calendarCompanyId);
@@ -3309,7 +3348,7 @@ export default function App() {
                         <div className="company-list-print-header hidden">
                           <div className="text-xl font-black text-slate-800">団体別 健康診断予約一覧</div>
                           <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}</div>
-                          <div className="mt-1 text-xs text-slate-400">印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
+                          <div className="mt-1 text-xs text-slate-400">表示順: {getCalendarListSortLabel()}　印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
                         </div>
                         <div className="company-list-summary grid grid-cols-3 gap-2">
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -3322,7 +3361,16 @@ export default function App() {
                           </div>
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">表示順</div>
-                            <div className="text-sm font-black text-slate-700">健診日順</div>
+                            <select
+                              value={calendarListSort}
+                              onChange={e => setCalendarListSort(e.target.value)}
+                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
+                            >
+                              <option value="date">健診日順</option>
+                              <option value="kana">読み仮名順</option>
+                              <option value="feeDesc">金額 高い順</option>
+                              <option value="feeAsc">金額 低い順</option>
+                            </select>
                           </div>
                         </div>
                         <div className="company-list-table overflow-hidden rounded-xl border border-slate-200">
@@ -3333,7 +3381,7 @@ export default function App() {
                             <div className="text-right">料金</div>
                           </div>
                           <div className="divide-y divide-slate-100">
-                            {calendarListData.map(r => {
+                            {getSortedCalendarListData().map(r => {
                               const itemLabels = getReservationItemLabels(r);
                               return (
                                 <div key={r.id} className="company-list-row grid grid-cols-[88px_1fr_92px_88px] gap-2 px-3 py-3 text-xs hover:bg-blue-50">
