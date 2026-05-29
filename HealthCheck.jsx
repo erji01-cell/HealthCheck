@@ -1151,7 +1151,8 @@ export default function App() {
       others: formData.others,
       bp_measure_count: items.bloodPressure ? parseInt(formData.bpMeasureCount || '1', 10) : null,
       bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
-      bp2_sys: formData.bp2Sys, bp2_dia: formData.bp2Dia,
+      bp2_sys: items.bloodPressure && formData.bpMeasureCount === '2' ? formData.bp2Sys : '',
+      bp2_dia: items.bloodPressure && formData.bpMeasureCount === '2' ? formData.bp2Dia : '',
       pulse: formData.pulse,
       height: formData.height, weight: formData.weight, bmi: formData.bmi, waist: formData.waist,
       vision_r: formData.visionR, vision_l: formData.visionL,
@@ -1642,6 +1643,12 @@ export default function App() {
         ...prev,
         items: { ...prev.items, [itemName]: checked }
       }));
+    } else if (name === 'bpMeasureCount') {
+      setFormData(prev => ({
+        ...prev,
+        bpMeasureCount: value,
+        ...(value === '1' ? { bp2Sys: '', bp2Dia: '' } : {}),
+      }));
     } else if (name === 'purpose') {
       setFormData(prev => ({
         ...prev,
@@ -1950,6 +1957,7 @@ export default function App() {
       .single();
     if (error || !data) return;
     const birthDateIso = data.birth_date ? parseDobToISO(data.birth_date) : '';
+    const loadedBpMeasureCount = Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
     setFormData({
       date: data.date || tomorrowStr,
       dayOfWeek: data.day_of_week || '',
@@ -1987,7 +1995,7 @@ export default function App() {
       medicalHistory: data.medical_history || '',
       findings: data.findings || '',
       others: data.others || '',
-      bpMeasureCount: String(data.bp_measure_count || 1),
+      bpMeasureCount: loadedBpMeasureCount,
       bp1Sys: data.bp1_sys || '', bp1Dia: data.bp1_dia || '',
       bp2Sys: data.bp2_sys || '', bp2Dia: data.bp2_dia || '',
       pulse: data.pulse || '',
@@ -4582,9 +4590,11 @@ export default function App() {
                       <div className="text-[10px] text-black mb-0.5">血圧1回目</div>
                       <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
                     </div>
-                    <div className="flex-1 p-2 flex flex-col items-start justify-start">
-                      <div className="text-[10px] text-black mb-0.5">血圧2回目</div>
-                      <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp2Sys || ''} / {formData.bp2Dia || ''}</div>
+                    <div className={`flex-1 p-2 flex flex-col items-start justify-start ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'bg-slate-100' : ''}`}>
+                      <div className="text-[10px] text-black mb-0.5">血圧2回目{formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '（不要）' : ''}</div>
+                      <div className={`font-mono text-sm font-bold w-full text-center ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'text-slate-500' : 'text-black'}`}>
+                        {formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '測定なし' : `${formData.bp2Sys || ''} / ${formData.bp2Dia || ''}`}
+                      </div>
                     </div>
                     <div className="w-[100px] p-2 flex flex-col items-start justify-start">
                       <div className="text-[10px] text-black mb-0.5">脈拍</div>
