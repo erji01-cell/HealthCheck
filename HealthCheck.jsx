@@ -299,6 +299,7 @@ export default function App() {
     medicalHistory: '',
     findings: '',
     others: '',
+    bpMeasureCount: '1',
     bp1Sys: '', bp1Dia: '',
     bp2Sys: '', bp2Dia: '',
     pulse: '',
@@ -811,7 +812,7 @@ export default function App() {
   const getReservationItemLabels = (r) => [
     r.item_height_weight && '身長/体重',
     r.item_abdominal_girth && '腹囲',
-    r.item_blood_pressure && '血圧',
+    r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`,
     r.item_vision && '視力',
     r.item_color_vision && '色神',
     r.item_hearing && '聴力',
@@ -909,7 +910,7 @@ export default function App() {
     setSingleReservationLoading(true);
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
       .eq('id', reservationId)
       .single();
     if (error || !data) {
@@ -1011,7 +1012,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .eq('company_id', companyId)
       .gte('date', start)
       .lte('date', end)
@@ -1065,7 +1066,7 @@ export default function App() {
       setCalendarDetailError('');
       let detailQuery = supabase
         .from('health_reserv')
-        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
         .eq('date', selectedCalendarDate);
       if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
       const { data, error } = await detailQuery.order('patient_name', { ascending: true });
@@ -1148,6 +1149,7 @@ export default function App() {
       payment_type: paymentType,
       fee: fee,
       others: formData.others,
+      bp_measure_count: items.bloodPressure ? parseInt(formData.bpMeasureCount || '1', 10) : null,
       bp1_sys: formData.bp1Sys, bp1_dia: formData.bp1Dia,
       bp2_sys: formData.bp2Sys, bp2_dia: formData.bp2Dia,
       pulse: formData.pulse,
@@ -1549,7 +1551,7 @@ export default function App() {
     setModalStep('reservations');
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, purpose, fee, payment_type, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_endoscopy')
+      .select('id, date, day_of_week, purpose, fee, payment_type, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_endoscopy')
       .eq('patient_id', patient.patient_id)
       .order('date', { ascending: false })
       .limit(20);
@@ -1985,6 +1987,7 @@ export default function App() {
       medicalHistory: data.medical_history || '',
       findings: data.findings || '',
       others: data.others || '',
+      bpMeasureCount: String(data.bp_measure_count || 1),
       bp1Sys: data.bp1_sys || '', bp1Dia: data.bp1_dia || '',
       bp2Sys: data.bp2_sys || '', bp2Dia: data.bp2_dia || '',
       pulse: data.pulse || '',
@@ -2383,6 +2386,24 @@ export default function App() {
                           );
                         })}
                       </div>
+                      {formData.items.bloodPressure && (
+                        <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                          <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
+                          {['1', '2'].map(count => (
+                            <label key={count} className={`flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold cursor-pointer ${formData.bpMeasureCount === count ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                              <input
+                                type="radio"
+                                name="bpMeasureCount"
+                                value={count}
+                                checked={formData.bpMeasureCount === count}
+                                onChange={handleChange}
+                                className="sr-only"
+                              />
+                              {count}回
+                            </label>
+                          ))}
+                        </div>
+                      )}
                       <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
@@ -3578,7 +3599,7 @@ export default function App() {
                         <div className="text-center text-slate-400 py-8 text-sm">予約情報なし</div>
                       )}
                       {!patientReservLoading && patientReservations.map((r, i) => {
-                        const items = [r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査', r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神', r.item_endoscopy && '胃内視鏡'].filter(Boolean);
+                        const items = getReservationItemLabels(r);
                         return (
                           <div
                             key={i}
@@ -3986,7 +4007,7 @@ export default function App() {
                     )}
                     {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                       const checkedItems = [
-                        r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && '血圧', r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
+                        r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`, r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
                         r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
                         r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
                         r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
@@ -4644,7 +4665,7 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, colorVision: '色神' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: `血圧${formData.bpMeasureCount === '2' ? '2回' : '1回'}`, vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, colorVision: '色神' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
