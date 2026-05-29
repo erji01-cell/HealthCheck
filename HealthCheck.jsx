@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
@@ -933,7 +933,7 @@ export default function App() {
               {r.patient_id && <span className="font-black text-emerald-600">ID: {r.patient_id}</span>}
               {r.patient_gender && <span>{r.patient_gender}</span>}
               {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
-              {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+              {r.age != null && r.age !== '' && <span className="text-blue-600 font-bold">{r.age}歳</span>}
             </div>
           </div>
           <div className="text-right text-xs text-slate-500">
@@ -2259,7 +2259,7 @@ export default function App() {
                     <div className="space-y-1">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">健診時年齢</label>
                       <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
-                        {formData.age !== '' && formData.age != null ? `${formData.age} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                        {formData.age !== '' && formData.age != null ? <span className="text-blue-600 font-bold">{formData.age} 歳</span> : <span className="text-slate-300">年齢は自動計算</span>}
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -2617,7 +2617,7 @@ export default function App() {
                         <div className="space-y-1">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">健診時年齢</label>
                           <div className="w-full p-2 border rounded-lg bg-slate-50 min-h-[42px] text-sm flex items-center">
-                            {kenshinData.kAge !== '' && kenshinData.kAge != null ? `${kenshinData.kAge} 歳` : <span className="text-slate-300">年齢は自動計算</span>}
+                            {kenshinData.kAge !== '' && kenshinData.kAge != null ? <span className="text-blue-600 font-bold">{kenshinData.kAge} 歳</span> : <span className="text-slate-300">年齢は自動計算</span>}
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -3505,7 +3505,7 @@ export default function App() {
                                     {(r.birth_date || (r.age != null && r.age !== '')) && (
                                       <div className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
                                         {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
-                                        {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+                                        {r.age != null && r.age !== '' && <span className="text-blue-600 font-bold">{r.age}歳</span>}
                                       </div>
                                     )}
                                     {itemLabels.length > 0 && (
@@ -4032,7 +4032,7 @@ export default function App() {
                               {r.patient_id && <span className="font-black text-emerald-600">ID: {r.patient_id}</span>}
                               {r.patient_gender && <span>{r.patient_gender}</span>}
                               {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
-                              {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+                              {r.age != null && r.age !== '' && <span className="text-blue-600 font-bold">{r.age}歳</span>}
                             </div>
                           </div>
                           <div className="text-right text-xs text-slate-500">
