@@ -4600,14 +4600,17 @@ export default function App() {
                       <div className="text-[10px] text-black mb-0.5">脈拍</div>
                       <div className="font-mono text-sm font-bold text-black">{formData.pulse || ''}</div>
                     </div>
-                    <div className={`w-[100px] p-2 flex ${!formData.items.colorVision ? 'items-center justify-center bg-slate-100' : 'flex-col items-start justify-start'}`}>
+                    <div className={`w-[100px] p-2 flex flex-col items-start justify-start ${!formData.items.colorVision ? 'relative bg-slate-100' : ''}`}>
                       {formData.items.colorVision ? (
                         <>
                           <div className="text-[10px] text-black mb-0.5">色神</div>
                           <div className="text-sm font-bold text-black">{formData.colorVision || ''}</div>
                         </>
                       ) : (
-                        <div className="text-sm font-bold text-slate-500">不要</div>
+                        <>
+                          <div className="text-[10px] text-black mb-0.5">色神</div>
+                          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-500">不要</div>
+                        </>
                       )}
                     </div>
                   </div>
