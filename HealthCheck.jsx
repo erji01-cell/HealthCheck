@@ -1011,7 +1011,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .eq('company_id', companyId)
       .gte('date', start)
       .lte('date', end)
@@ -3473,6 +3473,12 @@ export default function App() {
                                       <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
                                     </div>
                                     {r.patient_name_kana && <div className="text-[10px] font-bold text-slate-400 truncate leading-tight">{r.patient_name_kana}</div>}
+                                    {(r.birth_date || (r.age != null && r.age !== '')) && (
+                                      <div className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
+                                        {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
+                                        {r.age != null && r.age !== '' && <span>{r.age}歳</span>}
+                                      </div>
+                                    )}
                                     {itemLabels.length > 0 && (
                                       <div className="mt-0.5 flex flex-wrap gap-0.5">
                                         {itemLabels.map(item => (
