@@ -307,10 +307,12 @@ export default function App() {
     height: '', weight: '', bmi: '', waist: '', chest: '',
     visionR: '', visionL: '', visionR2: '', visionL2: '',
     hearingR: '', hearingL: '', hearingR2: '', hearingL2: '',
-    colorVision: ''
+    colorVision: '',
+    staffId: '', staffName: ''
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [staffMembers, setStaffMembers] = useState([]);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
   const [saveErrorMessage, setSaveErrorMessage] = useState('');
   const [editingReservationId, setEditingReservationId] = useState(null);
@@ -688,6 +690,22 @@ export default function App() {
       } catch (err) {
         console.error('自動バックアップ失敗:', err);
       }
+    })();
+  }, [session]);
+
+  // 担当者一覧取得（invent_staff）
+  useEffect(() => {
+    if (!session) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('invent_staff')
+        .select('id, name, is_active')
+        .order('id', { ascending: true });
+      if (error) {
+        console.error('担当者一覧の読み込みに失敗しました:', error);
+        return;
+      }
+      setStaffMembers((data ?? []).filter(member => member.is_active !== false));
     })();
   }, [session]);
 
@@ -1106,6 +1124,8 @@ export default function App() {
       hearing_r: formData.hearingR, hearing_l: formData.hearingL,
       hearing_r2: formData.hearingR2, hearing_l2: formData.hearingL2,
       color_vision: formData.colorVision,
+      staff_id: formData.staffId ? parseInt(formData.staffId, 10) : null,
+      staff_name: formData.staffName || null,
       user_id: session?.user?.id,
       updated_at: new Date().toISOString(),
     };
@@ -1147,6 +1167,10 @@ export default function App() {
   const handleSave = async () => {
     if (!formData.name.trim()) {
       alert('氏名を入力してください。');
+      return;
+    }
+    if (!formData.staffId) {
+      alert('予約担当者を選択してください。');
       return;
     }
     if (!editingReservationId && formData.id && formData.date) {
@@ -1951,6 +1975,8 @@ export default function App() {
       hearingR: data.hearing_r || '', hearingL: data.hearing_l || '',
       hearingR2: data.hearing_r2 || '', hearingL2: data.hearing_l2 || '',
       colorVision: data.color_vision || '',
+      staffId: data.staff_id != null ? String(data.staff_id) : '',
+      staffName: data.staff_name || '',
     });
     setBirthDateInput(birthDateIso);
     setPatientQuery(data.patient_name || '');
@@ -2426,19 +2452,43 @@ export default function App() {
                   <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
-                <button
-                  onClick={handleSave}
-                  disabled={saveStatus === 'saving'}
-                  className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                    saveStatus === 'saved' ? 'bg-green-600 text-white' :
-                    saveStatus === 'error' ? 'bg-red-600 text-white' :
-                    saveStatus === 'saving' ? 'bg-blue-400 text-white cursor-not-allowed' :
-                    'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  <Save size={18} />
-                  {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '予約データを保存'}
-                </button>
+                <div className="flex items-stretch gap-3">
+                  {/* 左半分：予約担当者 */}
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">予約担当者 <span className="text-red-500">*</span></label>
+                    <select
+                      value={formData.staffId}
+                      onChange={(e) => {
+                        const sid = e.target.value;
+                        const member = staffMembers.find(m => String(m.id) === sid);
+                        setFormData(prev => ({ ...prev, staffId: sid, staffName: member ? member.name : '' }));
+                      }}
+                      className="w-full p-4 border rounded-xl bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">担当者を選択</option>
+                      {staffMembers.map(m => (
+                        <option key={m.id} value={String(m.id)}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* 右半分：保存ボタン */}
+                  <div className="flex-1 flex flex-col">
+                    <label className="text-[11px] font-bold text-transparent uppercase select-none">保存</label>
+                    <button
+                      onClick={handleSave}
+                      disabled={saveStatus === 'saving'}
+                      className={`w-full flex-1 font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                        saveStatus === 'saved' ? 'bg-green-600 text-white' :
+                        saveStatus === 'error' ? 'bg-red-600 text-white' :
+                        saveStatus === 'saving' ? 'bg-blue-400 text-white cursor-not-allowed' :
+                        'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      <Save size={18} />
+                      {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存しました' : saveStatus === 'error' ? '保存失敗' : editingReservationId ? '上書き保存' : '予約データを保存'}
+                    </button>
+                  </div>
+                </div>
                 {saveStatus === 'error' && saveErrorMessage && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
                     {saveErrorMessage}
