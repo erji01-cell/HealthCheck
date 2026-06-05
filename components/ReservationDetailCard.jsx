@@ -1,5 +1,5 @@
 import React from 'react';
-import { KURITAS_PURPOSES } from '../lib/healthCheckConfig.js';
+import { getCompanyBillingLabel } from '../lib/healthCheckConfig.js';
 
 export default function ReservationDetailCard({
   reservation,
@@ -27,8 +27,8 @@ export default function ReservationDetailCard({
           <div>{r.purpose}</div>
           {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
           <div className="font-bold text-blue-600">
-            {KURITAS_PURPOSES.includes(r.purpose)
-              ? '同友会請求'
+            {getCompanyBillingLabel(r.purpose)
+              ? getCompanyBillingLabel(r.purpose)
               : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
           </div>
         </div>

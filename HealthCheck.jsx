@@ -12,7 +12,9 @@ import {
 import {
   HOLIDAYS,
   KURITAS_BLOOD_LABELS,
-  KURITAS_PURPOSES,
+  HAPILUS_BLOOD_LABELS,
+  SPECIAL_COMPANY_PURPOSES,
+  getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calcFee,
   getItemsForPurpose,
@@ -273,6 +275,10 @@ export default function App() {
       blood: true,
       bloodKuritasRegular: false,
       bloodKuritasSpecific: false,
+      bloodHapilusB: false,
+      bloodHapilusC: false,
+      bloodHapilusHire: false,
+      bloodHapilusNight: false,
       hba1c: false,
       endoscopy: false,
       echo: false,
@@ -841,6 +847,10 @@ export default function App() {
     r.item_blood && '採血',
     r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular,
     r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific,
+    r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b,
+    r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c,
+    r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire,
+    r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night,
     r.item_hba1c && 'HbA1c',
     r.item_endoscopy && '胃内視鏡',
     r.item_echo && '腹部エコー',
@@ -929,7 +939,7 @@ export default function App() {
     setSingleReservationLoading(true);
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
       .eq('id', reservationId)
       .single();
     if (error || !data) {
@@ -976,7 +986,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .eq('company_id', companyId)
       .gte('date', start)
       .lte('date', end)
@@ -1030,7 +1040,7 @@ export default function App() {
       setCalendarDetailError('');
       let detailQuery = supabase
         .from('health_reserv')
-        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
         .eq('date', selectedCalendarDate);
       if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
       const { data, error } = await detailQuery.order('patient_name', { ascending: true });
@@ -1056,11 +1066,11 @@ export default function App() {
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
     let fee = null;
-    if (KURITAS_PURPOSES.includes(formData.purpose)) fee = null;
+    if (SPECIAL_COMPANY_PURPOSES.includes(formData.purpose)) fee = null;
     else if (zeroPurposes.includes(formData.purpose)) fee = 0;
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
-    const paymentType = KURITAS_PURPOSES.includes(formData.purpose) ? '同友会請求' : formData.paymentType;
+    const paymentType = getCompanyBillingLabel(formData.purpose) || formData.paymentType;
 
     const company = resolveSelectedHealthCompany(formData.companyId, formData.companyName);
 
@@ -1089,6 +1099,10 @@ export default function App() {
       item_blood: items.blood,
       item_blood_kuritas_regular: items.bloodKuritasRegular,
       item_blood_kuritas_specific: items.bloodKuritasSpecific,
+      item_blood_hapilus_b: items.bloodHapilusB,
+      item_blood_hapilus_c: items.bloodHapilusC,
+      item_blood_hapilus_hire: items.bloodHapilusHire,
+      item_blood_hapilus_night: items.bloodHapilusNight,
       item_hba1c: items.hba1c,
       item_endoscopy: items.endoscopy,
       item_echo: items.echo,
@@ -1204,7 +1218,7 @@ export default function App() {
       const nextOthers = [...(manual ? [manual] : []), ...notes].join('\n');
       return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
     });
-  }, [formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific]);
+  }, [formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific, formData.items.bloodHapilusB, formData.items.bloodHapilusC, formData.items.bloodHapilusHire, formData.items.bloodHapilusNight]);
 
   // BMI自動計算（予約詳細入力）
   useEffect(() => {
@@ -1522,7 +1536,7 @@ export default function App() {
     setModalStep('reservations');
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, purpose, fee, payment_type, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_endoscopy')
+      .select('id, date, day_of_week, purpose, fee, payment_type, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_endoscopy')
       .eq('patient_id', patient.patient_id)
       .order('date', { ascending: false })
       .limit(20);
@@ -1623,7 +1637,8 @@ export default function App() {
       setFormData(prev => ({
         ...prev,
         purpose: value,
-        items: getItemsForPurpose(value, prev.items)
+        items: getItemsForPurpose(value, prev.items),
+        ...(SPECIAL_COMPANY_PURPOSES.includes(value) ? { bpMeasureCount: '2' } : {}),
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -1950,6 +1965,10 @@ export default function App() {
         blood: !!data.item_blood,
         bloodKuritasRegular: !!data.item_blood_kuritas_regular,
         bloodKuritasSpecific: !!data.item_blood_kuritas_specific,
+        bloodHapilusB: !!data.item_blood_hapilus_b,
+        bloodHapilusC: !!data.item_blood_hapilus_c,
+        bloodHapilusHire: !!data.item_blood_hapilus_hire,
+        bloodHapilusNight: !!data.item_blood_hapilus_night,
         hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
         echo: !!data.item_echo, manganese: !!data.item_manganese, stool: !!data.item_stool,
         norovirus: !!data.item_norovirus, bacteria3: !!data.item_bacteria3, bacteria5: !!data.item_bacteria5,
@@ -2267,17 +2286,29 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
-                  <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                    {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'クリタス定期健診', 'クリタス特定業務', 'その他'].map(p => (
-                      <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                        <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
-                      </label>
-                    ))}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                    <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+                      {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他'].map(p => (
+                        <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                          <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
+                        </label>
+                      ))}
+                    </div>
+                    <div className="border-t border-slate-200 pt-3">
+                      <div className="text-[11px] font-bold text-emerald-600 uppercase mb-2">特定企業</div>
+                      <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+                        {['クリタス定期健診', 'クリタス特定業務', 'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業'].map(p => (
+                          <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                            <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-emerald-600" /> {p}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {(() => {
-                  const isSpecialPurpose = ['特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児', ...KURITAS_PURPOSES].includes(formData.purpose);
+                  const isSpecialPurpose = ['特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児', ...SPECIAL_COMPANY_PURPOSES].includes(formData.purpose);
                   const bloodLabel = ['特定健診(国保)', '長寿健診'].includes(formData.purpose)
                     ? '採血 セット3'
                     : formData.purpose === '特定健診(社保)'
@@ -2294,9 +2325,9 @@ export default function App() {
                       <option value="会社請求">会社請求</option>
                     </select>
                   );
-                  const feeDisplay = KURITAS_PURPOSES.includes(formData.purpose) ? (
+                  const feeDisplay = getCompanyBillingLabel(formData.purpose) ? (
                     <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
-                      <div className="text-sm font-bold text-emerald-700">同友会請求</div>
+                      <div className="text-sm font-bold text-emerald-700">{getCompanyBillingLabel(formData.purpose)}</div>
                       <div className="text-xs text-emerald-500 font-bold">料金</div>
                     </div>
                   ) : zeroPurposes.includes(formData.purpose) ? (
@@ -2344,46 +2375,71 @@ export default function App() {
                             disabled={isSpecialPurpose}
                             className="w-3.5 h-3.5 rounded border-slate-300"
                           />
-                          （クリタス・色神以外すべて）
+                          （特定企業・色神以外すべて）
                         </label>
                       </div>
-                      <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, bloodKuritasRegular: '採血 クリタス 定期', bloodKuritasSpecific: '採血 クリタス 特定', colorVision: '色神' }).map(([key, label]) => {
-                          const isKuritasBloodOption = key === 'bloodKuritasRegular' || key === 'bloodKuritasSpecific';
-                          const disabled = isSpecialPurpose || isKuritasBloodOption;
-                          const lockedChecked = disabled && formData.items[key];
-                          return (
-                            <label key={key} className={disabled ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
-                              <input
-                                type="checkbox"
-                                name={`item_${key}`}
-                                checked={formData.items[key]}
-                                onChange={handleChange}
-                                disabled={disabled}
-                                className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`}
-                              /> {label}
-                            </label>
-                          );
-                        })}
-                      </div>
-                      {formData.items.bloodPressure && (
-                        <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
-                          <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
-                          {['1', '2'].map(count => (
-                            <label key={count} className={`flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold cursor-pointer ${formData.bpMeasureCount === count ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'}`}>
-                              <input
-                                type="radio"
-                                name="bpMeasureCount"
-                                value={count}
-                                checked={formData.bpMeasureCount === count}
-                                onChange={handleChange}
-                                className="sr-only"
-                              />
-                              {count}回
-                            </label>
-                          ))}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                        <div className="grid grid-cols-4 gap-2">
+                          {Object.entries({ heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: '血圧', vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: bloodLabel, colorVision: '色神' }).map(([key, label]) => {
+                            const disabled = isSpecialPurpose;
+                            const lockedChecked = disabled && formData.items[key];
+                            return (
+                              <label key={key} className={disabled ? `flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}` : cbClass}>
+                                <input
+                                  type="checkbox"
+                                  name={`item_${key}`}
+                                  checked={formData.items[key]}
+                                  onChange={handleChange}
+                                  disabled={disabled}
+                                  className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-blue-600' : 'border-slate-300'}`}
+                                /> {label}
+                              </label>
+                            );
+                          })}
                         </div>
-                      )}
+                        <div className="border-t border-slate-200 pt-3">
+                          <div className="text-[11px] font-bold text-emerald-600 uppercase mb-2">特定企業（採血）</div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {Object.entries({ bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, bloodHapilusB: HAPILUS_BLOOD_LABELS.b, bloodHapilusC: HAPILUS_BLOOD_LABELS.c, bloodHapilusHire: HAPILUS_BLOOD_LABELS.hire, bloodHapilusNight: HAPILUS_BLOOD_LABELS.night }).map(([key, label]) => {
+                              const lockedChecked = formData.items[key];
+                              return (
+                                <label key={key} className={`flex items-center gap-2 text-xs cursor-not-allowed ${lockedChecked ? 'text-slate-800 font-bold' : 'text-slate-500'}`}>
+                                  <input
+                                    type="checkbox"
+                                    name={`item_${key}`}
+                                    checked={formData.items[key]}
+                                    onChange={handleChange}
+                                    disabled={true}
+                                    className={`w-3.5 h-3.5 rounded ${lockedChecked ? 'accent-emerald-600' : 'border-slate-300'}`}
+                                  /> {label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      {formData.items.bloodPressure && (() => {
+                        const bpLocked = SPECIAL_COMPANY_PURPOSES.includes(formData.purpose);
+                        return (
+                          <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                            <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
+                            {['1', '2'].map(count => (
+                              <label key={count} className={`flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold ${bpLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${formData.bpMeasureCount === count ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                                <input
+                                  type="radio"
+                                  name="bpMeasureCount"
+                                  value={count}
+                                  checked={formData.bpMeasureCount === count}
+                                  onChange={handleChange}
+                                  disabled={bpLocked}
+                                  className="sr-only"
+                                />
+                                {count}回
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       <label className="text-[11px] font-bold text-slate-400 uppercase">検便</label>
                       <div className="grid grid-cols-4 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         {Object.entries({ stool: '便潜血2日法', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' }).map(([key, label]) => (
@@ -4028,7 +4084,7 @@ export default function App() {
                     {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                       const checkedItems = [
                         r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`, r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_color_vision && '色神',
+                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_color_vision && '色神',
                         r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン',
                         r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                         r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
@@ -4051,8 +4107,8 @@ export default function App() {
                             <div>{r.purpose}</div>
                             {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
                             <div className="font-bold text-blue-600">
-                              {KURITAS_PURPOSES.includes(r.purpose)
-                                ? '同友会請求'
+                              {getCompanyBillingLabel(r.purpose)
+                                ? getCompanyBillingLabel(r.purpose)
                                 : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
                             </div>
                           </div>
@@ -4696,7 +4752,8 @@ export default function App() {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: `血圧${formData.bpMeasureCount === '2' ? '2回' : '1回'}`, vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, colorVision: '色神' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: `血圧${formData.bpMeasureCount === '2' ? '2回' : '1回'}`, vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', colorVision: '色神' } },
+                      { label: '特定企業', bg: 'bg-emerald-50', border: 'border-emerald-200', labelColor: 'text-emerald-700', entries: { bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, bloodHapilusB: HAPILUS_BLOOD_LABELS.b, bloodHapilusC: HAPILUS_BLOOD_LABELS.c, bloodHapilusHire: HAPILUS_BLOOD_LABELS.hire, bloodHapilusNight: HAPILUS_BLOOD_LABELS.night } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },
                       { label: 'その他採血', bg: 'bg-purple-50', border: 'border-purple-200', labelColor: 'text-purple-700', entries: { psa: 'PSA', hbsAg: 'HBs抗原', hbsAb: 'HBs抗体', hcvAb: 'HCV抗体', syphilis: '梅毒STS', mrsa: 'MRSA 黄色ブドウ球菌' } },
@@ -4756,8 +4813,8 @@ export default function App() {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    {KURITAS_PURPOSES.includes(formData.purpose) ? (
-                      <span className="text-base font-bold">同友会請求</span>
+                    {getCompanyBillingLabel(formData.purpose) ? (
+                      <span className="text-base font-bold">{getCompanyBillingLabel(formData.purpose)}</span>
                     ) : (
                       <>
                         <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
@@ -4782,7 +4839,7 @@ export default function App() {
                 </div>
 
                 {/* 行: 既往歴 */}
-                <div className="flex border-b-[1.5px] border-black min-h-[40px]">
+                <div className="flex border-b-[1.5px] border-black min-h-[calc(40px_-_2mm)]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">既往歴</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
                     {formData.medicalHistory}
@@ -4790,7 +4847,7 @@ export default function App() {
                 </div>
 
                 {/* 行: 所見 */}
-                <div className="flex border-b-[1.5px] border-black min-h-[60px]">
+                <div className="flex border-b-[1.5px] border-black min-h-[calc(60px_-_2mm)]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">所見</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
                     {formData.findings}
@@ -4806,12 +4863,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 下部 */}
-              <div className="mt-auto flex justify-end items-end pt-4 border-t border-slate-100">
-                <div className="text-right">
-                  <div className="text-sm font-black border-b-2 border-black mb-1 px-1 inline-block">陽春堂内科診療所</div>
-                </div>
-              </div>
             </div>
             )}
 
