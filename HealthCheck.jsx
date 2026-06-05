@@ -2504,7 +2504,7 @@ export default function App() {
 
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase">備考事項</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase">備考</label>
                   <textarea name="others" value={formData.others} onChange={handleChange} className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
@@ -4856,7 +4856,7 @@ export default function App() {
 
                 {/* 行: 備考事項 */}
                 <div className="flex min-h-[60px]">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">備考事項</div>
+                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">備考</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-800">
                     {formData.others}
                   </div>
