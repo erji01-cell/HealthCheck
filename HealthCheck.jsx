@@ -163,6 +163,15 @@ const kenshinInitialState = {
   issueDate: '',
 };
 
+// ISO日付("YYYY-MM-DD") → 曜日（タイムゾーン非依存・ローカル基準で算出）
+const WEEKDAY_NAMES = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+const getWeekdayFromIso = (isoDate) => {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  return WEEKDAY_NAMES[new Date(y, m - 1, d).getDay()];
+};
+
 // ISO日付 → 和暦表示
 const toWareki = (isoDate) => {
   if (!isoDate) return '';
@@ -817,12 +826,11 @@ export default function App() {
     }
   }, [formData.birthDate, formData.date]);
 
-  // 曜日計算
+  // 曜日計算（保存用：日付文字列からタイムゾーン非依存で算出）
   useEffect(() => {
     if (formData.date) {
-      const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
-      const day = days[new Date(formData.date).getDay()];
-      setFormData(prev => ({ ...prev, dayOfWeek: day }));
+      const day = getWeekdayFromIso(formData.date);
+      setFormData(prev => (prev.dayOfWeek === day ? prev : { ...prev, dayOfWeek: day }));
     }
   }, [formData.date]);
 
@@ -3545,7 +3553,7 @@ export default function App() {
                                 >
                                   <div>
                                     <div className="font-black text-slate-700">{r.date ? r.date.replace(/-/g, '/') : ''}</div>
-                                    {r.day_of_week && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{r.day_of_week}</div>}
+                                    {(getWeekdayFromIso(r.date) || r.day_of_week) && <div className="mt-0.5 text-[10px] font-bold text-slate-400">{getWeekdayFromIso(r.date) || r.day_of_week}</div>}
                                   </div>
                                   <div className="min-w-0">
                                     <div className="flex items-baseline gap-3 min-w-0">
@@ -3666,7 +3674,7 @@ export default function App() {
                             onClick={() => { handleLoadReservation(r.id, false); setRightTab('preview'); setShowPatientModal(false); setModalStep('search'); }}
                             className="px-4 py-3 bg-white hover:bg-blue-50 cursor-pointer rounded-xl mb-2 border border-slate-200"
                           >
-                            <div className="font-bold text-sm text-blue-700">{r.date} ({r.day_of_week})</div>
+                            <div className="font-bold text-sm text-blue-700">{r.date} ({getWeekdayFromIso(r.date) || r.day_of_week})</div>
                             <div className="text-xs text-slate-500 mt-0.5 flex gap-2 flex-wrap">
                               <span>{r.purpose}</span>
                               {items.map(it => <span key={it} className="bg-slate-100 px-1.5 py-0.5 rounded">{it}</span>)}
@@ -4608,7 +4616,7 @@ export default function App() {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
                   <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
                     {formData.date ? (() => { const [y,m,d] = formData.date.split('-'); return `${y}年${parseInt(m)}月${parseInt(d)}日`; })() : '　年　月　日'}
-                    <span className="ml-4 font-normal text-sm">（{formData.dayOfWeek || '　曜日'}）</span>
+                    <span className="ml-4 font-normal text-sm">（{getWeekdayFromIso(formData.date) || '　曜日'}）</span>
                   </div>
                   <div className="w-[140px] bg-slate-100 p-2 flex items-center justify-center font-bold text-sm">
                     {formData.purpose || ''}
