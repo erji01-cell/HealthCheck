@@ -838,10 +838,11 @@ export default function App() {
 
   const getCalendarDataRange = () => {
     const today = new Date();
-    return {
-      start: new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0],
-      end: new Date(today.getFullYear(), today.getMonth() + 12, today.getDate()).toISOString().split('T')[0],
-    };
+    // カレンダー表示と同じ「過去12ヶ月〜先12ヶ月」を月初〜月末で完全カバー（タイムゾーン非依存）
+    const startD = new Date(today.getFullYear(), today.getMonth() - 12, 1);
+    const endD = new Date(today.getFullYear(), today.getMonth() + 13, 0);
+    const fmt = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    return { start: fmt(startD), end: fmt(endD) };
   };
 
   const getReservationItemLabels = (r) => [
@@ -3415,7 +3416,8 @@ export default function App() {
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
                   <div className="space-y-6">
-                    {Array.from({ length: 13 }, (_, i) => {
+                    {Array.from({ length: 25 }, (_, idx) => {
+                      const i = idx - 12; // 過去12ヶ月 〜 先12ヶ月
                       const d = new Date();
                       const year = new Date(d.getFullYear(), d.getMonth() + i, 1).getFullYear();
                       const month = new Date(d.getFullYear(), d.getMonth() + i, 1).getMonth();
