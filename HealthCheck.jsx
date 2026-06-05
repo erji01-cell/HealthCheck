@@ -341,6 +341,8 @@ export default function App() {
   const [singleReservationLoading, setSingleReservationLoading] = useState(false);
   const [singleReservationError, setSingleReservationError] = useState('');
   const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
+  // 認証監視など [] 依存のeffectから最新の選択団体を参照するためのref（stale closure対策）
+  const calendarCompanyIdRef = useRef(calendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
   const [calendarListSort, setCalendarListSort] = useState('date');
@@ -668,7 +670,7 @@ export default function App() {
       setSession(session);
       if (session) {
         deleteOldReservations();
-        fetchCalendarData();
+        fetchCalendarData(calendarCompanyIdRef.current);
         fetchHealthCompanies();
       }
     });
@@ -676,7 +678,7 @@ export default function App() {
       setSession(session);
       if (session) {
         deleteOldReservations();
-        fetchCalendarData();
+        fetchCalendarData(calendarCompanyIdRef.current);
         fetchHealthCompanies();
       }
     });
@@ -1017,6 +1019,7 @@ export default function App() {
   }, [rightTab, calendarViewMode, calendarCompanyId]);
 
   useEffect(() => {
+    calendarCompanyIdRef.current = calendarCompanyId;
     try {
       if (calendarCompanyId) {
         window.localStorage.setItem(CALENDAR_COMPANY_STORAGE_KEY, calendarCompanyId);
