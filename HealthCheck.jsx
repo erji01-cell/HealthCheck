@@ -1166,6 +1166,7 @@ export default function App() {
       setSaveStatus('saved');
       setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '', paymentType }));
       if (editingReservationId) setEditingReservationId(null);
+      pendingCalendarScrollRef.current = true;
       await fetchCalendarData();
       // patients テーブルへの自動同期（患者IDがある場合のみ）
       if (formData.id) {
