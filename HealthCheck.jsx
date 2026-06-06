@@ -3382,6 +3382,7 @@ export default function App() {
                       setCalendarDetailData({});
                       setCalendarListData([]);
                       setCalendarListError('');
+                      pendingCalendarScrollRef.current = true;
                       fetchCalendarData(companyId);
                     }}
                     className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
@@ -3407,6 +3408,7 @@ export default function App() {
                         setCalendarDetailData({});
                         setCalendarListData([]);
                         setCalendarListError('');
+                        pendingCalendarScrollRef.current = true;
                         fetchCalendarData('');
                       }}
                       disabled={!calendarCompanyId}
