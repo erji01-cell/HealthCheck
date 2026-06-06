@@ -1471,12 +1471,21 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [resultQuery, resultSearchMode, session]);
 
-  // カレンダー表示時に当月へスクロール
+  // カレンダー表示時に当月へスクロール（月セルが描画されるまでリトライ）
   useEffect(() => {
-    if (rightTab === 'calendar') {
-      setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    }
-  }, [rightTab]);
+    if (rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
+    let tries = 0;
+    let timer;
+    const tryScroll = () => {
+      if (currentMonthRef.current) {
+        currentMonthRef.current.scrollIntoView({ block: 'start' });
+      } else if (tries++ < 30) {
+        timer = setTimeout(tryScroll, 100);
+      }
+    };
+    timer = setTimeout(tryScroll, 100);
+    return () => clearTimeout(timer);
+  }, [rightTab, calendarViewMode]);
 
   // 外側クリックで候補を閉じる
   useEffect(() => {
@@ -3307,7 +3316,7 @@ export default function App() {
                     <ListTodo size={12} /> 予約プレビュー
                   </button>
                   <button
-                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); setTimeout(() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
+                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                   >
                     <Calendar size={12} /> 予約カレンダー
