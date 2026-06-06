@@ -247,6 +247,7 @@ export default function App() {
   const reservationCompanyRef = useRef(null);
   const kenshinCompanyRef = useRef(null);
   const currentMonthRef = useRef(null);
+  const pendingCalendarScrollRef = useRef(false);
   const modalSearchRef = useRef(null);
   const kenshinTopRef = useRef(null);
   const kenshinBottomRef = useRef(null);
@@ -1471,21 +1472,25 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [resultQuery, resultSearchMode, session]);
 
-  // カレンダー表示時に当月へスクロール（月セルが描画されるまでリトライ）
+  // カレンダーを開いたら「当月を初期表示する」予約をセット
   useEffect(() => {
-    if (rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
-    let tries = 0;
-    let timer;
-    const tryScroll = () => {
+    if (rightTab === 'calendar' && calendarViewMode === 'calendar') {
+      pendingCalendarScrollRef.current = true;
+    }
+  }, [rightTab, calendarViewMode]);
+
+  // 月セルの描画完了後（読み込み完了後）に当月へ1回だけスクロール
+  useEffect(() => {
+    if (!pendingCalendarScrollRef.current) return;
+    if (rightTab !== 'calendar' || calendarViewMode !== 'calendar' || calendarLoading) return;
+    // 描画反映後にスクロール
+    requestAnimationFrame(() => {
       if (currentMonthRef.current) {
         currentMonthRef.current.scrollIntoView({ block: 'start' });
-      } else if (tries++ < 30) {
-        timer = setTimeout(tryScroll, 100);
+        pendingCalendarScrollRef.current = false;
       }
-    };
-    timer = setTimeout(tryScroll, 100);
-    return () => clearTimeout(timer);
-  }, [rightTab, calendarViewMode]);
+    });
+  }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
 
   // 外側クリックで候補を閉じる
   useEffect(() => {
