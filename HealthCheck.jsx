@@ -1079,7 +1079,7 @@ export default function App() {
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
     let fee = null;
-    if (SPECIAL_COMPANY_PURPOSES.includes(formData.purpose)) fee = null;
+    if (getCompanyBillingLabel(formData.purpose)) fee = null;
     else if (zeroPurposes.includes(formData.purpose)) fee = 0;
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
@@ -2324,7 +2324,7 @@ export default function App() {
                     <div className="border-t border-slate-200 pt-3">
                       <div className="text-[11px] font-bold text-emerald-600 uppercase mb-2">特定企業</div>
                       <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                        {['クリタス定期健診', 'クリタス特定業務', 'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業'].map(p => (
+                        {['クリタス定期健診', 'クリタス特定業務', 'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業', '第一生命', '第一生命 採血も'].map(p => (
                           <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                             <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-emerald-600" /> {p}
                           </label>
