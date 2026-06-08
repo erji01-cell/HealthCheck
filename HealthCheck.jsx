@@ -247,6 +247,7 @@ export default function App() {
   const reservationCompanyRef = useRef(null);
   const kenshinCompanyRef = useRef(null);
   const currentMonthRef = useRef(null);
+  const calendarScrollRef = useRef(null);
   const pendingCalendarScrollRef = useRef(false);
   const modalSearchRef = useRef(null);
   const kenshinTopRef = useRef(null);
@@ -1481,15 +1482,20 @@ export default function App() {
   }, [rightTab, calendarViewMode]);
 
   // 月セルの描画完了後（読み込み完了後）に当月へ1回だけスクロール
+  // ※ scrollIntoView はページ等の外側コンテナも巻き込みヘッダーが切れるため、
+  //   カレンダーのスクロール枠のみを動かし、stickyバーの高さ分オフセットする
   useEffect(() => {
     if (!pendingCalendarScrollRef.current) return;
     if (rightTab !== 'calendar' || calendarViewMode !== 'calendar' || calendarLoading) return;
-    // 描画反映後にスクロール
     requestAnimationFrame(() => {
-      if (currentMonthRef.current) {
-        currentMonthRef.current.scrollIntoView({ block: 'start' });
-        pendingCalendarScrollRef.current = false;
-      }
+      const wrapper = calendarScrollRef.current;
+      const monthEl = currentMonthRef.current;
+      if (!wrapper || !monthEl) return;
+      const stickyBar = wrapper.querySelector('.company-list-print-hide');
+      const headerH = stickyBar ? stickyBar.offsetHeight : 0;
+      const delta = monthEl.getBoundingClientRect().top - wrapper.getBoundingClientRect().top - headerH;
+      wrapper.scrollTop += delta;
+      pendingCalendarScrollRef.current = false;
     });
   }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
 
@@ -3352,7 +3358,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper">
+            <div ref={calendarScrollRef} className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper">
 
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
