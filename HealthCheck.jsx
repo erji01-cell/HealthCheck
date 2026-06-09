@@ -897,12 +897,13 @@ export default function App() {
     }, 0);
 
   const getCalendarListSortLabel = () => ({
-    date: '健診日順',
+    date: '健診日 昇順',
+    dateDesc: '健診日 降順',
     kana: '読み仮名順',
     feeDesc: '金額 高い順',
     feeAsc: '金額 低い順',
     registered: '登録順',
-  }[calendarListSort] || '健診日順');
+  }[calendarListSort] || '健診日 昇順');
 
   const compareCalendarListByDate = (a, b) =>
     String(a.date || '').localeCompare(String(b.date || '')) ||
@@ -917,6 +918,12 @@ export default function App() {
     const list = [...calendarListData];
     if (calendarListSort === 'registered') {
       return list.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    }
+    if (calendarListSort === 'dateDesc') {
+      return list.sort((a, b) =>
+        String(b.date || '').localeCompare(String(a.date || '')) ||
+        String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja')
+      );
     }
     if (calendarListSort === 'kana') {
       return list.sort((a, b) =>
@@ -3552,7 +3559,8 @@ export default function App() {
                               onChange={e => setCalendarListSort(e.target.value)}
                               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
                             >
-                              <option value="date">健診日順</option>
+                              <option value="date">健診日 昇順</option>
+                              <option value="dateDesc">健診日 降順</option>
                               <option value="kana">読み仮名順</option>
                               <option value="feeDesc">金額 高い順</option>
                               <option value="feeAsc">金額 低い順</option>
@@ -3586,7 +3594,12 @@ export default function App() {
                                       {r.patient_id && <div className="shrink-0 text-[10px] font-black text-emerald-600">ID: {r.patient_id}</div>}
                                       <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
                                     </div>
-                                    {r.patient_name_kana && <div className="text-[10px] font-bold text-slate-400 truncate leading-tight">{r.patient_name_kana}</div>}
+                                    {(r.patient_name_kana || r.company_name) && (
+                                      <div className="flex items-baseline justify-between gap-2 leading-tight">
+                                        <div className="text-[10px] font-bold text-slate-400 truncate">{r.patient_name_kana}</div>
+                                        {r.company_name && <div className="shrink-0 text-[10px] font-bold text-indigo-500 truncate max-w-[55%]">🏢 {r.company_name}</div>}
+                                      </div>
+                                    )}
                                     {(r.birth_date || (r.age != null && r.age !== '')) && (
                                       <div className="flex gap-2 text-[10px] font-bold text-slate-500 leading-tight">
                                         {r.birth_date && <span>{formatDobDisplay(parseDobToISO(r.birth_date))}</span>}
