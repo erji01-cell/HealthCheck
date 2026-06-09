@@ -901,6 +901,7 @@ export default function App() {
     kana: '読み仮名順',
     feeDesc: '金額 高い順',
     feeAsc: '金額 低い順',
+    registered: '登録順',
   }[calendarListSort] || '健診日順');
 
   const compareCalendarListByDate = (a, b) =>
@@ -914,6 +915,9 @@ export default function App() {
 
   const getSortedCalendarListData = () => {
     const list = [...calendarListData];
+    if (calendarListSort === 'registered') {
+      return list.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    }
     if (calendarListSort === 'kana') {
       return list.sort((a, b) =>
         String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja') ||
@@ -935,13 +939,14 @@ export default function App() {
   };
 
   const getSelectedCalendarCompanyName = () => {
+    if (!calendarCompanyId) return 'すべての団体';
     const company = healthCompanies.find(c => c.id === calendarCompanyId);
     if (!company) return '';
     return `${company.display_no != null ? `${company.display_no} ` : ''}${company.name}`;
   };
 
   const handlePrintCompanyList = () => {
-    if (!calendarCompanyId || calendarViewMode !== 'list') return;
+    if (calendarViewMode !== 'list') return;
     setPrintMode('companyList');
     setTimeout(() => window.print(), 50);
   };
@@ -989,20 +994,16 @@ export default function App() {
 
   const fetchCalendarListData = async (companyId = calendarCompanyId) => {
     setCalendarListError('');
-    if (!companyId) {
-      setCalendarListData([]);
-      setCalendarListLoading(false);
-      return;
-    }
-
     setCalendarListLoading(true);
     const { start, end } = getCalendarDataRange();
-    const { data, error } = await supabase
+    let query = supabase
       .from('health_reserv')
       .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
-      .eq('company_id', companyId)
       .gte('date', start)
-      .lte('date', end)
+      .lte('date', end);
+    // 団体未選択（すべての団体）の場合はフィルタなし
+    if (companyId) query = query.eq('company_id', companyId);
+    const { data, error } = await query
       .order('date', { ascending: true })
       .order('patient_name', { ascending: true });
 
@@ -3520,23 +3521,18 @@ export default function App() {
                   </div>
                 )) : (
                   <div className="company-list-print-area space-y-3">
-                    {!calendarCompanyId ? (
-                      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center">
-                        <div className="text-sm font-black text-slate-600">団体を選択してください</div>
-                        <div className="mt-1 text-xs text-slate-400">団体別に健診日順の一覧と料金を表示します。</div>
-                      </div>
-                    ) : calendarListLoading ? (
+                    {calendarListLoading ? (
                       <div className="text-center text-slate-400 py-10">一覧を読み込み中...</div>
                     ) : calendarListError ? (
                       <div className="text-center text-red-500 py-10 text-sm font-bold">{calendarListError}</div>
                     ) : calendarListData.length === 0 ? (
                       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-bold text-slate-400">
-                        この団体の予約はありません
+                        {calendarCompanyId ? 'この団体の予約はありません' : '予約はありません'}
                       </div>
                     ) : (
                       <>
                         <div className="company-list-print-header hidden">
-                          <div className="text-xl font-black text-slate-800">団体別 健康診断予約一覧</div>
+                          <div className="text-xl font-black text-slate-800">{calendarCompanyId ? '団体別 健康診断予約一覧' : '健康診断予約一覧'}</div>
                           <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}</div>
                           <div className="mt-1 text-xs text-slate-400">表示順: {getCalendarListSortLabel()}　印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
                         </div>
@@ -3560,6 +3556,7 @@ export default function App() {
                               <option value="kana">読み仮名順</option>
                               <option value="feeDesc">金額 高い順</option>
                               <option value="feeAsc">金額 低い順</option>
+                              <option value="registered">登録順</option>
                             </select>
                           </div>
                         </div>
