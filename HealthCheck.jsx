@@ -902,7 +902,7 @@ export default function App() {
       date: '健診日',
       fee: '金額',
       kana: '読み仮名',
-      registered: '登録順',
+      registered: '登録',
     }[calendarListSortField] || '健診日';
     const dirLabel = calendarListSortDir === 'desc' ? '降順' : '昇順';
     return `${fieldLabel} ${dirLabel}`;
@@ -923,7 +923,11 @@ export default function App() {
     const flip = (n) => (desc ? -n : n);
 
     if (calendarListSortField === 'registered') {
-      return list.sort((a, b) => flip((Number(a.id) || 0) - (Number(b.id) || 0)));
+      // id は uuid のため登録順は created_at で判定（フォールバックで id 文字列）
+      return list.sort((a, b) =>
+        flip(String(a.created_at || '').localeCompare(String(b.created_at || ''))) ||
+        String(a.id || '').localeCompare(String(b.id || ''))
+      );
     }
     if (calendarListSortField === 'kana') {
       return list.sort((a, b) =>
@@ -1008,7 +1012,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     let query = supabase
       .from('health_reserv')
-      .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .gte('date', start)
       .lte('date', end);
     // 団体未選択（すべての団体）の場合はフィルタなし
@@ -3566,7 +3570,7 @@ export default function App() {
                                 <option value="date">健診日</option>
                                 <option value="fee">金額</option>
                                 <option value="kana">読み仮名</option>
-                                <option value="registered">登録順</option>
+                                <option value="registered">登録</option>
                               </select>
                               <div className="flex shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden">
                                 {[['asc', '昇順'], ['desc', '降順']].map(([dir, label]) => (
