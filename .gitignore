@@ -4,3 +4,5 @@ dist/
 .env
 
 .vercel
+vite-dev.err.log
+vite-dev.out.log
