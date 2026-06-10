@@ -347,7 +347,8 @@ export default function App() {
   const calendarCompanyIdRef = useRef(calendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
-  const [calendarListSort, setCalendarListSort] = useState('date');
+  const [calendarListSortField, setCalendarListSortField] = useState('date'); // 'date' | 'fee' | 'kana' | 'registered'
+  const [calendarListSortDir, setCalendarListSortDir] = useState('asc'); // 'asc' | 'desc'
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
@@ -896,14 +897,16 @@ export default function App() {
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
 
-  const getCalendarListSortLabel = () => ({
-    date: '健診日 昇順',
-    dateDesc: '健診日 降順',
-    kana: '読み仮名順',
-    feeDesc: '金額 高い順',
-    feeAsc: '金額 低い順',
-    registered: '登録順',
-  }[calendarListSort] || '健診日 昇順');
+  const getCalendarListSortLabel = () => {
+    const fieldLabel = {
+      date: '健診日',
+      fee: '金額',
+      kana: '読み仮名',
+      registered: '登録順',
+    }[calendarListSortField] || '健診日';
+    const dirLabel = calendarListSortDir === 'desc' ? '降順' : '昇順';
+    return `${fieldLabel} ${dirLabel}`;
+  };
 
   const compareCalendarListByDate = (a, b) =>
     String(a.date || '').localeCompare(String(b.date || '')) ||
@@ -916,33 +919,33 @@ export default function App() {
 
   const getSortedCalendarListData = () => {
     const list = [...calendarListData];
-    if (calendarListSort === 'registered') {
-      return list.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    const desc = calendarListSortDir === 'desc';
+    const flip = (n) => (desc ? -n : n);
+
+    if (calendarListSortField === 'registered') {
+      return list.sort((a, b) => flip((Number(a.id) || 0) - (Number(b.id) || 0)));
     }
-    if (calendarListSort === 'dateDesc') {
+    if (calendarListSortField === 'kana') {
       return list.sort((a, b) =>
-        String(b.date || '').localeCompare(String(a.date || '')) ||
-        String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja')
-      );
-    }
-    if (calendarListSort === 'kana') {
-      return list.sort((a, b) =>
-        String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja') ||
+        flip(String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja')) ||
         compareCalendarListByDate(a, b)
       );
     }
-    if (calendarListSort === 'feeDesc' || calendarListSort === 'feeAsc') {
+    if (calendarListSortField === 'fee') {
       return list.sort((a, b) => {
         const aFee = getCalendarListFeeValue(a);
         const bFee = getCalendarListFeeValue(b);
         if (aFee == null && bFee == null) return compareCalendarListByDate(a, b);
-        if (aFee == null) return 1;
+        if (aFee == null) return 1; // 金額なしは常に末尾
         if (bFee == null) return -1;
-        const feeCompare = calendarListSort === 'feeDesc' ? bFee - aFee : aFee - bFee;
-        return feeCompare || compareCalendarListByDate(a, b);
+        return flip(aFee - bFee) || compareCalendarListByDate(a, b);
       });
     }
-    return list.sort(compareCalendarListByDate);
+    // date
+    return list.sort((a, b) =>
+      flip(String(a.date || '').localeCompare(String(b.date || ''))) ||
+      String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja')
+    );
   };
 
   const getSelectedCalendarCompanyName = () => {
@@ -3554,18 +3557,30 @@ export default function App() {
                           </div>
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">表示順</div>
-                            <select
-                              value={calendarListSort}
-                              onChange={e => setCalendarListSort(e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
-                            >
-                              <option value="date">健診日 昇順</option>
-                              <option value="dateDesc">健診日 降順</option>
-                              <option value="kana">読み仮名順</option>
-                              <option value="feeDesc">金額 高い順</option>
-                              <option value="feeAsc">金額 低い順</option>
-                              <option value="registered">登録順</option>
-                            </select>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <select
+                                value={calendarListSortField}
+                                onChange={e => setCalendarListSortField(e.target.value)}
+                                className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-indigo-300"
+                              >
+                                <option value="date">健診日</option>
+                                <option value="fee">金額</option>
+                                <option value="kana">読み仮名</option>
+                                <option value="registered">登録順</option>
+                              </select>
+                              <div className="flex shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden">
+                                {[['asc', '昇順'], ['desc', '降順']].map(([dir, label]) => (
+                                  <button
+                                    key={dir}
+                                    type="button"
+                                    onClick={() => setCalendarListSortDir(dir)}
+                                    className={`px-2 py-1 text-xs font-black transition-colors ${calendarListSortDir === dir ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="company-list-table overflow-hidden rounded-xl border border-slate-200">
