@@ -741,6 +741,24 @@ export default function App() {
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
 
+  // 金額別の件数・小計（金額の高い順）。料金null（請求分）は別枠で集計
+  const getCalendarListFeeBreakdown = () => {
+    const map = new Map(); // fee(number) -> count
+    let billingCount = 0;
+    calendarListData.forEach(r => {
+      const num = Number(r.fee);
+      if (Number.isFinite(num)) {
+        map.set(num, (map.get(num) || 0) + 1);
+      } else {
+        billingCount += 1;
+      }
+    });
+    const feeGroups = [...map.entries()]
+      .map(([fee, count]) => ({ fee, count, subtotal: fee * count }))
+      .sort((a, b) => b.fee - a.fee);
+    return { feeGroups, billingCount, totalCount: calendarListData.length };
+  };
+
   const getCalendarListSortLabel = () => {
     const fieldLabel = {
       date: '健診日',
@@ -3484,6 +3502,36 @@ export default function App() {
                             })}
                           </div>
                         </div>
+                        {(() => {
+                          const { feeGroups, billingCount, totalCount } = getCalendarListFeeBreakdown();
+                          if (totalCount === 0) return null;
+                          return (
+                            <div className="company-list-feebreak rounded-xl border border-slate-200 overflow-hidden" style={{ breakInside: 'avoid' }}>
+                              <div className="bg-slate-100 px-3 py-2 text-[11px] font-black text-slate-600">金額別 件数・小計</div>
+                              <div className="divide-y divide-slate-100">
+                                {feeGroups.map(g => (
+                                  <div key={g.fee} className="grid grid-cols-[1fr_64px_120px] gap-2 px-3 py-1.5 text-xs">
+                                    <div className="font-black text-blue-600">¥{g.fee.toLocaleString()}</div>
+                                    <div className="text-right font-bold text-slate-600">{g.count}件</div>
+                                    <div className="text-right font-black text-indigo-600">¥{g.subtotal.toLocaleString()}</div>
+                                  </div>
+                                ))}
+                                {billingCount > 0 && (
+                                  <div className="grid grid-cols-[1fr_64px_120px] gap-2 px-3 py-1.5 text-xs">
+                                    <div className="font-black text-slate-500">（請求分）</div>
+                                    <div className="text-right font-bold text-slate-600">{billingCount}件</div>
+                                    <div className="text-right font-black text-slate-400">—</div>
+                                  </div>
+                                )}
+                                <div className="grid grid-cols-[1fr_64px_120px] gap-2 px-3 py-1.5 text-xs bg-slate-50">
+                                  <div className="font-black text-slate-700">合計</div>
+                                  <div className="text-right font-black text-slate-700">{totalCount}件</div>
+                                  <div className="text-right font-black text-indigo-700">¥{getCalendarListTotalFee().toLocaleString()}</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </>
                     )}
                   </div>
