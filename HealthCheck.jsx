@@ -3437,8 +3437,8 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                        <div className="company-list-table rounded-xl border border-slate-200">
-                          <div className="company-list-table-header sticky z-10 grid grid-cols-[88px_1fr_92px_88px] gap-2 rounded-t-xl border-b border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-500" style={{ top: '118px' }}>
+                        <div className="company-list-table overflow-hidden rounded-xl border border-slate-200">
+                          <div className="company-list-table-header grid grid-cols-[88px_1fr_92px_88px] gap-2 bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-500">
                             <div>健診日</div>
                             <div>患者・健診目的</div>
                             <div className="text-right">支払い</div>
@@ -4223,7 +4223,6 @@ export default function App() {
           }
           .print-company-list-active .company-list-table-header {
             background: #f1f5f9 !important;
-            position: static !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
