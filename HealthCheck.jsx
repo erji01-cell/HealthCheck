@@ -3400,7 +3400,7 @@ export default function App() {
                           <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}</div>
                           <div className="mt-1 text-xs text-slate-400">表示順: {getCalendarListSortLabel()}　印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
                         </div>
-                        <div className="company-list-summary grid grid-cols-3 gap-2">
+                        <div className="company-list-summary sticky z-20 grid grid-cols-3 gap-2 bg-white pb-2" style={{ top: '60px' }}>
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">件数</div>
                             <div className="text-lg font-black text-slate-700">{calendarListData.length}件</div>
@@ -4214,6 +4214,7 @@ export default function App() {
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 2mm !important;
             margin-bottom: 4mm !important;
+            position: static !important;
           }
           .print-company-list-active .company-list-table {
             overflow: visible !important;
