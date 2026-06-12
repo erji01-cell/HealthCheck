@@ -3169,6 +3169,21 @@ export default function App() {
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
         <div className="w-full lg:w-[690px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative">
+          {/* 団体一覧表示時のみ：スクロールバー右外側の先頭/末尾ジャンプボタン */}
+          {rightTab === 'calendar' && calendarViewMode === 'list' && (
+            <div className="hidden lg:flex flex-col gap-2 absolute z-40 print-hide" style={{ left: 'calc(100% + 12px)', top: '50%', transform: 'translateY(-50%)' }}>
+              <button
+                onClick={() => calendarScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-all"
+                title="先頭へ"
+              >▲</button>
+              <button
+                onClick={() => calendarScrollRef.current?.scrollTo({ top: calendarScrollRef.current.scrollHeight, behavior: 'smooth' })}
+                className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-all"
+                title="末尾へ"
+              >▼</button>
+            </div>
+          )}
           <button
             onClick={async () => {
               const pw = window.prompt('バックアップ管理のパスワードを入力してください');
