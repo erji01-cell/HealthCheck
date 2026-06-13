@@ -3365,12 +3365,16 @@ export default function App() {
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                     setLeftTab('reservation');
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-amber-50 cursor-pointer hover:bg-amber-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-amber-700' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
                                       <div className="flex justify-between items-center mb-0.5">
-                                        <span className={`font-bold ${isDisabled ? 'text-rose-300' : isToday ? 'text-amber-600' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
+                                        {isToday ? (
+                                          <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-orange-500 text-white font-black leading-none shadow-sm">{day}</span>
+                                        ) : (
+                                          <span className={`font-bold ${isDisabled ? 'text-rose-300' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
+                                        )}
                                       </div>
                                       {reservations.map((r, ri) => {
                                         const gender = (r.patient_gender || '').trim();
