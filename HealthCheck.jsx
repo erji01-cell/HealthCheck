@@ -1896,7 +1896,8 @@ export default function App() {
       staffName: data.staff_name || '',
     });
     setBirthDateInput(birthDateIso);
-    setPatientQuery(data.patient_name || '');
+    // 検索枠には患者名を入れない（サジェストのプルダウンが出るのを防ぐ。氏名はフォーム側に表示）
+    setPatientQuery('');
     setEditingReservationId(editMode ? reservationId : null);
     setSelectedCalendarDate(null);
     if (editMode) setLeftTab('reservation');
