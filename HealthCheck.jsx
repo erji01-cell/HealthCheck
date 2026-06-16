@@ -52,6 +52,14 @@ const getStoredCalendarCompanyId = () => {
   }
 };
 
+// 健診目的フィルタの選択肢（健診目的ラジオと同じ並び）
+const CALENDAR_PURPOSE_OPTIONS = [
+  '就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他',
+  'クリタス定期健診', 'クリタス特定業務',
+  'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業',
+  '第一生命', '第一生命 採血も',
+];
+
 
 export default function App() {
   // 認証状態
@@ -193,6 +201,7 @@ export default function App() {
   const [calendarListData, setCalendarListData] = useState([]);
   const [calendarListSortField, setCalendarListSortField] = useState('date'); // 'date' | 'fee' | 'kana' | 'registered'
   const [calendarListSortDir, setCalendarListSortDir] = useState('asc'); // 'asc' | 'desc'
+  const [calendarPurpose, setCalendarPurpose] = useState(''); // 健診目的フィルタ（''=すべて）
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
@@ -735,8 +744,12 @@ export default function App() {
     return Number.isFinite(num) ? `¥${num.toLocaleString()}` : '-';
   };
 
+  // 健診目的フィルタ（''=すべて）
+  const matchesCalendarPurpose = (r) => !calendarPurpose || r.purpose === calendarPurpose;
+  const getFilteredCalendarListData = () => calendarListData.filter(matchesCalendarPurpose);
+
   const getCalendarListTotalFee = () =>
-    calendarListData.reduce((sum, r) => {
+    getFilteredCalendarListData().reduce((sum, r) => {
       const num = Number(r.fee);
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
@@ -745,7 +758,8 @@ export default function App() {
   const getCalendarListFeeBreakdown = () => {
     const map = new Map(); // fee(number) -> count
     let billingCount = 0;
-    calendarListData.forEach(r => {
+    const filtered = getFilteredCalendarListData();
+    filtered.forEach(r => {
       const num = Number(r.fee);
       if (Number.isFinite(num)) {
         map.set(num, (map.get(num) || 0) + 1);
@@ -756,7 +770,7 @@ export default function App() {
     const feeGroups = [...map.entries()]
       .map(([fee, count]) => ({ fee, count, subtotal: fee * count }))
       .sort((a, b) => b.fee - a.fee);
-    return { feeGroups, billingCount, totalCount: calendarListData.length };
+    return { feeGroups, billingCount, totalCount: filtered.length };
   };
 
   const getCalendarListSortLabel = () => {
@@ -780,7 +794,7 @@ export default function App() {
   };
 
   const getSortedCalendarListData = () => {
-    const list = [...calendarListData];
+    const list = getFilteredCalendarListData();
     const desc = calendarListSortDir === 'desc';
     const flip = (n) => (desc ? -n : n);
 
@@ -850,7 +864,7 @@ export default function App() {
     const { start, end } = getCalendarDataRange();
     let query = supabase
       .from('health_reserv')
-      .select('id, date, patient_name, patient_gender')
+      .select('id, date, patient_name, patient_gender, purpose')
       .gte('date', start)
       .lte('date', end)
       .order('date', { ascending: true });
@@ -3244,76 +3258,95 @@ export default function App() {
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
               <div className="company-calendar-card bg-white shadow-xl rounded-xl border border-slate-200 p-4">
-                <div className="company-list-print-hide sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex items-center gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
-                  <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => { setCalendarViewMode('calendar'); fetchCalendarData(calendarCompanyId); }}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
-                    >
-                      <Calendar size={12} /> カレンダー
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCalendarViewMode('list')}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'list' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-white'}`}
-                    >
-                      <ListTodo size={12} /> 団体一覧
-                    </button>
+                <div className="company-list-print-hide sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex flex-col gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
+                  {/* 1段目: 表示切替・件数・リセット/印刷 */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => { setCalendarViewMode('calendar'); fetchCalendarData(calendarCompanyId); }}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
+                      >
+                        <Calendar size={12} /> カレンダー
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarViewMode('list')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'list' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-white'}`}
+                      >
+                        <ListTodo size={12} /> 団体一覧
+                      </button>
+                    </div>
+                    <div className="shrink-0 min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
+                      {calendarViewMode === 'list'
+                        ? getFilteredCalendarListData().length
+                        : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarPurpose).length, 0)}件
+                    </div>
+                    <div className="ml-auto flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCalendarCompanyId('');
+                          setCalendarPurpose('');
+                          setSelectedCalendarDate(null);
+                          setCalendarDetailData({});
+                          setCalendarListData([]);
+                          setCalendarListError('');
+                          pendingCalendarScrollRef.current = true;
+                          fetchCalendarData('');
+                        }}
+                        disabled={!calendarCompanyId && !calendarPurpose}
+                        className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        リセット
+                      </button>
+                      {calendarViewMode === 'list' && (
+                        <button
+                          type="button"
+                          onClick={handlePrintCompanyList}
+                          disabled={calendarListLoading || getFilteredCalendarListData().length === 0}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          <Printer size={13} /> 印刷
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <select
-                    value={calendarCompanyId}
-                    onChange={e => {
-                      const companyId = e.target.value;
-                      setCalendarCompanyId(companyId);
-                      setSelectedCalendarDate(null);
-                      setCalendarDetailData({});
-                      setCalendarListData([]);
-                      setCalendarListError('');
-                      pendingCalendarScrollRef.current = true;
-                      fetchCalendarData(companyId);
-                    }}
-                    className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    <option value="">すべての団体</option>
-                    {getActiveHealthCompanies().map(company => (
-                      <option key={company.id} value={company.id}>
-                        {company.display_no != null ? `${company.display_no} ` : ''}{company.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="shrink-0 min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
-                    {calendarViewMode === 'list'
-                      ? calendarListData.length
-                      : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.length, 0)}件
-                  </div>
-                  <div className="ml-auto flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCalendarCompanyId('');
+                  {/* 2段目: 団体・健診目的のフィルタ */}
+                  <div className="flex items-center gap-2">
+                    <label className="shrink-0 text-[11px] font-black text-slate-400">団体</label>
+                    <select
+                      value={calendarCompanyId}
+                      onChange={e => {
+                        const companyId = e.target.value;
+                        setCalendarCompanyId(companyId);
                         setSelectedCalendarDate(null);
                         setCalendarDetailData({});
                         setCalendarListData([]);
                         setCalendarListError('');
                         pendingCalendarScrollRef.current = true;
-                        fetchCalendarData('');
+                        fetchCalendarData(companyId);
                       }}
-                      disabled={!calendarCompanyId}
-                      className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
                     >
-                      リセット
-                    </button>
-                    {calendarViewMode === 'list' && (
-                      <button
-                        type="button"
-                        onClick={handlePrintCompanyList}
-                        disabled={!calendarCompanyId || calendarListLoading || calendarListData.length === 0}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        <Printer size={13} /> 印刷
-                      </button>
-                    )}
+                      <option value="">すべての団体</option>
+                      {getActiveHealthCompanies().map(company => (
+                        <option key={company.id} value={company.id}>
+                          {company.display_no != null ? `${company.display_no} ` : ''}{company.name}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="shrink-0 text-[11px] font-black text-slate-400">目的</label>
+                    <select
+                      value={calendarPurpose}
+                      onChange={e => { setCalendarPurpose(e.target.value); pendingCalendarScrollRef.current = true; }}
+                      className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-emerald-400"
+                    >
+                      <option value="">すべての目的</option>
+                      {CALENDAR_PURPOSE_OPTIONS.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 {calendarViewMode === 'calendar' ? (calendarLoading ? (
@@ -3348,7 +3381,7 @@ export default function App() {
                           <div className="grid grid-cols-7 gap-px bg-slate-400 border border-slate-400 rounded-lg overflow-hidden">
                             {weeks.flat().map((day, idx) => {
                               const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
-                              const reservations = dateStr ? (calendarData[dateStr] || []) : [];
+                              const reservations = dateStr ? (calendarData[dateStr] || []).filter(matchesCalendarPurpose) : [];
                               const now = new Date();
                               const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
                               const isToday = dateStr === todayStr;
@@ -3409,21 +3442,21 @@ export default function App() {
                       <div className="text-center text-slate-400 py-10">一覧を読み込み中...</div>
                     ) : calendarListError ? (
                       <div className="text-center text-red-500 py-10 text-sm font-bold">{calendarListError}</div>
-                    ) : calendarListData.length === 0 ? (
+                    ) : getFilteredCalendarListData().length === 0 ? (
                       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-bold text-slate-400">
-                        {calendarCompanyId ? 'この団体の予約はありません' : '予約はありません'}
+                        {calendarPurpose ? `「${calendarPurpose}」の予約はありません` : calendarCompanyId ? 'この団体の予約はありません' : '予約はありません'}
                       </div>
                     ) : (
                       <>
                         <div className="company-list-print-header hidden">
                           <div className="text-xl font-black text-slate-800">{calendarCompanyId ? '団体別 健康診断予約一覧' : '健康診断予約一覧'}</div>
-                          <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}</div>
+                          <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}{calendarPurpose ? `　／　目的: ${calendarPurpose}` : ''}</div>
                           <div className="mt-1 text-xs text-slate-400">表示順: {getCalendarListSortLabel()}　印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
                         </div>
                         <div className="company-list-summary grid grid-cols-3 gap-2">
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">件数</div>
-                            <div className="text-lg font-black text-slate-700">{calendarListData.length}件</div>
+                            <div className="text-lg font-black text-slate-700">{getFilteredCalendarListData().length}件</div>
                           </div>
                           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <div className="text-[10px] font-black text-slate-400">合計金額</div>
