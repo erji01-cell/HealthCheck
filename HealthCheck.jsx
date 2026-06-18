@@ -2075,8 +2075,8 @@ export default function App() {
                     </button>
                     <button
                       type="button"
-                      disabled
-                      className="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 text-slate-300 cursor-not-allowed opacity-60"
+                      onClick={() => { setLeftTab('result'); setRightTab('kenshin'); }}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'result' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
@@ -3230,15 +3230,15 @@ export default function App() {
                   </button>
                   <button
                     type="button"
-                    disabled
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1.5 whitespace-nowrap"
+                    onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'kenshin' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-emerald-600 hover:bg-white'}`}
                   >
                     <ClipboardCheck size={12} /> 診断書プレビュー
                   </button>
                   <button
                     type="button"
-                    disabled
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-emerald-300 cursor-not-allowed opacity-60 flex items-center gap-1.5 whitespace-nowrap"
+                    onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-slate-500 hover:text-emerald-600 hover:bg-white flex items-center gap-1.5 whitespace-nowrap"
                   >
                     <Search size={12} /> 診断書検索
                   </button>
