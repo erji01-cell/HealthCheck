@@ -14,6 +14,7 @@ import {
   KURITAS_BLOOD_LABELS,
   HAPILUS_BLOOD_LABELS,
   SPECIAL_COMPANY_PURPOSES,
+  BP_TWO_MEASURE_LOCKED_PURPOSES,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calcFee,
@@ -1540,17 +1541,20 @@ export default function App() {
         items: { ...prev.items, [itemName]: checked }
       }));
     } else if (name === 'bpMeasureCount') {
-      setFormData(prev => ({
-        ...prev,
-        bpMeasureCount: value,
-        ...(value === '1' ? { bp2Sys: '', bp2Dia: '' } : {}),
-      }));
+      setFormData(prev => {
+        if (BP_TWO_MEASURE_LOCKED_PURPOSES.includes(prev.purpose)) return prev;
+        return {
+          ...prev,
+          bpMeasureCount: value,
+          ...(value === '1' ? { bp2Sys: '', bp2Dia: '' } : {}),
+        };
+      });
     } else if (name === 'purpose') {
       setFormData(prev => ({
         ...prev,
         purpose: value,
         items: getItemsForPurpose(value, prev.items),
-        ...(SPECIAL_COMPANY_PURPOSES.includes(value) ? { bpMeasureCount: '2' } : {}),
+        ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(value) ? { bpMeasureCount: '2' } : {}),
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -1854,7 +1858,10 @@ export default function App() {
       .single();
     if (error || !data) return;
     const birthDateIso = data.birth_date ? parseDobToISO(data.birth_date) : '';
-    const loadedBpMeasureCount = Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
+    const loadedPurpose = data.purpose || '就職';
+    const loadedBpMeasureCount = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
+      ? '2'
+      : Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
     setFormData({
       date: data.date || tomorrowStr,
       dayOfWeek: data.day_of_week || '',
@@ -1867,7 +1874,7 @@ export default function App() {
       contact: data.contact || '',
       companyName: data.company_name || '',
       companyId: data.company_id || '',
-      purpose: data.purpose || '就職',
+      purpose: loadedPurpose,
       hasHospitalForm: data.has_hospital_form || '無(当院用紙を使用)',
       items: {
         heightWeight: !!data.item_height_weight, abdominalGirth: !!data.item_abdominal_girth,
@@ -2332,7 +2339,7 @@ export default function App() {
                         </div>
                       </div>
                       {formData.items.bloodPressure && (() => {
-                        const bpLocked = SPECIAL_COMPANY_PURPOSES.includes(formData.purpose);
+                        const bpLocked = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(formData.purpose);
                         return (
                           <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                             <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
