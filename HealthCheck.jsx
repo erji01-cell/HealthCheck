@@ -22,6 +22,7 @@ import {
   stripKuritasBloodNotes,
 } from './lib/healthCheckConfig.js';
 import ReservationDetailCard from './components/ReservationDetailCard.jsx';
+import TodayReservationsModal from './components/TodayReservationsModal.jsx';
 import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
 import {
@@ -53,6 +54,9 @@ const getStoredCalendarCompanyId = () => {
   }
 };
 
+
+const getLocalIsoDate = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 // 健診目的フィルタの選択肢（健診目的ラジオと同じ並び）
 const CALENDAR_PURPOSE_OPTIONS = [
   '就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他',
@@ -191,6 +195,12 @@ export default function App() {
   const [singleReservationDetail, setSingleReservationDetail] = useState(null);
   const [singleReservationLoading, setSingleReservationLoading] = useState(false);
   const [singleReservationError, setSingleReservationError] = useState('');
+  const [showTodayReservationsModal, setShowTodayReservationsModal] = useState(false);
+  const [todayReservationsDate, setTodayReservationsDate] = useState(getLocalIsoDate);
+  const [todayReservations, setTodayReservations] = useState([]);
+  const [todayReservationsLoading, setTodayReservationsLoading] = useState(false);
+  const [todayReservationsError, setTodayReservationsError] = useState('');
+  const todayReservationsModalOpenedRef = useRef(false);
   const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
   // 認証監視など [] 依存のeffectから最新の選択団体を参照するためのref（stale closure対策）
   const calendarCompanyIdRef = useRef(calendarCompanyId);
@@ -854,6 +864,44 @@ export default function App() {
     }
     setSingleReservationLoading(false);
   };
+
+  const fetchTodayReservations = async () => {
+    const today = getLocalIsoDate();
+    setTodayReservationsDate(today);
+    setTodayReservations([]);
+    setTodayReservationsError('');
+    setTodayReservationsLoading(true);
+
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('*')
+      .eq('date', today)
+      .order('patient_name_kana', { ascending: true })
+      .order('patient_name', { ascending: true });
+
+    if (error) {
+      console.error('today reservations fetch error:', error);
+      setTodayReservationsError('\u672c\u65e5\u306e\u4e88\u7d04\u4e00\u89a7\u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002');
+    } else {
+      setTodayReservations(data || []);
+    }
+    setTodayReservationsLoading(false);
+  };
+
+  const openTodayReservationsModal = () => {
+    setShowTodayReservationsModal(true);
+    fetchTodayReservations();
+  };
+
+  useEffect(() => {
+    if (!session) {
+      todayReservationsModalOpenedRef.current = false;
+      return;
+    }
+    if (todayReservationsModalOpenedRef.current) return;
+    todayReservationsModalOpenedRef.current = true;
+    openTodayReservationsModal();
+  }, [session]);
 
   // カレンダーデータ取得
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
@@ -3232,6 +3280,13 @@ export default function App() {
                   </button>
                   <button
                     type="button"
+                    onClick={openTodayReservationsModal}
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-slate-500 hover:text-blue-600 hover:bg-white flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <Calendar size={12} /> {'\u672c\u65e5\u306e\u4e00\u89a7'}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'kenshin' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-emerald-600 hover:bg-white'}`}
                   >
@@ -4000,6 +4055,22 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {showTodayReservationsModal && (
+              <TodayReservationsModal
+                date={todayReservationsDate}
+                reservations={todayReservations}
+                loading={todayReservationsLoading}
+                error={todayReservationsError}
+                getItemLabels={getReservationItemLabels}
+                onClose={() => setShowTodayReservationsModal(false)}
+                onRefresh={fetchTodayReservations}
+                onSelect={reservation => {
+                  setShowTodayReservationsModal(false);
+                  fetchReservationDetailById(reservation.id);
+                }}
+              />
             )}
 
             {/* 団体一覧から開く単独予約詳細モーダル */}
