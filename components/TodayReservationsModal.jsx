@@ -1,6 +1,16 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { getCompanyBillingLabel } from '../lib/healthCheckConfig.js';
+import { formatDobDisplay } from '../lib/kenshinUtils.js';
+
+// 生年月日（YYYYMMDD もしくは ISO）→ ISO("YYYY-MM-DD")
+const toBirthIso = (raw) => {
+  if (!raw) return '';
+  const s = String(raw);
+  if (s.includes('-')) return s;
+  if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  return '';
+};
 
 const TEXT = {
   title: '\u672c\u65e5\u306e\u5065\u5eb7\u8a3a\u65ad\u4e00\u89a7',
@@ -73,6 +83,11 @@ export default function TodayReservationsModal({
                       <div className="min-w-0">
                         <div className="text-[13px] text-slate-400">{reservation.patient_name_kana}</div>
                         <div className={`text-[21px] font-black leading-tight ${nameColor}`}>{reservation.patient_name}</div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-bold text-slate-500">
+                          {reservation.patient_id && <span>ID: {reservation.patient_id}</span>}
+                          {toBirthIso(reservation.birth_date) && <span>{formatDobDisplay(toBirthIso(reservation.birth_date))}</span>}
+                          {reservation.age != null && reservation.age !== '' && <span>{reservation.age}歳</span>}
+                        </div>
                         <div className="mt-0.5 text-xs font-bold text-slate-500">{reservation.company_name || TEXT.noCompany}</div>
                       </div>
                       <div className="shrink-0 text-right text-xs text-slate-500">
