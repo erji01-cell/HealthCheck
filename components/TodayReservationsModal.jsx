@@ -66,7 +66,7 @@ export default function TodayReservationsModal({
                 const billingLabel = getCompanyBillingLabel(reservation.purpose);
                 const itemLabels = getItemLabels(reservation);
                 const gender = (reservation.patient_gender || '').trim();
-                const nameColor = gender === '\u7537' ? 'text-blue-700' : gender === '\u5973' ? 'text-red-700' : 'text-slate-800';
+                const nameColor = gender === '\u7537' ? 'text-blue-800' : gender === '\u5973' ? 'text-red-800' : 'text-slate-800';
                 return (
                   <button key={reservation.id} type="button" onClick={() => onSelect(reservation)} className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/40">
                     <div className="flex items-start justify-between gap-4">
