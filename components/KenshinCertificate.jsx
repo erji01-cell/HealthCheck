@@ -3,6 +3,9 @@ import { getBloodArrow, toWareki, toWareikiWithWestern, getBirthEra } from '../l
 
 // 健康診断書プレビュー（rightTab === kenshin で表示・印刷対象）
 export default function KenshinCertificate({ kenshinData, setHighlightedField }) {
+  // 値が未入力のセルを薄いグレーで網掛け（入力済み/未入力を明確化）
+  const EMPTY_BG = '#eef1f5';
+  const emptyBg = (v) => ((v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
   return (
     <>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
@@ -97,7 +100,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                     ].map(({ label, val }) => (
                       <div key={label} className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '22px'}}>
                         <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>
-                        <div className="flex-1 flex items-center justify-center font-mono font-bold" style={{fontSize: '12px'}}>{val}</div>
+                        <div className="flex-1 flex items-center justify-center font-mono font-bold" style={{fontSize: '12px', ...emptyBg(val)}}>{val}</div>
                       </div>
                     ))}
 
@@ -114,7 +117,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                               { side: '右', bare: kenshinData.visionR, corr: kenshinData.visionR2 },
                               { side: '左', bare: kenshinData.visionL, corr: kenshinData.visionL2 },
                             ].map(({ side, bare, corr }, i) => (
-                              <div key={side} className="flex items-center gap-1 pr-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px', paddingLeft: '17mm'}}>
+                              <div key={side} className="flex items-center gap-1 pr-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px', paddingLeft: '17mm', ...emptyBg(bare || corr)}}>
                                 <span className="text-black font-bold" style={{width: '12px'}}>{side}</span>
                                 <span className="text-black font-bold">裸眼: {bare}</span>
                                 {corr && <span className="ml-3 text-black font-bold">矯正: {corr}</span>}
@@ -124,7 +127,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                         </div>
                         <div className="flex" style={{flex: 1, minHeight: '18px', fontSize: '11px'}}>
                           <div className="bg-slate-50 flex items-center justify-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>色神</div>
-                          <div className="flex items-center px-2">{kenshinData.colorVision}</div>
+                          <div className="flex-1 flex items-center px-2" style={{...emptyBg(kenshinData.colorVision)}}>{kenshinData.colorVision}</div>
                         </div>
                       </div>
                     </div>
@@ -137,7 +140,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                           { hz: '1000Hz', r: kenshinData.hearingR,     l: kenshinData.hearingL },
                           { hz: '4000Hz', r: kenshinData.hearing4000R, l: kenshinData.hearing4000L },
                         ].map(({ hz, r, l }, i) => (
-                          <div key={hz} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px'}}>
+                          <div key={hz} className="flex items-center gap-2 px-2" style={{flex: 1, minHeight: '18px', borderBottom: i === 0 ? '1px solid black' : 'none', fontSize: '11px', ...emptyBg(r || l)}}>
                             <span className="text-slate-500" style={{width: '38px', flexShrink: 0}}>{hz}</span>
                             <span className="text-black font-bold">右: {r}</span>
                             <span className="ml-2 text-black font-bold">左: {l}</span>
@@ -161,7 +164,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                             <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>{group}</div>
                             <div className="flex flex-col flex-1">
                               {rows.map(({ label, val, field }, i) => (
-                                <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
+                                <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < rows.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer', ...emptyBg(val)}}>
                                   <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                   <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                                   {(() => { const a = getBloodArrow(field, val, kenshinData.kGender); return a ? <span className={`font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`} style={{fontSize: '15px'}}>{a}</span> : null; })()}
@@ -190,7 +193,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                               { label: '血清クレアチニン(mg/dL)', val: kenshinData.cre,      field: 'cre' },
                               { label: 'eGFR',                  val: kenshinData.egfr,     field: 'egfr' },
                             ].map(({ label, val, field }, i, arr) => (
-                              <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
+                              <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer', ...emptyBg(val)}}>
                                 <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                                 <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                                 {(() => { const a = getBloodArrow(field, val, kenshinData.kGender); return a ? <span className={`font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`} style={{fontSize: '15px'}}>{a}</span> : null; })()}
@@ -204,7 +207,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                     {/* 胸部X-P */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>胸部X-P</div>
-                      <div className="flex-1 flex flex-col justify-start p-1" style={{fontSize: '11px'}}>
+                      <div className="flex-1 flex flex-col justify-start p-1" style={{fontSize: '11px', ...emptyBg(kenshinData.xRayResult || kenshinData.xRayDate || kenshinData.xRayCategory)}}>
                         {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　') && (
                           <div className="text-black" style={{fontSize: '10px'}}>
                             {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　')}
@@ -217,25 +220,25 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                     {/* 心電図 */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>心電図</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.ecgResult}</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.ecgResult)}}>{kenshinData.ecgResult}</div>
                     </div>
 
                     {/* 胃内視鏡 */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>胃内視鏡</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.endoscopyResult}</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.endoscopyResult)}}>{kenshinData.endoscopyResult}</div>
                     </div>
 
                     {/* 腹部エコー */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>腹部エコー</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.echoResult}</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.echoResult)}}>{kenshinData.echoResult}</div>
                     </div>
 
                     {/* マンガン */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>マンガン</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px'}}>{kenshinData.manganeseResult}</div>
+                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.manganeseResult)}}>{kenshinData.manganeseResult}</div>
                     </div>
 
                     {/* 尿検査 */}
@@ -248,7 +251,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                           { label: 'ウロビリノーゲン', val: kenshinData.urineUrobilinogen,  field: 'urineUrobilinogen' },
                           { label: '潜血',           val: kenshinData.urineOccultBlood,   field: 'urineOccultBlood' },
                         ].map(({ label, val, field }, i, arr) => (
-                          <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer'}}>
+                          <div key={label} className="flex items-center gap-1 px-1" onClick={() => { setHighlightedField(field); const el = document.getElementById(`kenshin-field-${field}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} style={{flex: 1, minHeight: '18px', borderBottom: i < arr.length - 1 ? '1px solid black' : 'none', fontSize: '10px', cursor: 'pointer', ...emptyBg(val)}}>
                             <span className="text-slate-600" style={{width: '130px', flexShrink: 0}}>{label}</span>
                             <span className="font-mono font-bold" style={{fontSize: '12px'}}>{val}</span>
                           </div>
@@ -259,13 +262,13 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                     {/* 診察所見 */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 2.5, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>診察所見</div>
-                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.doctorFindings}</div>
+                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px', ...emptyBg(kenshinData.doctorFindings)}}>{kenshinData.doctorFindings}</div>
                     </div>
 
                     {/* 総合所見 */}
                     <div className="flex" style={{flex: 2.5}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>総合所見</div>
-                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px'}}>{kenshinData.overallFindings}</div>
+                      <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px', ...emptyBg(kenshinData.overallFindings)}}>{kenshinData.overallFindings}</div>
                     </div>
 
                   </div>
