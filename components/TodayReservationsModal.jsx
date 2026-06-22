@@ -12,6 +12,8 @@ const TEXT = {
   empty: '\u672c\u65e5\u306e\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   noCompany: '\u56e3\u4f53\u540d\u306a\u3057',
   remarks: '\u5099\u8003',
+  purpose: '\u5065\u8a3a\u76ee\u7684',
+  unset: '\u672a\u8a2d\u5b9a',
 };
 
 const formatFee = (fee) => {
@@ -74,7 +76,7 @@ export default function TodayReservationsModal({
                         <div className="mt-0.5 text-xs font-bold text-slate-500">{reservation.company_name || TEXT.noCompany}</div>
                       </div>
                       <div className="shrink-0 text-right text-xs text-slate-500">
-                        <div>{reservation.purpose}</div>
+                        <div className="font-bold text-slate-600">{TEXT.purpose}: {reservation.purpose || TEXT.unset}</div>
                         <div className="mt-0.5 font-black text-blue-600">
                           {billingLabel || [formatFee(reservation.fee), reservation.payment_type].filter(Boolean).join(' ')}
                         </div>
