@@ -38,7 +38,10 @@ export default function TodayReservationsModal({
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
           <div>
             <h2 className="text-lg font-black text-slate-800">{TEXT.title}</h2>
-            <div className="mt-0.5 text-xs font-bold text-slate-500">{dateLabel} {reservations.length}{TEXT.count}</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-sm font-bold text-slate-600">{dateLabel}</span>
+              <span className="text-base font-black text-blue-600">{reservations.length}{TEXT.count}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onRefresh} disabled={loading} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40">
@@ -60,12 +63,14 @@ export default function TodayReservationsModal({
               {reservations.map(reservation => {
                 const billingLabel = getCompanyBillingLabel(reservation.purpose);
                 const itemLabels = getItemLabels(reservation);
+                const gender = (reservation.patient_gender || '').trim();
+                const nameColor = gender === '\u7537' ? 'text-blue-700' : gender === '\u5973' ? 'text-red-700' : 'text-slate-800';
                 return (
                   <button key={reservation.id} type="button" onClick={() => onSelect(reservation)} className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/40">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <div className="text-[10px] text-slate-400">{reservation.patient_name_kana}</div>
-                        <div className="font-black text-slate-800">{reservation.patient_name}</div>
+                        <div className={`font-black ${nameColor}`}>{reservation.patient_name}</div>
                         <div className="mt-0.5 text-xs font-bold text-slate-500">{reservation.company_name || TEXT.noCompany}</div>
                       </div>
                       <div className="shrink-0 text-right text-xs text-slate-500">

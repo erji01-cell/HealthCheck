@@ -3336,7 +3336,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={openTodayReservationsModal}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-xs font-bold text-blue-700 hover:bg-blue-100 whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs font-bold text-amber-700 hover:bg-amber-100 whitespace-nowrap"
                       >
                         <Calendar size={13} /> {'\u672c\u65e5\u306e\u4e00\u89a7'}
                       </button>
