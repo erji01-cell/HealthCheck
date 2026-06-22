@@ -71,8 +71,8 @@ export default function TodayReservationsModal({
                   <button key={reservation.id} type="button" onClick={() => onSelect(reservation)} className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/40">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="text-[10px] text-slate-400">{reservation.patient_name_kana}</div>
-                        <div className={`font-black ${nameColor}`}>{reservation.patient_name}</div>
+                        <div className="text-[13px] text-slate-400">{reservation.patient_name_kana}</div>
+                        <div className={`text-[21px] font-black leading-tight ${nameColor}`}>{reservation.patient_name}</div>
                         <div className="mt-0.5 text-xs font-bold text-slate-500">{reservation.company_name || TEXT.noCompany}</div>
                       </div>
                       <div className="shrink-0 text-right text-xs text-slate-500">
