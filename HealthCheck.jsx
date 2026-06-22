@@ -3280,13 +3280,6 @@ export default function App() {
                   </button>
                   <button
                     type="button"
-                    onClick={openTodayReservationsModal}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-slate-500 hover:text-blue-600 hover:bg-white flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    <Calendar size={12} /> {'\u672c\u65e5\u306e\u4e00\u89a7'}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'kenshin' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-emerald-600 hover:bg-white'}`}
                   >
@@ -3340,6 +3333,13 @@ export default function App() {
                         : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarPurpose).length, 0)}件
                     </div>
                     <div className="ml-auto flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={openTodayReservationsModal}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-xs font-bold text-blue-700 hover:bg-blue-100 whitespace-nowrap"
+                      >
+                        <Calendar size={13} /> {'\u672c\u65e5\u306e\u4e00\u89a7'}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
