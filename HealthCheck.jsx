@@ -2744,8 +2744,8 @@ export default function App() {
                     </div>
 
                     {/* 血圧・脈拍 */}
-                    <div className="flex items-end gap-2 flex-wrap">
-                      <div className="space-y-2 w-[220px] shrink-0">
+                    <div className="grid grid-cols-4 gap-2 items-end">
+                      <div className="col-span-2 space-y-2">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 <span className="normal-case">(mmHg)</span></label>
                         <div className="flex items-center gap-2 w-full">
                           <input type="text" name="bpSys" value={kenshinData.bpSys} onChange={handleKenshinChange} placeholder="収縮期" className="min-w-0 flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
@@ -2753,7 +2753,7 @@ export default function App() {
                           <input type="text" name="bpDia" value={kenshinData.bpDia} onChange={handleKenshinChange} placeholder="拡張期" className="min-w-0 flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                       </div>
-                      <div className="space-y-2 w-[88px] shrink-0 ml-8">
+                      <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-400 uppercase">脈拍</label>
                         <input type="text" name="pulse" value={kenshinData.pulse} onChange={handleKenshinChange} placeholder="回/分" className="w-full p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
