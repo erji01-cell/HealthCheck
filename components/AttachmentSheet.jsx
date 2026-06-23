@@ -23,10 +23,10 @@ export default function AttachmentSheet({ formData }) {
       className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container mt-8"
     >
       <h1 className="text-[22px] font-bold text-center mb-8 border-b-2 border-black pb-3 tracking-[0.12em]">
-        診療申込書・検尿結果・心電図 貼付台紙
+        問診票・検尿結果 貼付台紙
       </h1>
 
-      <div className="grid grid-cols-5 border-[1.5px] border-black text-sm mb-8">
+      <div className="grid grid-cols-5 border-[1.5px] border-black text-sm mb-6">
         {infoItems.map(({ label, value }) => (
           <div key={label} className="border-r-[1.5px] border-black last:border-r-0">
             <div className="bg-slate-100 border-b-[1.5px] border-black text-center text-xs font-bold py-1">
@@ -39,47 +39,20 @@ export default function AttachmentSheet({ formData }) {
         ))}
       </div>
 
-      <div className="flex-1 grid grid-rows-[1fr_58mm] gap-5">
-        <div className="grid grid-cols-[1fr_58mm] gap-5 min-h-0">
-          <div className="border-[1.5px] border-black bg-slate-50 flex flex-col min-h-0">
-            <div className="bg-slate-100 border-b-[1.5px] border-black px-4 py-2 text-center font-bold">
-              診療申込書貼付欄
-            </div>
-            <div className="flex-1 flex items-center justify-center text-slate-400 text-lg font-bold">
-              ここに診療申込書を貼付
-            </div>
-          </div>
-
-          <div className="grid grid-rows-[1fr_42mm] gap-5 min-h-0">
-            <div className="border-[1.5px] border-black bg-slate-50 flex flex-col min-h-0">
-              <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-2 text-center font-bold text-sm">
-                検尿結果貼付欄
-              </div>
-              <div className="flex-1 flex items-center justify-center text-center text-slate-400 text-sm font-bold leading-relaxed px-2">
-                ここに<br />検尿結果を貼付
-              </div>
-            </div>
-
-            <div className="border-[1.5px] border-black bg-white flex flex-col">
-              <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-1.5 text-center font-bold text-sm">
-                確認欄
-              </div>
-              <div className="flex-1 p-2 text-xs leading-6">
-                <div>診療申込書 □</div>
-                <div>検尿結果 □</div>
-                <div>心電図 □</div>
-                <div>確認者：</div>
-              </div>
-            </div>
-          </div>
+      {/* 貼付エリア（問診票・検尿結果を貼付）＋ 右下に確認欄 */}
+      <div className="flex-1 border-[1.5px] border-black relative bg-white min-h-0">
+        <div className="absolute top-3 left-0 right-0 text-center text-slate-300 text-base font-bold">
+          問診票・検尿結果をこの枠内に貼付
         </div>
 
-        <div className="border-[1.5px] border-black bg-slate-50 flex flex-col">
-          <div className="bg-slate-100 border-b-[1.5px] border-black px-4 py-2 text-center font-bold">
-            心電図貼付欄
+        <div className="absolute bottom-0 right-0 w-[62mm] border-l-[1.5px] border-t-[1.5px] border-black bg-white">
+          <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-1.5 text-center font-bold text-sm">
+            確認欄
           </div>
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-base font-bold">
-            ここに心電図を貼付
+          <div className="p-3 text-sm leading-8">
+            <div>問診票　□</div>
+            <div>検尿結果　□</div>
+            <div className="mt-1">確認者：</div>
           </div>
         </div>
       </div>
