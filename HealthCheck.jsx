@@ -4280,8 +4280,8 @@ export default function App() {
           #printable p { margin-bottom: 2px !important; }
           #attachment-sheet {
             width: 210mm !important;
-            min-height: 287mm !important;
-            padding: 10mm 12mm !important;
+            min-height: 0 !important;
+            padding: 5mm 10mm !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
@@ -4292,7 +4292,7 @@ export default function App() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          #attachment-sheet h1 { font-size: 24px !important; margin-bottom: 8mm !important; padding-bottom: 4px !important; }
+          #attachment-sheet h1 { font-size: 20px !important; margin-bottom: 3mm !important; padding-bottom: 3px !important; }
           .bg-slate-100 { background-color: #f1f5f9 !important; }
           .bg-white { background-color: white !important; }
           .vision-hearing-item span { font-size: 12px !important; }

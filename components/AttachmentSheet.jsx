@@ -1,58 +1,62 @@
 import React from 'react';
-import { getWeekdayFromIso } from '../lib/kenshinUtils.js';
 
 export default function AttachmentSheet({ formData }) {
-  const formattedDate = formData.date
-    ? (() => {
-        const [year, month, day] = formData.date.split('-');
-        return `${year}年${parseInt(month, 10)}月${parseInt(day, 10)}日`;
-      })()
-    : '　　　年　　　月　　　日';
-
   const infoItems = [
     { label: 'ID', value: formData.id || '' },
     { label: '氏名', value: formData.name ? `${formData.name} 様` : '' },
-    { label: '健診日', value: `${formattedDate}${formData.date ? `（${getWeekdayFromIso(formData.date)}）` : ''}` },
-    { label: '団体名', value: formData.companyName || '' },
-    { label: '健診目的', value: formData.purpose || '' },
   ];
 
   return (
     <div
       id="attachment-sheet"
-      className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container mt-8"
+      className="bg-white shadow-2xl rounded-sm px-12 pt-6 pb-8 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container mt-4"
     >
-      <h1 className="text-[22px] font-bold text-center mb-8 border-b-2 border-black pb-3 tracking-[0.12em]">
+      <h1 className="text-[20px] font-bold text-center mb-3 border-b-2 border-black pb-2 tracking-[0.12em]">
         問診票・検尿結果 貼付台紙
       </h1>
 
-      <div className="grid grid-cols-5 border-[1.5px] border-black text-sm mb-6">
+      <div className="grid grid-cols-[120px_1fr] border-[1.5px] border-black text-sm mb-3">
         {infoItems.map(({ label, value }) => (
           <div key={label} className="border-r-[1.5px] border-black last:border-r-0">
             <div className="bg-slate-100 border-b-[1.5px] border-black text-center text-xs font-bold py-1">
               {label}
             </div>
-            <div className="min-h-[34px] px-2 py-2 text-center font-bold flex items-center justify-center">
+            <div className="min-h-[30px] px-2 py-1.5 text-center font-bold flex items-center justify-center">
               {value}
             </div>
           </div>
         ))}
       </div>
 
-      {/* 貼付エリア（問診票・検尿結果を貼付）＋ 右下に確認欄 */}
-      <div className="flex-1 border-[1.5px] border-black relative bg-white min-h-0">
-        <div className="absolute top-3 left-0 right-0 text-center text-slate-300 text-base font-bold">
-          問診票・検尿結果をこの枠内に貼付
+      <div className="flex flex-col gap-3">
+        {/* 上半分: 心電図貼付欄（縦12.0cm） */}
+        <div className="border-[1.5px] border-black bg-slate-50 flex flex-col" style={{ height: '120mm' }}>
+          <div className="bg-slate-100 border-b-[1.5px] border-black px-4 py-1.5 text-center font-bold">
+            心電図貼付欄
+          </div>
+          <div className="flex-1 flex items-center justify-center text-slate-300 text-base font-bold">
+            ここに心電図を貼付
+          </div>
         </div>
 
-        <div className="absolute bottom-0 right-0 w-[62mm] border-l-[1.5px] border-t-[1.5px] border-black bg-white">
-          <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-1.5 text-center font-bold text-sm">
-            確認欄
+        {/* 下半分: 左=診療申込書（縦13.5cm）／右=検尿 */}
+        <div className="flex gap-3" style={{ height: '135mm' }}>
+          <div className="border-[1.5px] border-black bg-slate-50 flex flex-col" style={{ width: '95mm' }}>
+            <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-1.5 text-center font-bold text-sm">
+              診療申込書貼付欄
+            </div>
+            <div className="flex-1 flex items-center justify-center text-slate-300 text-sm font-bold">
+              ここに診療申込書を貼付
+            </div>
           </div>
-          <div className="p-3 text-sm leading-8">
-            <div>問診票　□</div>
-            <div>検尿結果　□</div>
-            <div className="mt-1">確認者：</div>
+
+          <div className="flex-1 border-[1.5px] border-black bg-slate-50 flex flex-col">
+            <div className="bg-slate-100 border-b-[1.5px] border-black px-2 py-1.5 text-center font-bold text-sm">
+              検尿貼付欄
+            </div>
+            <div className="flex-1 flex items-center justify-center text-center text-slate-300 text-sm font-bold leading-relaxed px-2">
+              ここに<br />検尿結果を貼付
+            </div>
           </div>
         </div>
       </div>
