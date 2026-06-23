@@ -2743,20 +2743,20 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* 血圧 */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 <span className="normal-case">(mmHg)</span></label>
-                      <div className="flex items-center gap-2 max-w-[240px]">
-                        <input type="text" name="bpSys" value={kenshinData.bpSys} onChange={handleKenshinChange} placeholder="収縮期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        <span className="text-slate-500 font-bold">/</span>
-                        <input type="text" name="bpDia" value={kenshinData.bpDia} onChange={handleKenshinChange} placeholder="拡張期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                    {/* 血圧・脈拍 */}
+                    <div className="flex items-end gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">血圧 <span className="normal-case">(mmHg)</span></label>
+                        <div className="flex items-center gap-2 max-w-[240px]">
+                          <input type="text" name="bpSys" value={kenshinData.bpSys} onChange={handleKenshinChange} placeholder="収縮期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          <span className="text-slate-500 font-bold">/</span>
+                          <input type="text" name="bpDia" value={kenshinData.bpDia} onChange={handleKenshinChange} placeholder="拡張期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
                       </div>
-                    </div>
-
-                    {/* 脈拍 */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase">脈拍</label>
-                      <input type="text" name="pulse" value={kenshinData.pulse} onChange={handleKenshinChange} placeholder="回/分" className="w-full max-w-[120px] p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">脈拍</label>
+                        <input type="text" name="pulse" value={kenshinData.pulse} onChange={handleKenshinChange} placeholder="回/分" className="w-[120px] p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
                     </div>
 
                     {/* 視力・色神 */}
