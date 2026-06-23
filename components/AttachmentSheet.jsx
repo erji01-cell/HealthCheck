@@ -13,7 +13,6 @@ export default function AttachmentSheet({ formData }) {
     { label: 'ID', value: formData.id || '' },
     { label: '氏名', value: formData.name ? `${formData.name} 様` : '' },
     { label: '健診日', value: `${formattedDate}${formData.date ? `（${getWeekdayFromIso(formData.date)}）` : ''}` },
-    { label: '団体名', value: formData.companyName || '' },
   ];
 
   return (
@@ -21,7 +20,7 @@ export default function AttachmentSheet({ formData }) {
       id="attachment-sheet"
       className="bg-white shadow-2xl rounded-sm px-12 pt-6 pb-8 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container mt-4"
     >
-      <div className="grid grid-cols-[80px_1fr_175px_1.3fr] border-[1.5px] border-black text-sm mb-3">
+      <div className="grid grid-cols-[110px_1fr_190px] border-[1.5px] border-black text-sm mb-3">
         {infoItems.map(({ label, value }) => (
           <div key={label} className="border-r-[1.5px] border-black last:border-r-0">
             <div className="bg-slate-100 border-b-[1.5px] border-black text-center text-xs font-bold py-1">
