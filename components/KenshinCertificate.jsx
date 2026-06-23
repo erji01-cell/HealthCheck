@@ -91,12 +91,13 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
                   {/* 左列 */}
                   <div className="flex flex-col" style={{flex: 1, borderRight: '1.5px solid black'}}>
 
-                    {/* 身長/体重・BMI・腹囲・血圧 */}
+                    {/* 身長/体重・BMI・腹囲・血圧・脈拍 */}
                     {[
                       { label: '身長/体重', val: kenshinData.height && kenshinData.weight ? `${kenshinData.height} cm / ${kenshinData.weight} kg` : '' },
                       { label: 'BMI',       val: kenshinData.bmi },
                       { label: '腹囲',      val: kenshinData.waist ? `${kenshinData.waist} cm` : '' },
                       { label: '血圧(mmHg)',val: kenshinData.bpSys || kenshinData.bpDia ? `${kenshinData.bpSys || ''} / ${kenshinData.bpDia || ''}` : '' },
+                      { label: '脈拍',      val: kenshinData.pulse },
                     ].map(({ label, val }) => (
                       <div key={label} className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '22px'}}>
                         <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '78px', borderRight: '1px solid black', fontSize: '11px', padding: '2px 4px'}}>{label}</div>

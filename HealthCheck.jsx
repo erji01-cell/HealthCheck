@@ -1400,7 +1400,7 @@ export default function App() {
           ];
           const { data, error } = await supabase
             .from('health_reserv')
-            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_id, company_name, purpose')
+            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_id, company_name, purpose, pulse')
             .or(orParts.join(','))
             .order('date', { ascending: false })
             .limit(100);
@@ -1687,7 +1687,7 @@ export default function App() {
       kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
       kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: r.k_company_name || '', kCompanyId: r.company_id || '',
       address: r.address || '',
-      bpSys: r.bp_sys || '', bpDia: r.bp_dia || '',
+      bpSys: r.bp_sys || '', bpDia: r.bp_dia || '', pulse: r.pulse || '',
       height: r.height || '', weight: r.weight || '', bmi: r.bmi || '', waist: r.waist || '',
       visionR: r.vision_r || '', visionL: r.vision_l || '', visionR2: r.vision_r2 || '', visionL2: r.vision_l2 || '',
       colorVision: r.color_vision || '',
@@ -1748,7 +1748,7 @@ export default function App() {
       company_id: company.id,
       k_company_name: company.name,
       address: d.address,
-      bp_sys: d.bpSys, bp_dia: d.bpDia,
+      bp_sys: d.bpSys, bp_dia: d.bpDia, pulse: d.pulse,
       height: d.height, weight: d.weight, bmi: d.bmi, waist: d.waist,
       vision_r: d.visionR, vision_l: d.visionL, vision_r2: d.visionR2, vision_l2: d.visionL2,
       color_vision: d.colorVision,
@@ -1841,6 +1841,7 @@ export default function App() {
       kContact: r.contact || '',
       kCompanyName: r.company_name || '',
       kCompanyId: r.company_id || '',
+      pulse: r.pulse || prev.pulse,
     }));
     if (iso) setKenshinBirthDateInput(iso);
     setSelectedKenshinReservation({
@@ -2750,6 +2751,12 @@ export default function App() {
                         <span className="text-slate-500 font-bold">/</span>
                         <input type="text" name="bpDia" value={kenshinData.bpDia} onChange={handleKenshinChange} placeholder="拡張期" className="flex-1 p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                       </div>
+                    </div>
+
+                    {/* 脈拍 */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase">脈拍</label>
+                      <input type="text" name="pulse" value={kenshinData.pulse} onChange={handleKenshinChange} placeholder="回/分" className="w-full max-w-[120px] p-2 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     {/* 視力・色神 */}
