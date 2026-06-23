@@ -39,7 +39,7 @@ export default function AttachmentSheet({ formData }) {
         ))}
       </div>
 
-      <div className="flex-1 grid grid-rows-[1fr_78mm] gap-6">
+      <div className="flex-1 grid grid-rows-[1fr_68mm] gap-6">
         <div className="border-[1.5px] border-black bg-slate-50 flex flex-col">
           <div className="bg-slate-100 border-b-[1.5px] border-black px-4 py-2 text-center font-bold">
             問診票貼付欄

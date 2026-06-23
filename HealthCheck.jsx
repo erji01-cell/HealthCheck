@@ -214,7 +214,7 @@ export default function App() {
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
-  const [printAttachmentSheet, setPrintAttachmentSheet] = useState(false);
+  const [printAttachmentSheet, setPrintAttachmentSheet] = useState(true);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
