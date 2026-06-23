@@ -60,32 +60,28 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                 <div className="flex border-b-[1.5px] border-black text-xs">
                   <div className="bp-title w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs text-center leading-tight shrink-0">血圧・脈拍<br/>色神</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
-                    <div className="flex-1 flex flex-col">
-                      <div className="flex flex-1 divide-x-[1.5px] divide-black border-b-[1.5px] border-black">
-                        <div className="flex-1 p-2 flex flex-col items-start justify-start">
-                          <div className="text-[10px] text-black mb-0.5">血圧1回目</div>
-                          <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
-                        </div>
-                        <div className={`flex-1 p-2 flex flex-col items-start justify-start ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'bg-slate-100' : ''}`}>
-                          <div className="text-[10px] text-black mb-0.5">血圧2回目{formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '（不要）' : ''}</div>
-                          <div className={`font-mono text-sm font-bold w-full text-center ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'text-slate-500' : 'text-black'}`}>
-                            {formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '測定なし' : `${formData.bp2Sys || ''} / ${formData.bp2Dia || ''}`}
-                          </div>
-                        </div>
+                    <div className="flex-1 p-2 flex flex-col items-start justify-start">
+                      <div className="text-[10px] text-black mb-0.5">血圧1回目</div>
+                      <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.bp1Sys || ''} / {formData.bp1Dia || ''}</div>
+                    </div>
+                    <div className={`flex-1 p-2 flex flex-col items-start justify-start ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'bg-slate-100' : ''}`}>
+                      <div className="text-[10px] text-black mb-0.5">血圧2回目{formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '（不要）' : ''}</div>
+                      <div className={`font-mono text-sm font-bold w-full text-center ${formData.items.bloodPressure && formData.bpMeasureCount === '1' ? 'text-slate-500' : 'text-black'}`}>
+                        {formData.items.bloodPressure && formData.bpMeasureCount === '1' ? '測定なし' : `${formData.bp2Sys || ''} / ${formData.bp2Dia || ''}`}
                       </div>
-                      <div className={`min-h-[34px] p-2 flex flex-col items-start justify-start ${!formData.items.pulse ? 'relative bg-slate-100' : ''}`}>
-                        {formData.items.pulse ? (
-                          <>
-                            <div className="text-[10px] text-black mb-0.5">脈拍</div>
-                            <div className="font-mono text-sm font-bold text-black w-full text-center">{formData.pulse || ''}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="text-[10px] text-black mb-0.5">脈拍</div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-500">不要</div>
-                          </>
-                        )}
-                      </div>
+                    </div>
+                    <div className={`w-[100px] p-2 flex flex-col items-start justify-start ${!formData.items.pulse ? 'relative bg-slate-100' : ''}`}>
+                      {formData.items.pulse ? (
+                        <>
+                          <div className="text-[10px] text-black mb-0.5">脈拍</div>
+                          <div className="font-mono text-sm font-bold text-black">{formData.pulse || ''}</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-[10px] text-black mb-0.5">脈拍</div>
+                          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-500">不要</div>
+                        </>
+                      )}
                     </div>
                     <div className={`w-[100px] p-2 flex flex-col items-start justify-start ${!formData.items.colorVision ? 'relative bg-slate-100' : ''}`}>
                       {formData.items.colorVision ? (
