@@ -244,7 +244,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField })
 
                     {/* 尿検査 */}
                     <div className="flex" style={{borderBottom: '1px solid black', flex: 4}}>
-                      <div className="bg-slate-50 flex items-center justify-center text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>尿検査</div>
+                      <div className="bg-slate-50 flex items-center justify-center text-center font-bold" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px', padding: '2px'}}>尿検査</div>
                       <div className="flex flex-col flex-1">
                         {[
                           { label: '糖',             val: kenshinData.urineGlucose,       field: 'urineGlucose' },
