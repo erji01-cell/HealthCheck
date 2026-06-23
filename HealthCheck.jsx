@@ -25,6 +25,7 @@ import ReservationDetailCard from './components/ReservationDetailCard.jsx';
 import TodayReservationsModal from './components/TodayReservationsModal.jsx';
 import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
+import AttachmentSheet from './components/AttachmentSheet.jsx';
 import {
   getBloodArrow,
   kenshinInitialState,
@@ -213,6 +214,7 @@ export default function App() {
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
+  const [printAttachmentSheet, setPrintAttachmentSheet] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
@@ -3306,9 +3308,22 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2 print-hide">
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
-                  <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
-                    <Printer size={14} /> 用紙印刷
-                  </button>
+                  <>
+                    {rightTab === 'preview' && (
+                      <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={printAttachmentSheet}
+                          onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
+                          className="h-3.5 w-3.5 accent-blue-600"
+                        />
+                        貼付台紙も印刷
+                      </label>
+                    )}
+                    <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
+                      <Printer size={14} /> 用紙印刷
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -4218,7 +4233,10 @@ export default function App() {
 
             {/* A4帳票再現 */}
             {rightTab === 'preview' && (
-              <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
+              <>
+                <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
+                {printAttachmentSheet && <AttachmentSheet formData={formData} />}
+              </>
             )}
 
             </div>
@@ -4260,6 +4278,21 @@ export default function App() {
           }
           #printable h1 { font-size: 24px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
           #printable p { margin-bottom: 2px !important; }
+          #attachment-sheet {
+            width: 210mm !important;
+            min-height: 287mm !important;
+            padding: 10mm 12mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: white !important;
+            page-break-before: always !important;
+            break-before: page !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #attachment-sheet h1 { font-size: 24px !important; margin-bottom: 8mm !important; padding-bottom: 4px !important; }
           .bg-slate-100 { background-color: #f1f5f9 !important; }
           .bg-white { background-color: white !important; }
           .vision-hearing-item span { font-size: 12px !important; }
