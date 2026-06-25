@@ -892,9 +892,25 @@ export default function App() {
     setTodayReservationsLoading(false);
   };
 
+  // カレンダーのスクロール枠を当月の月セルへ合わせる（stickyバー分オフセット）
+  const doScrollCalendarToCurrentMonth = () => {
+    const wrapper = calendarScrollRef.current;
+    const monthEl = currentMonthRef.current;
+    if (!wrapper || !monthEl) return false;
+    const stickyBar = wrapper.querySelector('.company-list-print-hide');
+    const headerH = stickyBar ? stickyBar.offsetHeight : 0;
+    const delta = monthEl.getBoundingClientRect().top - wrapper.getBoundingClientRect().top - headerH;
+    wrapper.scrollTop += delta;
+    return true;
+  };
+
   const openTodayReservationsModal = () => {
     setShowTodayReservationsModal(true);
     fetchTodayReservations();
+    // カレンダー表示中なら、本日が属する月（当月）へスクロール
+    if (rightTab === 'calendar' && calendarViewMode === 'calendar') {
+      requestAnimationFrame(() => doScrollCalendarToCurrentMonth());
+    }
   };
 
   useEffect(() => {
@@ -1442,14 +1458,7 @@ export default function App() {
     if (!pendingCalendarScrollRef.current) return;
     if (rightTab !== 'calendar' || calendarViewMode !== 'calendar' || calendarLoading) return;
     requestAnimationFrame(() => {
-      const wrapper = calendarScrollRef.current;
-      const monthEl = currentMonthRef.current;
-      if (!wrapper || !monthEl) return;
-      const stickyBar = wrapper.querySelector('.company-list-print-hide');
-      const headerH = stickyBar ? stickyBar.offsetHeight : 0;
-      const delta = monthEl.getBoundingClientRect().top - wrapper.getBoundingClientRect().top - headerH;
-      wrapper.scrollTop += delta;
-      pendingCalendarScrollRef.current = false;
+      if (doScrollCalendarToCurrentMonth()) pendingCalendarScrollRef.current = false;
     });
   }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
 
