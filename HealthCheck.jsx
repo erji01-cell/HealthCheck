@@ -18,6 +18,7 @@ import {
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calcFee,
+  calcKuritasFee,
   getItemsForPurpose,
   stripKuritasBloodNotes,
 } from './lib/healthCheckConfig.js';
@@ -1036,7 +1037,9 @@ export default function App() {
     const { items } = formData;
     const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
     let fee = null;
-    if (getCompanyBillingLabel(formData.purpose)) fee = null;
+    const kuritasFee = calcKuritasFee(formData.purpose, items);
+    if (kuritasFee !== null) fee = kuritasFee;
+    else if (getCompanyBillingLabel(formData.purpose)) fee = null;
     else if (zeroPurposes.includes(formData.purpose)) fee = 0;
     else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
     else fee = calcFee(items);
@@ -3640,7 +3643,7 @@ export default function App() {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-right font-black text-blue-600">{formatReservationFee(r.fee)}</div>
+                                  <div className="text-right font-black text-blue-600">{formatReservationFee(r.fee ?? calcKuritasFee(r.purpose, { xRay: r.item_xray, endoscopy: r.item_endoscopy, stool: r.item_stool, psa: r.item_psa }))}</div>
                                 </div>
                               );
                             })}
@@ -4196,7 +4199,10 @@ export default function App() {
                             {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
                             <div className="font-bold text-blue-600">
                               {getCompanyBillingLabel(r.purpose)
-                                ? getCompanyBillingLabel(r.purpose)
+                                ? (() => {
+                                    const kFee = r.fee ?? calcKuritasFee(r.purpose, { xRay: r.item_xray, endoscopy: r.item_endoscopy, stool: r.item_stool, psa: r.item_psa });
+                                    return `${getCompanyBillingLabel(r.purpose)}${kFee != null ? ` ¥${kFee.toLocaleString()}` : ''}`;
+                                  })()
                                 : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
                             </div>
                           </div>
