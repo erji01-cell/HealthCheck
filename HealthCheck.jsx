@@ -3367,7 +3367,7 @@ export default function App() {
                         onClick={() => setCalendarViewMode('list')}
                         className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'list' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-white'}`}
                       >
-                        <ListTodo size={12} /> 団体一覧
+                        <ListTodo size={12} /> 団体別一覧
                       </button>
                     </div>
                     <div className="shrink-0 min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
