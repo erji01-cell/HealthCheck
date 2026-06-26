@@ -2306,12 +2306,18 @@ export default function App() {
                       <option value="会社請求">会社請求</option>
                     </select>
                   );
-                  const feeDisplay = getCompanyBillingLabel(formData.purpose) ? (
-                    <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
-                      <div className="text-sm font-bold text-emerald-700">{getCompanyBillingLabel(formData.purpose)}</div>
-                      <div className="text-xs text-emerald-500 font-bold">料金</div>
-                    </div>
-                  ) : zeroPurposes.includes(formData.purpose) ? (
+                  const feeDisplay = getCompanyBillingLabel(formData.purpose) ? (() => {
+                    const kFee = calcKuritasFee(formData.purpose, formData.items);
+                    return (
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+                        <div className="text-sm font-bold text-emerald-700">{getCompanyBillingLabel(formData.purpose)}</div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-emerald-500 font-bold">料金</span>
+                          {kFee != null && <span className="text-2xl font-black text-emerald-700">¥{kFee.toLocaleString()}</span>}
+                        </div>
+                      </div>
+                    );
+                  })() :zeroPurposes.includes(formData.purpose) ? (
                     <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
                       {paymentTypeSelector}
                       <div className="flex items-center gap-3">
