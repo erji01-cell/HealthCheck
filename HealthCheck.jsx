@@ -212,6 +212,8 @@ export default function App() {
   const [calendarListSortField, setCalendarListSortField] = useState('date'); // 'date' | 'fee' | 'kana' | 'registered'
   const [calendarListSortDir, setCalendarListSortDir] = useState('asc'); // 'asc' | 'desc'
   const [calendarPurpose, setCalendarPurpose] = useState(''); // 健診目的フィルタ（''=すべて）
+  const [calendarDateFrom, setCalendarDateFrom] = useState('');
+  const [calendarDateTo, setCalendarDateTo] = useState('');
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
@@ -758,7 +760,29 @@ export default function App() {
 
   // 健診目的フィルタ（''=すべて）
   const matchesCalendarPurpose = (r) => !calendarPurpose || r.purpose === calendarPurpose;
-  const getFilteredCalendarListData = () => calendarListData.filter(matchesCalendarPurpose);
+  const matchesCalendarDateRange = (r) => {
+    const date = String(r.date || '');
+    if (!date) return false;
+    if (calendarDateFrom && date < calendarDateFrom) return false;
+    if (calendarDateTo && date > calendarDateTo) return false;
+    return true;
+  };
+  const matchesCalendarFilters = (r) => matchesCalendarPurpose(r) && matchesCalendarDateRange(r);
+  const getFilteredCalendarListData = () => calendarListData.filter(matchesCalendarFilters);
+  const getCalendarDateRangeLabel = () => {
+    if (!calendarDateFrom && !calendarDateTo) return '';
+    const from = calendarDateFrom ? calendarDateFrom.replace(/-/g, '/') : '指定なし';
+    const to = calendarDateTo ? calendarDateTo.replace(/-/g, '/') : '指定なし';
+    return `期間: ${from} 〜 ${to}`;
+  };
+  const getCalendarListEmptyMessage = () => {
+    const filters = [
+      calendarCompanyId && 'この団体',
+      calendarPurpose && `「${calendarPurpose}」`,
+      getCalendarDateRangeLabel(),
+    ].filter(Boolean);
+    return filters.length ? `${filters.join(' / ')}の予約はありません` : '予約はありません';
+  };
 
   const getCalendarListTotalFee = () =>
     getFilteredCalendarListData().reduce((sum, r) => {
@@ -951,7 +975,10 @@ export default function App() {
   const fetchCalendarListData = async (companyId = calendarCompanyId) => {
     setCalendarListError('');
     setCalendarListLoading(true);
-    const { start, end } = getCalendarDataRange();
+    const defaultRange = getCalendarDataRange();
+    const hasDateRange = calendarDateFrom || calendarDateTo;
+    const start = hasDateRange ? (calendarDateFrom || '1900-01-01') : defaultRange.start;
+    const end = hasDateRange ? (calendarDateTo || '2999-12-31') : defaultRange.end;
     let query = supabase
       .from('health_reserv')
       .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_hba1c, item_endoscopy, item_echo, item_manganese, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
@@ -976,7 +1003,7 @@ export default function App() {
   useEffect(() => {
     if (rightTab !== 'calendar' || calendarViewMode !== 'list') return;
     fetchCalendarListData(calendarCompanyId);
-  }, [rightTab, calendarViewMode, calendarCompanyId]);
+  }, [rightTab, calendarViewMode, calendarCompanyId, calendarDateFrom, calendarDateTo]);
 
   useEffect(() => {
     calendarCompanyIdRef.current = calendarCompanyId;
@@ -3373,7 +3400,7 @@ export default function App() {
                     <div className="shrink-0 min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
                       {calendarViewMode === 'list'
                         ? getFilteredCalendarListData().length
-                        : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarPurpose).length, 0)}件
+                        : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarFilters).length, 0)}件
                     </div>
                     <div className="ml-auto flex shrink-0 items-center gap-2">
                       <button
@@ -3388,6 +3415,8 @@ export default function App() {
                         onClick={() => {
                           setCalendarCompanyId('');
                           setCalendarPurpose('');
+                          setCalendarDateFrom('');
+                          setCalendarDateTo('');
                           setSelectedCalendarDate(null);
                           setCalendarDetailData({});
                           setCalendarListData([]);
@@ -3395,7 +3424,7 @@ export default function App() {
                           pendingCalendarScrollRef.current = true;
                           fetchCalendarData('');
                         }}
-                        disabled={!calendarCompanyId && !calendarPurpose}
+                        disabled={!calendarCompanyId && !calendarPurpose && !calendarDateFrom && !calendarDateTo}
                         className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         リセット
@@ -3448,6 +3477,34 @@ export default function App() {
                       ))}
                     </select>
                   </div>
+                  {/* 3段目: 健診日の期間フィルタ */}
+                  <div className="flex items-center gap-2">
+                    <label className="shrink-0 text-[11px] font-black text-slate-400">期間</label>
+                    <input
+                      type="date"
+                      value={calendarDateFrom}
+                      onChange={e => setCalendarDateFrom(e.target.value)}
+                      className="w-[145px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-indigo-300"
+                    />
+                    <span className="text-xs font-black text-slate-400">〜</span>
+                    <input
+                      type="date"
+                      value={calendarDateTo}
+                      onChange={e => setCalendarDateTo(e.target.value)}
+                      className="w-[145px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-indigo-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setCalendarDateFrom(''); setCalendarDateTo(''); }}
+                      disabled={!calendarDateFrom && !calendarDateTo}
+                      className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      期間クリア
+                    </button>
+                    <div className="min-w-0 flex-1 text-[11px] font-bold text-slate-400 truncate">
+                      {getCalendarDateRangeLabel()}
+                    </div>
+                  </div>
                 </div>
                 {calendarViewMode === 'calendar' ? (calendarLoading ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
@@ -3481,7 +3538,7 @@ export default function App() {
                           <div className="grid grid-cols-7 gap-px bg-slate-400 border border-slate-400 rounded-lg overflow-hidden">
                             {weeks.flat().map((day, idx) => {
                               const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
-                              const reservations = dateStr ? (calendarData[dateStr] || []).filter(matchesCalendarPurpose) : [];
+                              const reservations = dateStr ? (calendarData[dateStr] || []).filter(matchesCalendarFilters) : [];
                               const now = new Date();
                               const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
                               const isToday = dateStr === todayStr;
@@ -3544,13 +3601,13 @@ export default function App() {
                       <div className="text-center text-red-500 py-10 text-sm font-bold">{calendarListError}</div>
                     ) : getFilteredCalendarListData().length === 0 ? (
                       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-bold text-slate-400">
-                        {calendarPurpose ? `「${calendarPurpose}」の予約はありません` : calendarCompanyId ? 'この団体の予約はありません' : '予約はありません'}
+                        {getCalendarListEmptyMessage()}
                       </div>
                     ) : (
                       <>
                         <div className="company-list-print-header hidden">
                           <div className="text-xl font-black text-slate-800">{calendarCompanyId ? '団体別 健康診断予約一覧' : '健康診断予約一覧'}</div>
-                          <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}{calendarPurpose ? `　／　目的: ${calendarPurpose}` : ''}</div>
+                          <div className="mt-1 text-sm font-bold text-slate-600">{getSelectedCalendarCompanyName()}{calendarPurpose ? `　／　目的: ${calendarPurpose}` : ''}{getCalendarDateRangeLabel() ? `　／　${getCalendarDateRangeLabel()}` : ''}</div>
                           <div className="mt-1 text-xs text-slate-400">表示順: {getCalendarListSortLabel()}　印刷日: {new Date().toLocaleDateString('ja-JP')}</div>
                         </div>
                         <div className="company-list-summary grid grid-cols-3 gap-2">
