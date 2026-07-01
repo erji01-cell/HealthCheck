@@ -3670,7 +3670,7 @@ export default function App() {
                                   <div className="min-w-0">
                                     <div className="flex items-baseline gap-3 min-w-0">
                                       <div className="font-black text-slate-800 truncate">{r.patient_name}</div>
-                                      {r.patient_id && <div className="shrink-0 text-[10px] font-black text-emerald-600">ID: {r.patient_id}</div>}
+                                      {r.patient_id && <div className="shrink-0 text-xs font-black text-emerald-600">ID: {r.patient_id}</div>}
                                       <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
                                     </div>
                                     {(r.patient_name_kana || r.company_name) && (
@@ -3701,7 +3701,7 @@ export default function App() {
                                   <div className="flex flex-col text-right">
                                     <div className="font-bold text-slate-500">{getCompanyBillingLabel(r.purpose) || r.payment_type || '-'}</div>
                                     {r.created_at && (
-                                      <div className="mt-auto pt-1 text-xs font-bold text-emerald-600">
+                                      <div className="mt-auto pt-1 text-[10px] font-bold text-emerald-600">
                                         登録: {(() => { const d = new Date(r.created_at); return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; })()}
                                       </div>
                                     )}
