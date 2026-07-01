@@ -3701,7 +3701,7 @@ export default function App() {
                                   <div className="flex flex-col text-right">
                                     <div className="font-bold text-slate-500">{getCompanyBillingLabel(r.purpose) || r.payment_type || '-'}</div>
                                     {r.created_at && (
-                                      <div className="mt-auto pt-1 text-[9px] font-bold text-slate-400">
+                                      <div className="mt-auto pt-1 text-xs font-bold text-slate-400">
                                         登録: {(() => { const d = new Date(r.created_at); return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; })()}
                                       </div>
                                     )}
