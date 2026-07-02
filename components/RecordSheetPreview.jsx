@@ -270,7 +270,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                 </div>
 
                 {/* 行: 備考事項 */}
-                <div className="flex min-h-[60px]">
+                <div className="flex min-h-[30px]">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">備考</div>
                   <div className="flex-1 p-2 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-800">
                     {formData.others}
