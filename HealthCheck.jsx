@@ -11,6 +11,7 @@ import {
 } from './lib/backup.js';
 import {
   HOLIDAYS,
+  HOLIDAYS_COVERAGE_END,
   KURITAS_BLOOD_LABELS,
   HAPILUS_BLOOD_LABELS,
   SPECIAL_COMPANY_PURPOSES,
@@ -548,7 +549,6 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        deleteOldReservations();
         fetchCalendarData(calendarCompanyIdRef.current);
         fetchHealthCompanies();
       }
@@ -556,7 +556,6 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        deleteOldReservations();
         fetchCalendarData(calendarCompanyIdRef.current);
         fetchHealthCompanies();
       }
@@ -572,19 +571,40 @@ export default function App() {
     return () => clearInterval(keepAlive);
   }, []);
 
-  // 自動バックアップ（ログイン後・1日1回）
+  // 自動バックアップ（ログイン後・1日1回）＋バックアップ確認後の古い予約自動削除
+  const startupMaintenanceRanRef = useRef(false);
   useEffect(() => {
     if (!session) return;
+    if (startupMaintenanceRanRef.current) return;
+    startupMaintenanceRanRef.current = true;
     (async () => {
-      if (!(await shouldRunAutoBackup(session))) {
-        setLastBackupAt(getLastBackupTime());
-        return;
+      // 直近7日以内のバックアップが確認できた場合のみ自動削除を実行する
+      const RECENT_BACKUP_MS = 7 * 24 * 60 * 60 * 1000;
+      let backupOk = false;
+      if (await shouldRunAutoBackup(session)) {
+        try {
+          await performBackup(session, { downloadLocal: false, prune: true });
+          backupOk = true;
+        } catch (err) {
+          console.error('自動バックアップ失敗:', err);
+        }
+      } else {
+        const last = getLastBackupTime();
+        backupOk = !!last && (Date.now() - last) < RECENT_BACKUP_MS;
       }
-      try {
-        await performBackup(session, { downloadLocal: false, prune: true });
-        setLastBackupAt(getLastBackupTime());
-      } catch (err) {
-        console.error('自動バックアップ失敗:', err);
+      setLastBackupAt(getLastBackupTime());
+      if (backupOk) {
+        deleteOldReservations();
+      } else {
+        console.warn('直近のバックアップが確認できないため、古い予約の自動削除をスキップしました。');
+        showNotice('直近のバックアップが確認できないため、1年以上前の予約データの自動削除をスキップしました。\n患者管理のバックアップ機能から手動バックアップを実行してください。');
+      }
+
+      // 祝日リストの期限切れ警告（終了60日前から表示）
+      const warnFrom = new Date(HOLIDAYS_COVERAGE_END);
+      warnFrom.setDate(warnFrom.getDate() - 60);
+      if (new Date() >= warnFrom) {
+        showNotice(`祝日リストは ${HOLIDAYS_COVERAGE_END.slice(0, 4)}年末までしか登録されていません。\n来年の祝日判定が効かなくなるため、祝日リストの更新（healthCheckConfig.js の HOLIDAYS）が必要です。`);
       }
     })();
   }, [session]);
