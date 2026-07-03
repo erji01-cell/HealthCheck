@@ -111,7 +111,7 @@ export default function App() {
   // 初期状態の定義
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowStr = getLocalIsoDate(tomorrow);
   const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
 
   const initialState = {
@@ -269,7 +269,7 @@ export default function App() {
   const deleteOldReservations = async () => {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const cutoffDate = oneYearAgo.toISOString().split('T')[0];
+    const cutoffDate = getLocalIsoDate(oneYearAgo);
     await supabase.from('health_reserv').delete().lt('date', cutoffDate);
   };
 
@@ -349,9 +349,10 @@ export default function App() {
       .join(' / ');
   };
 
-  const saveHealthReservationRecord = async (record) => {
-    return editingReservationId
-      ? supabase.from('health_reserv').update(record).eq('id', editingReservationId)
+  const saveHealthReservationRecord = async (record, overrideId = null) => {
+    const targetId = overrideId || editingReservationId;
+    return targetId
+      ? supabase.from('health_reserv').update(record).eq('id', targetId)
       : supabase.from('health_reserv').insert(record);
   };
 
@@ -1057,8 +1058,8 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedCalendarDate, calendarCompanyId]);
 
-  // 実際の保存処理
-  const performSave = async () => {
+  // 実際の保存処理（overrideId 指定時はそのIDの既存レコードを更新）
+  const performSave = async (overrideId = null) => {
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
@@ -1145,7 +1146,7 @@ export default function App() {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await saveHealthReservationRecord(record);
+    const { error } = await saveHealthReservationRecord(record, overrideId);
     if (error) {
       console.error(error);
       setSaveErrorMessage(formatSupabaseError(error));
@@ -1202,9 +1203,8 @@ export default function App() {
           message: `${formData.date} にはすでに患者ID（${formData.id}）${formData.name}の予約が登録されています。\n更新してよろしいですか？`,
           onConfirm: async () => {
             setConfirmDialog({ show: false, message: '', onConfirm: null });
-            // 既存予約を削除してから新規保存
-            await supabase.from('health_reserv').delete().eq('id', existing[0].id);
-            await performSave();
+            // 既存予約を上書き更新（削除→挿入だと保存失敗時にデータが消えるためupdateで置き換え）
+            await performSave(existing[0].id);
           }
         });
         return;
