@@ -265,12 +265,21 @@ export default function App() {
     }
   }, [kenshinData.kBirthDate, kenshinData.kDate]);
 
+  // 通知ダイアログ（OKのみ・alert代替）
+  const showNotice = (message) => {
+    setConfirmDialog({ show: true, message, onConfirm: null, noticeOnly: true });
+  };
+
   // 1年以上前の予約データを自動削除
   const deleteOldReservations = async () => {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     const cutoffDate = getLocalIsoDate(oneYearAgo);
-    await supabase.from('health_reserv').delete().lt('date', cutoffDate);
+    const { error } = await supabase.from('health_reserv').delete().lt('date', cutoffDate);
+    if (error) {
+      console.error('古い予約の自動削除に失敗:', error);
+      showNotice('古い予約データの自動削除に失敗しました。\nSupabaseの設定（RLSポリシー等）を確認してください。');
+    }
   };
 
   const fetchHealthCompanies = async () => {
@@ -629,9 +638,19 @@ export default function App() {
   };
 
   // ファイルから復元
-  const handleRestoreFromFile = async (file) => {
+  const handleRestoreFromFile = (file) => {
     if (!file || !session) return;
-    if (!window.confirm(`${file.name} から復元します。既存データに上書き（merge）されます。続行しますか？`)) return;
+    setConfirmDialog({
+      show: true,
+      message: `${file.name} から復元します。既存データに上書き（merge）されます。続行しますか？`,
+      onConfirm: () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        performRestoreFromFile(file);
+      },
+    });
+  };
+
+  const performRestoreFromFile = async (file) => {
     setBackupBusy(true);
     setBackupMessage('復元中...');
     try {
@@ -648,9 +667,19 @@ export default function App() {
   };
 
   // Storageから復元
-  const handleRestoreFromStorage = async (fileName) => {
+  const handleRestoreFromStorage = (fileName) => {
     if (!session) return;
-    if (!window.confirm(`${fileName} から復元します。既存データに上書き（merge）されます。続行しますか？`)) return;
+    setConfirmDialog({
+      show: true,
+      message: `${fileName} から復元します。既存データに上書き（merge）されます。続行しますか？`,
+      onConfirm: () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        performRestoreFromStorage(fileName);
+      },
+    });
+  };
+
+  const performRestoreFromStorage = async (fileName) => {
     setBackupBusy(true);
     setBackupMessage('復元中...');
     try {
@@ -961,7 +990,9 @@ export default function App() {
       .order('date', { ascending: true });
     if (companyId) query = query.eq('company_id', companyId);
     const { data, error } = await query;
-    if (!error && data) {
+    if (error) {
+      console.error('カレンダーデータの取得に失敗:', error);
+    } else if (data) {
       const grouped = {};
       data.forEach(r => {
         if (!grouped[r.date]) grouped[r.date] = [];
@@ -1193,13 +1224,16 @@ export default function App() {
       await fetchCalendarData();
       // patients テーブルへの自動同期（患者IDがある場合のみ）
       if (formData.id) {
-        const { data: existing } = await supabase
+        const { data: existing, error: patientSelectError } = await supabase
           .from('patients')
           .select('patient_id')
           .eq('patient_id', formData.id)
           .limit(1);
-        if (!existing || existing.length === 0) {
-          await supabase.from('patients').insert({
+        if (patientSelectError) {
+          console.error('患者マスタの確認に失敗:', patientSelectError);
+          showNotice('予約は保存されましたが、患者マスタの確認に失敗しました。');
+        } else if (!existing || existing.length === 0) {
+          const { error: patientInsertError } = await supabase.from('patients').insert({
             patient_id: formData.id,
             patient_name: formData.name || '',
             patient_name_kana: formData.yurigana || '',
@@ -1208,6 +1242,10 @@ export default function App() {
             address: '',
             phone_number: formData.contact || '',
           });
+          if (patientInsertError) {
+            console.error('患者マスタへの登録に失敗:', patientInsertError);
+            showNotice('予約は保存されましたが、患者マスタへの自動登録に失敗しました。');
+          }
         }
       }
     }
@@ -1217,11 +1255,11 @@ export default function App() {
   // 予約データ保存
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      alert('氏名を入力してください。');
+      showNotice('氏名を入力してください。');
       return;
     }
     if (!formData.staffId) {
-      alert('予約担当者を選択してください。');
+      showNotice('予約担当者を選択してください。');
       return;
     }
     if (!editingReservationId && formData.id && formData.date) {
@@ -1740,13 +1778,19 @@ export default function App() {
   }, [kenshinModalQuery, session]);
 
   // 診断書削除
-  const handleDeleteKenshinRecord = async (r, e) => {
+  const handleDeleteKenshinRecord = (r, e) => {
     e.stopPropagation();
-    if (!window.confirm(`${r.k_name || ''} 様の診断書（健診日：${r.k_date || '不明'}）\n\n本当に削除しますか？`)) return;
-    const { error } = await supabase.from('health_data').delete().eq('id', r.id);
-    if (error) { console.error(error); alert('削除に失敗しました'); return; }
-    setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
-    setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
+    setConfirmDialog({
+      show: true,
+      message: `${r.k_name || ''} 様の診断書（健診日：${r.k_date || '不明'}）\n\n本当に削除しますか？`,
+      onConfirm: async () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        const { error } = await supabase.from('health_data').delete().eq('id', r.id);
+        if (error) { console.error(error); showNotice('削除に失敗しました'); return; }
+        setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
+        setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
+      },
+    });
   };
 
   // 診断書検索から選択してkenshinDataに復元
@@ -1943,11 +1987,22 @@ export default function App() {
   };
 
   // カレンダーから予約を削除
-  const handleDeleteReservation = async (reservationId, patientName) => {
-    if (!window.confirm(`「${patientName}」の予約を削除しますか？`)) return;
+  const handleDeleteReservation = (reservationId, patientName) => {
+    setConfirmDialog({
+      show: true,
+      message: `「${patientName}」の予約を削除しますか？`,
+      onConfirm: () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        performDeleteReservation(reservationId);
+      },
+    });
+  };
+
+  const performDeleteReservation = async (reservationId) => {
     const { error } = await supabase.from('health_reserv').delete().eq('id', reservationId);
     if (error) {
-      alert('削除に失敗しました。');
+      console.error('予約の削除に失敗:', error);
+      showNotice('削除に失敗しました。');
     } else {
       setCalendarData(prev => {
         const updated = { ...prev };
@@ -3344,7 +3399,7 @@ export default function App() {
             onClick={async () => {
               const pw = window.prompt('バックアップ管理のパスワードを入力してください');
               if (pw === null) return;
-              if (pw !== '0125') { alert('パスワードが違います'); return; }
+              if (pw !== '0125') { showNotice('パスワードが違います'); return; }
               setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
             }}
             className="absolute right-2 top-0 z-20 flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap print-hide"
@@ -4168,20 +4223,22 @@ export default function App() {
               );
             })()}
 
-            {/* 確認ダイアログ */}
+            {/* 確認ダイアログ（noticeOnly時はOKのみの通知ダイアログ） */}
             {confirmDialog.show && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
                   <p className="text-slate-700 mb-6 whitespace-pre-line">{confirmDialog.message}</p>
                   <div className="flex gap-3 justify-center">
+                    {!confirmDialog.noticeOnly && (
+                      <button
+                        onClick={() => setConfirmDialog({ show: false, message: '', onConfirm: null })}
+                        className="px-6 py-2 border-2 border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50"
+                      >
+                        キャンセル
+                      </button>
+                    )}
                     <button
-                      onClick={() => setConfirmDialog({ show: false, message: '', onConfirm: null })}
-                      className="px-6 py-2 border-2 border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50"
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      onClick={confirmDialog.onConfirm}
+                      onClick={confirmDialog.onConfirm || (() => setConfirmDialog({ show: false, message: '', onConfirm: null }))}
                       className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
                     >
                       OK
