@@ -1006,6 +1006,40 @@ export default function App() {
     fetchCalendarListData(calendarCompanyId);
   }, [rightTab, calendarViewMode, calendarCompanyId, calendarDateFrom, calendarDateTo]);
 
+  // リアルタイム同期：他端末での予約変更を検知し、表示中のビューを再取得する
+  // （stale closure対策：最新のフェッチ関数と表示状態をrefで参照）
+  const realtimeHandlersRef = useRef({});
+  realtimeHandlersRef.current = {
+    fetchCalendarData,
+    fetchCalendarListData,
+    fetchTodayReservations,
+    calendarViewMode,
+    showTodayReservationsModal,
+    calendarCompanyId,
+  };
+  useEffect(() => {
+    if (!session) return;
+    let refreshTimer = null;
+    const scheduleRefresh = () => {
+      // 連続イベントをまとめて500ms後に1回だけ再取得
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        const h = realtimeHandlersRef.current;
+        h.fetchCalendarData(h.calendarCompanyId);
+        if (h.calendarViewMode === 'list') h.fetchCalendarListData(h.calendarCompanyId);
+        if (h.showTodayReservationsModal) h.fetchTodayReservations();
+      }, 500);
+    };
+    const channel = supabase
+      .channel('health-reserv-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'health_reserv' }, scheduleRefresh)
+      .subscribe();
+    return () => {
+      clearTimeout(refreshTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+
   useEffect(() => {
     calendarCompanyIdRef.current = calendarCompanyId;
     try {
