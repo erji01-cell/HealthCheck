@@ -657,6 +657,23 @@ export default function App() {
     }
   };
 
+  // ヘッダーからワンクリックでSupabase Storageへ即バックアップ
+  const [quickBackupBusy, setQuickBackupBusy] = useState(false);
+  const handleQuickBackup = async () => {
+    if (!session || quickBackupBusy) return;
+    setQuickBackupBusy(true);
+    try {
+      await performBackup(session, { downloadLocal: false });
+      setLastBackupAt(getLastBackupTime());
+      showNotice('バックアップが完了しました');
+      if (showBackupModal) await refreshBackupList();
+    } catch (err) {
+      showNotice('バックアップに失敗しました: ' + err.message);
+    } finally {
+      setQuickBackupBusy(false);
+    }
+  };
+
   // 手動バックアップ
   const handleManualBackup = async () => {
     if (!session || backupBusy) return;
@@ -3466,20 +3483,30 @@ export default function App() {
               >▼</button>
             </div>
           )}
-          <button
-            onClick={async () => {
-              const pw = window.prompt('バックアップ管理のパスワードを入力してください');
-              if (pw === null) return;
-              if (pw !== '0125') { showNotice('パスワードが違います'); return; }
-              setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
-            }}
-            className="absolute right-2 top-0 z-20 flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap print-hide"
-            title="バックアップ管理"
-          >
-            <Database size={14} /> バックアップ
-          </button>
+          <div className="absolute right-2 top-0 z-20 flex items-center gap-2 print-hide">
+            <button
+              onClick={handleQuickBackup}
+              disabled={quickBackupBusy}
+              className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-100 shadow-sm transition-all whitespace-nowrap disabled:opacity-50"
+              title="バックアップ"
+            >
+              <Save size={14} /> {quickBackupBusy ? 'バックアップ中...' : 'バックアップ'}
+            </button>
+            <button
+              onClick={async () => {
+                const pw = window.prompt('バックアップ管理のパスワードを入力してください');
+                if (pw === null) return;
+                if (pw !== '0125') { showNotice('パスワードが違います'); return; }
+                setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
+              }}
+              className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 shadow-sm transition-all whitespace-nowrap"
+              title="患者管理"
+            >
+              <Database size={14} /> 患者管理
+            </button>
+          </div>
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[118px] print-hide lg:shrink-0">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[250px] print-hide lg:shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
                 <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
