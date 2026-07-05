@@ -2357,16 +2357,16 @@ export default function App() {
                     <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
                       <Search size={13} /> 予約患者検索
                     </button>
-                    <div className="relative">
+                    <div className="relative w-[116px]">
                       <button
                         onClick={handleQuickBackup}
                         disabled={quickBackupBusy}
-                        className="absolute bottom-full right-0 mb-1 flex items-center gap-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                        className="absolute bottom-full inset-x-0 mb-1 flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
                         title="今すぐバックアップ"
                       >
                         <Save size={13} /> {quickBackupBusy ? '...' : 'バックアップ'}
                       </button>
-                      <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                      <button onClick={handleReset} className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
                         <RotateCcw size={13} /> リセット
                       </button>
                     </div>
