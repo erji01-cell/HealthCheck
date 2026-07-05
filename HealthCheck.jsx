@@ -657,7 +657,7 @@ export default function App() {
     }
   };
 
-  // ワンクリック即バックアップ（Storageへ保存のみ・ローカルDLなし）
+  // ワンクリック即バックアップ（Storage保存＋ローカルDL）
   const [quickBackupBusy, setQuickBackupBusy] = useState(false);
   const handleQuickBackup = () => {
     if (!session || quickBackupBusy) return;
@@ -674,7 +674,7 @@ export default function App() {
   const performQuickBackup = async () => {
     setQuickBackupBusy(true);
     try {
-      await performBackup(session, { downloadLocal: false });
+      await performBackup(session, { downloadLocal: true });
       setLastBackupAt(getLastBackupTime());
       showNotice('バックアップが完了しました');
       if (showBackupModal) await refreshBackupList();
