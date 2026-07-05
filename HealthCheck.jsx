@@ -657,6 +657,23 @@ export default function App() {
     }
   };
 
+  // ワンクリック即バックアップ（Storageへ保存のみ・ローカルDLなし）
+  const [quickBackupBusy, setQuickBackupBusy] = useState(false);
+  const handleQuickBackup = async () => {
+    if (!session || quickBackupBusy) return;
+    setQuickBackupBusy(true);
+    try {
+      await performBackup(session, { downloadLocal: false });
+      setLastBackupAt(getLastBackupTime());
+      showNotice('バックアップが完了しました');
+      if (showBackupModal) await refreshBackupList();
+    } catch (err) {
+      showNotice('バックアップに失敗しました: ' + err.message);
+    } finally {
+      setQuickBackupBusy(false);
+    }
+  };
+
   // 手動バックアップ
   const handleManualBackup = async () => {
     if (!session || backupBusy) return;
@@ -2340,9 +2357,19 @@ export default function App() {
                     <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
                       <Search size={13} /> 予約患者検索
                     </button>
-                    <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
-                      <RotateCcw size={13} /> リセット
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={handleQuickBackup}
+                        disabled={quickBackupBusy}
+                        className="absolute bottom-full right-0 mb-1 flex items-center gap-1 text-[10px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 px-2 py-0.5 rounded-md transition-colors whitespace-nowrap disabled:opacity-50"
+                        title="今すぐバックアップ"
+                      >
+                        <Save size={11} /> {quickBackupBusy ? '...' : 'バックアップ'}
+                      </button>
+                      <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                        <RotateCcw size={13} /> リセット
+                      </button>
+                    </div>
                   </div>
                 </div>
 
