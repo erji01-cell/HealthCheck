@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -2328,6 +2328,11 @@ export default function App() {
           <Info size={20} className="text-amber-500 shrink-0" />
           <span className="text-sm font-bold text-amber-800 flex-grow">{backupWarning}</span>
           <button onClick={() => setBackupWarning('')} className="text-amber-400 hover:text-amber-700 shrink-0 p-1 text-lg font-bold">✕</button>
+        </div>
+      )}
+      {(quickBackupBusy || backupBusy) && (
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[260] px-7 py-4 bg-white text-slate-700 font-black rounded-2xl shadow-2xl border border-slate-200 flex items-center gap-3">
+          <Loader2 size={22} className="animate-spin text-purple-600" /> バックアップ中...
         </div>
       )}
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
