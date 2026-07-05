@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
-  getLastBackupTime, isAutoBackupEnabled, setAutoBackupEnabled, shouldRunAutoBackup
+  getLastBackupTime, isAutoBackupEnabled, setAutoBackupEnabled, getBackupItemTime
 } from './lib/backup.js';
 import {
   HOLIDAYS,
@@ -239,6 +239,8 @@ export default function App() {
   const [backupMessage, setBackupMessage] = useState('');
   const [autoBackupOn, setAutoBackupOn] = useState(isAutoBackupEnabled());
   const [lastBackupAt, setLastBackupAt] = useState(getLastBackupTime());
+  const [restoreReplace, setRestoreReplace] = useState(true); // 復元方式：true=完全置換 / false=追加・上書き
+  const [backupWarning, setBackupWarning] = useState(''); // バックアップ関連の警告バナー
   const restoreInputRef = useRef(null);
   const [healthCompanies, setHealthCompanies] = useState([]);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -578,26 +580,42 @@ export default function App() {
     if (startupMaintenanceRanRef.current) return;
     startupMaintenanceRanRef.current = true;
     (async () => {
-      // 直近7日以内のバックアップが確認できた場合のみ自動削除を実行する
-      const RECENT_BACKUP_MS = 7 * 24 * 60 * 60 * 1000;
-      let backupOk = false;
-      if (await shouldRunAutoBackup(session)) {
+      // 起動時は毎回チェック：前回バックアップと差分があればバックアップ（同一ならスキップ）
+      let failMsg = '';
+      if (isAutoBackupEnabled()) {
         try {
-          await performBackup(session, { downloadLocal: false, prune: true });
-          backupOk = true;
+          await performBackup(session, { downloadLocal: false, skipIfUnchanged: true });
         } catch (err) {
-          console.error('自動バックアップ失敗:', err);
+          failMsg = `自動バックアップに失敗しました（${err?.message || '不明なエラー'}）。バックアップ管理から手動バックアップを実行してください。`;
         }
-      } else {
-        const last = getLastBackupTime();
-        backupOk = !!last && (Date.now() - last) < RECENT_BACKUP_MS;
       }
       setLastBackupAt(getLastBackupTime());
-      if (backupOk) {
+
+      // バックアップ健全性チェック（最終バックアップが古すぎないか確認して警告）
+      let latestBackup = 0;
+      try {
+        const backups = await listStorageBackups(session);
+        latestBackup = backups.reduce((m, it) => Math.max(m, getBackupItemTime(it)), 0);
+      } catch {
+        /* 一覧取得失敗時は下の警告分岐で処理 */
+      }
+      if (!latestBackup) {
+        setBackupWarning(failMsg || 'バックアップがまだ一度も作成されていません。バックアップ管理からバックアップを実行してください。');
+      } else {
+        const days = Math.floor((Date.now() - latestBackup) / (24 * 60 * 60 * 1000));
+        if (days >= 8) {
+          setBackupWarning(`最後のバックアップから${days}日経過しています。バックアップ管理からバックアップを実行してください。`);
+        } else if (failMsg) {
+          setBackupWarning(failMsg);
+        }
+      }
+
+      // 直近7日以内のバックアップが確認できた場合のみ自動削除を実行する
+      const RECENT_BACKUP_MS = 7 * 24 * 60 * 60 * 1000;
+      if (latestBackup && Date.now() - latestBackup < RECENT_BACKUP_MS) {
         deleteOldReservations();
       } else {
         console.warn('直近のバックアップが確認できないため、古い予約の自動削除をスキップしました。');
-        showNotice('直近のバックアップが確認できないため、1年以上前の予約データの自動削除をスキップしました。\n患者管理のバックアップ機能から手動バックアップを実行してください。');
       }
 
       // 祝日リストの期限切れ警告（終了60日前から表示）
@@ -657,12 +675,17 @@ export default function App() {
     }
   };
 
+  // 復元確認の文言（復元方式によって切り替え）
+  const restoreConfirmText = (label) => restoreReplace
+    ? `「${label}」から復元しますか？\n\n【完全置換】現在のデータはすべて削除され、バックアップ時点の状態に完全に戻ります。\nバックアップ後に追加したデータも消えます。`
+    : `「${label}」から復元しますか？\n\n【追加・上書き】バックアップの内容を追加・上書きします。\nバックアップに無い現在のデータはそのまま残ります。`;
+
   // ファイルから復元
   const handleRestoreFromFile = (file) => {
     if (!file || !session) return;
     setConfirmDialog({
       show: true,
-      message: `${file.name} から復元します。既存データに上書き（merge）されます。続行しますか？`,
+      message: restoreConfirmText(file.name),
       onConfirm: () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         performRestoreFromFile(file);
@@ -676,7 +699,7 @@ export default function App() {
     try {
       const text = await file.text();
       const payload = JSON.parse(text);
-      const results = await restoreFromPayload(payload, session);
+      const results = await restoreFromPayload(payload, session, { replace: restoreReplace });
       const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
       setBackupMessage(`復元完了: ${summary}`);
     } catch (err) {
@@ -691,7 +714,7 @@ export default function App() {
     if (!session) return;
     setConfirmDialog({
       show: true,
-      message: `${fileName} から復元します。既存データに上書き（merge）されます。続行しますか？`,
+      message: restoreConfirmText(fileName.split('/').pop()),
       onConfirm: () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         performRestoreFromStorage(fileName);
@@ -704,7 +727,7 @@ export default function App() {
     setBackupMessage('復元中...');
     try {
       const payload = await downloadStorageBackup(session, fileName);
-      const results = await restoreFromPayload(payload, session);
+      const results = await restoreFromPayload(payload, session, { replace: restoreReplace });
       const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
       setBackupMessage(`復元完了: ${summary}`);
     } catch (err) {
@@ -1068,6 +1091,22 @@ export default function App() {
     showTodayReservationsModal,
     calendarCompanyId,
   };
+  // --- 変更後の自動バックアップ（最後の変更から3分後に実行） ---
+  const changeBackupTimer = useRef(null);
+  const scheduleChangeBackup = () => {
+    if (changeBackupTimer.current) clearTimeout(changeBackupTimer.current);
+    changeBackupTimer.current = setTimeout(async () => {
+      if (!isAutoBackupEnabled()) return;
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        // 変更がなければスキップ／同じ日の分は上書き（backup.js側で処理）
+        await performBackup(s, { downloadLocal: false, skipIfUnchanged: true });
+      } catch {
+        /* 失敗しても次回起動時の健全性チェックで警告される */
+      }
+    }, 3 * 60 * 1000);
+  };
+
   useEffect(() => {
     if (!session) return;
     let refreshTimer = null;
@@ -1080,6 +1119,7 @@ export default function App() {
         if (h.calendarViewMode === 'list') h.fetchCalendarListData(h.calendarCompanyId);
         if (h.showTodayReservationsModal) h.fetchTodayReservations();
       }, 500);
+      scheduleChangeBackup();
     };
     const channel = supabase
       .channel('health-reserv-realtime')
@@ -1087,6 +1127,7 @@ export default function App() {
       .subscribe();
     return () => {
       clearTimeout(refreshTimer);
+      if (changeBackupTimer.current) clearTimeout(changeBackupTimer.current);
       supabase.removeChannel(channel);
     };
   }, [session]);
@@ -1809,6 +1850,7 @@ export default function App() {
         if (error) { console.error(error); showNotice('削除に失敗しました'); return; }
         setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
         setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
+        scheduleChangeBackup();
       },
     });
   };
@@ -1929,6 +1971,7 @@ export default function App() {
     else {
       setKenshinData(prev => ({ ...prev, kCompanyId: company.id || '', kCompanyName: company.name || '' }));
       setKenshinSaveStatus('saved');
+      scheduleChangeBackup();
     }
     setTimeout(() => setKenshinSaveStatus(''), 3000);
   };
@@ -2251,6 +2294,14 @@ export default function App() {
 
   return (
     <div className={`min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden ${printMode === 'companyList' ? 'print-company-list-active' : ''}`}>
+      {/* バックアップ警告バナー */}
+      {backupWarning && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[300] max-w-2xl w-[calc(100%-2rem)] px-4 py-3 bg-amber-50 border border-amber-300 rounded-2xl shadow-lg flex items-center gap-3 print-hide">
+          <Info size={20} className="text-amber-500 shrink-0" />
+          <span className="text-sm font-bold text-amber-800 flex-grow">{backupWarning}</span>
+          <button onClick={() => setBackupWarning('')} className="text-amber-400 hover:text-amber-700 shrink-0 p-1 text-lg font-bold">✕</button>
+        </div>
+      )}
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
@@ -3973,6 +4024,21 @@ export default function App() {
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleRestoreFromFile(f); e.target.value = ''; }}
                     />
                   </div>
+                  <div className="px-8 py-3 bg-white border-b border-slate-100 flex items-center gap-4 flex-wrap text-sm">
+                    <span className="font-black text-slate-600">復元方式:</span>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-slate-600">
+                      <input type="radio" name="restoreMode" checked={restoreReplace} onChange={() => setRestoreReplace(true)}
+                        className="w-4 h-4 accent-rose-600 cursor-pointer" />
+                      完全置換
+                      <span className="text-xs text-slate-400 font-normal">（全データを削除してバックアップ時点に完全に戻す）</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-slate-600">
+                      <input type="radio" name="restoreMode" checked={!restoreReplace} onChange={() => setRestoreReplace(false)}
+                        className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+                      追加・上書き
+                      <span className="text-xs text-slate-400 font-normal">（バックアップに無い現在のデータは残す）</span>
+                    </label>
+                  </div>
                   <div className="px-8 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-sm">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
@@ -3981,16 +4047,16 @@ export default function App() {
                         onChange={e => { setAutoBackupOn(e.target.checked); setAutoBackupEnabled(e.target.checked); }}
                         className="w-5 h-5"
                       />
-                      <span className="font-bold text-slate-700">自動バックアップ（1日1回）</span>
+                      <span className="font-bold text-slate-700">自動バックアップ（起動時＋変更の3分後）</span>
                       <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
                     </label>
-                    <span className="text-slate-400">① Storage 保存 ② ローカル DL ③ 古い分を自動削除（最大30件）</span>
+                    <span className="text-slate-400">同じ日の分は上書き保存 / 最大30日分保持 / 変更がない日は保存しない</span>
                   </div>
                   {backupMessage && (
                     <div className="px-8 py-3 text-sm text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
                   )}
                   <div className="px-8 py-5">
-                    <div className="text-sm font-bold text-slate-600 mb-3">Storage 内のバックアップ（{backupList.length} 件 / 最大30件保持）</div>
+                    <div className="text-sm font-bold text-slate-600 mb-3">Storage 内のバックアップ（{backupList.length} 件 / 最大30日分保持）</div>
                     {backupListLoading && <div className="text-center text-slate-400 py-6 text-sm">読み込み中...</div>}
                     {!backupListLoading && backupList.length === 0 && (
                       <div className="text-center text-slate-400 py-8 text-sm">バックアップがありません</div>
