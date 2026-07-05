@@ -2361,10 +2361,10 @@ export default function App() {
                       <button
                         onClick={handleQuickBackup}
                         disabled={quickBackupBusy}
-                        className="absolute bottom-full right-0 mb-1 flex items-center gap-1 text-[10px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 px-2 py-0.5 rounded-md transition-colors whitespace-nowrap disabled:opacity-50"
+                        className="absolute bottom-full right-0 mb-1 flex items-center gap-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
                         title="今すぐバックアップ"
                       >
-                        <Save size={11} /> {quickBackupBusy ? '...' : 'バックアップ'}
+                        <Save size={13} /> {quickBackupBusy ? '...' : 'バックアップ'}
                       </button>
                       <button onClick={handleReset} className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
                         <RotateCcw size={13} /> リセット
