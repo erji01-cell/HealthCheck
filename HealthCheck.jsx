@@ -659,8 +659,19 @@ export default function App() {
 
   // ワンクリック即バックアップ（Storageへ保存のみ・ローカルDLなし）
   const [quickBackupBusy, setQuickBackupBusy] = useState(false);
-  const handleQuickBackup = async () => {
+  const handleQuickBackup = () => {
     if (!session || quickBackupBusy) return;
+    setConfirmDialog({
+      show: true,
+      message: 'バックアップを取りますか？',
+      onConfirm: () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        performQuickBackup();
+      },
+    });
+  };
+
+  const performQuickBackup = async () => {
     setQuickBackupBusy(true);
     try {
       await performBackup(session, { downloadLocal: false });
