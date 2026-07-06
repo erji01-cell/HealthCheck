@@ -358,6 +358,23 @@ export default function App() {
     return { id: null, name: '' };
   };
 
+  const resolveLoadedHealthCompany = (companyId, companyName) => {
+    if (companyId) {
+      const selected = healthCompanies.find(c => c.id === companyId);
+      return { id: companyId, name: selected?.name || normalizeCompanyName(companyName) };
+    }
+    const matched = findHealthCompany(companyName);
+    return matched
+      ? { id: matched.id, name: matched.name }
+      : { id: '', name: normalizeCompanyName(companyName) };
+  };
+
+  const hasUnselectedCompanyName = (companyId, companyName) =>
+    !companyId && !!normalizeCompanyName(companyName);
+
+  const getUnselectedCompanyMessage = () =>
+    '団体名は候補一覧から選択してください。\n新しい団体は「団体管理」で追加してください。\n団体名なしの場合は「団体名なし」を選択してください。';
+
   const formatSupabaseError = (error) => {
     if (!error) return '';
     const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
@@ -470,11 +487,10 @@ export default function App() {
 
   const handleReservationCompanyInput = (e) => {
     const value = e.target.value;
-    const company = findHealthCompany(value);
     setFormData(prev => ({
       ...prev,
       companyName: value,
-      companyId: company?.id || '',
+      companyId: '',
     }));
     setShowReservationCompanyOptions(true);
   };
@@ -490,11 +506,10 @@ export default function App() {
 
   const handleKenshinCompanyInput = (e) => {
     const value = e.target.value;
-    const company = findHealthCompany(value);
     setKenshinData(prev => ({
       ...prev,
       kCompanyName: value,
-      kCompanyId: company?.id || '',
+      kCompanyId: '',
     }));
     setShowKenshinCompanyOptions(true);
   };
@@ -1257,6 +1272,11 @@ export default function App() {
       setSaveErrorMessage('ログイン状態が確認できません。再ログインしてから保存してください。');
       return;
     }
+    if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
+      setSaveStatus('error');
+      setSaveErrorMessage(getUnselectedCompanyMessage());
+      return;
+    }
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
@@ -1381,6 +1401,10 @@ export default function App() {
   const handleSave = async () => {
     if (!formData.name.trim()) {
       showNotice('氏名を入力してください。');
+      return;
+    }
+    if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
+      showNotice(getUnselectedCompanyMessage());
       return;
     }
     if (!formData.staffId) {
@@ -1921,6 +1945,7 @@ export default function App() {
 
   // 診断書検索から選択してkenshinDataに復元
   const handleSelectKenshinRecord = (r) => {
+    const loadedCompany = resolveLoadedHealthCompany(r.company_id, r.k_company_name);
     setSelectedKenshinReservation(r.reserv_id ? {
       id: r.reserv_id,
       date: r.k_date || '',
@@ -1930,7 +1955,7 @@ export default function App() {
     setKenshinData({
       kDate: r.k_date || '', kId: r.k_id || '', kName: r.k_name || '', kYurigana: r.k_yurigana || '',
       kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
-      kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: r.k_company_name || '', kCompanyId: r.company_id || '',
+      kGender: r.k_gender || '', kContact: r.k_contact || '', kCompanyName: loadedCompany.name || '', kCompanyId: loadedCompany.id || '',
       address: r.address || '',
       bpSys: r.bp_sys || '', bpDia: r.bp_dia || '', pulse: r.pulse || '',
       height: r.height || '', weight: r.weight || '', bmi: r.bmi || '', waist: r.waist || '',
@@ -1979,6 +2004,12 @@ export default function App() {
   const handleKenshinSave = async () => {
     setKenshinSaveStatus('saving');
     const d = kenshinData;
+    if (hasUnselectedCompanyName(d.kCompanyId, d.kCompanyName)) {
+      setKenshinSaveStatus('error');
+      showNotice(getUnselectedCompanyMessage());
+      setTimeout(() => setKenshinSaveStatus(''), 3000);
+      return;
+    }
     const company = resolveSelectedHealthCompany(d.kCompanyId, d.kCompanyName);
     const record = {
       k_date: d.kDate || null,
@@ -2076,6 +2107,7 @@ export default function App() {
   // 診断結果入力用：予約から選択
   const handleSelectKenshinReservation = (r) => {
     const iso = r.birth_date ? parseDobToISO(r.birth_date) : '';
+    const loadedCompany = resolveLoadedHealthCompany(r.company_id, r.company_name);
     setKenshinData(prev => ({
       ...prev,
       kDate: r.date || prev.kDate,
@@ -2085,8 +2117,8 @@ export default function App() {
       kBirthDate: iso,
       kGender: r.patient_gender || '',
       kContact: r.contact || '',
-      kCompanyName: r.company_name || '',
-      kCompanyId: r.company_id || '',
+      kCompanyName: loadedCompany.name || '',
+      kCompanyId: loadedCompany.id || '',
       pulse: r.pulse || prev.pulse,
     }));
     if (iso) setKenshinBirthDateInput(iso);
@@ -2163,6 +2195,7 @@ export default function App() {
     if (error || !data) return;
     const birthDateIso = data.birth_date ? parseDobToISO(data.birth_date) : '';
     const loadedPurpose = data.purpose || '就職';
+    const loadedCompany = resolveLoadedHealthCompany(data.company_id, data.company_name);
     const loadedBpMeasureCount = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
       ? '2'
       : Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
@@ -2176,8 +2209,8 @@ export default function App() {
       birthDate: birthDateIso,
       age: data.age || '',
       contact: data.contact || '',
-      companyName: data.company_name || '',
-      companyId: data.company_id || '',
+      companyName: loadedCompany.name || '',
+      companyId: loadedCompany.id || '',
       purpose: loadedPurpose,
       hasHospitalForm: data.has_hospital_form || '無(当院用紙を使用)',
       items: {
@@ -2302,9 +2335,11 @@ export default function App() {
       }
       if (e.key !== 'Enter') return;
       const companyByNo = findHealthCompanyByDisplayNo(e.currentTarget.value);
-      if (companyByNo) {
+      const exactCompany = findHealthCompany(e.currentTarget.value);
+      const companyToSelect = companyByNo || exactCompany || (filteredCompanies.length === 1 ? filteredCompanies[0] : null);
+      if (companyToSelect) {
         e.preventDefault();
-        onSelect(companyByNo);
+        onSelect(companyToSelect);
       }
     };
     return (
