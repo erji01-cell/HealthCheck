@@ -1,5 +1,5 @@
 import React from 'react';
-import { calcFee, getCompanyBillingLabel, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS } from '../lib/healthCheckConfig.js';
+import { calculateReservationFee, getCompanyBillingLabel, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS } from '../lib/healthCheckConfig.js';
 import { getWeekdayFromIso, formatDobDisplay } from '../lib/kenshinUtils.js';
 
 // 健康診断の記録用紙プレビュー（rightTab === preview で表示・印刷対象）
@@ -234,10 +234,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                       <>
                         <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
                           ¥ {(() => {
-                            const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
-                            if (zeroPurposes.includes(formData.purpose)) return '0';
-                            if (formData.purpose === '特定健診(社保)') return parseInt(shahoFee || 0).toLocaleString();
-                            const fee = calcFee(formData.items);
+                            const fee = calculateReservationFee({ purpose: formData.purpose, items: formData.items, shahoFee });
                             return fee !== null ? fee.toLocaleString() : '0';
                           })()} -
                         </span>

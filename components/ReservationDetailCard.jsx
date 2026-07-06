@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCompanyBillingLabel } from '../lib/healthCheckConfig.js';
+import { getReservationBillingText } from '../lib/healthCheckConfig.js';
 
 export default function ReservationDetailCard({
   reservation,
@@ -26,11 +26,7 @@ export default function ReservationDetailCard({
         <div className="text-right text-xs text-slate-500">
           <div>{r.purpose}</div>
           {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
-          <div className="font-bold text-blue-600">
-            {getCompanyBillingLabel(r.purpose)
-              ? getCompanyBillingLabel(r.purpose)
-              : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
-          </div>
+          <div className="font-bold text-blue-600">{getReservationBillingText(r)}</div>
         </div>
       </div>
       <div className="flex flex-wrap gap-1">

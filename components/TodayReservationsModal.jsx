@@ -1,6 +1,6 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
-import { getCompanyBillingLabel } from '../lib/healthCheckConfig.js';
+import { getReservationBillingText } from '../lib/healthCheckConfig.js';
 import { formatDobDisplay } from '../lib/kenshinUtils.js';
 
 // 生年月日（YYYYMMDD もしくは ISO）→ ISO("YYYY-MM-DD")
@@ -24,12 +24,6 @@ const TEXT = {
   remarks: '\u5099\u8003',
   purpose: '\u5065\u8a3a\u76ee\u7684',
   unset: '\u672a\u8a2d\u5b9a',
-};
-
-const formatFee = (fee) => {
-  if (fee == null || fee === '') return '';
-  const value = Number(fee);
-  return Number.isFinite(value) ? `\u00a5${value.toLocaleString()}` : '';
 };
 
 export default function TodayReservationsModal({
@@ -73,7 +67,6 @@ export default function TodayReservationsModal({
           ) : (
             <div className="space-y-2">
               {reservations.map(reservation => {
-                const billingLabel = getCompanyBillingLabel(reservation.purpose);
                 const itemLabels = getItemLabels(reservation);
                 const gender = (reservation.patient_gender || '').trim();
                 const nameColor = gender === '\u7537' ? 'text-blue-800' : gender === '\u5973' ? 'text-red-800' : 'text-slate-800';
@@ -93,7 +86,7 @@ export default function TodayReservationsModal({
                       <div className="shrink-0 text-right text-xs text-slate-500">
                         <div className="font-bold text-slate-600">{TEXT.purpose}: {reservation.purpose || TEXT.unset}</div>
                         <div className="mt-0.5 font-black text-blue-600">
-                          {billingLabel || [formatFee(reservation.fee), reservation.payment_type].filter(Boolean).join(' ')}
+                          {getReservationBillingText(reservation)}
                         </div>
                       </div>
                     </div>

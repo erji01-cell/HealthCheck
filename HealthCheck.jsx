@@ -18,8 +18,12 @@ import {
   BP_TWO_MEASURE_LOCKED_PURPOSES,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
-  calcFee,
-  calcKuritasFee,
+  calculateReservationFee,
+  formatYenAmount,
+  getReservationBillingText,
+  getReservationFeeValue,
+  getReservationPaymentType,
+  ZERO_FEE_PURPOSES,
   getItemsForPurpose,
   stripKuritasBloodNotes,
 } from './lib/healthCheckConfig.js';
@@ -356,16 +360,44 @@ export default function App() {
 
   const formatSupabaseError = (error) => {
     if (!error) return '';
+    const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
+    if (missingColumn) {
+      return `Supabase側に「${missingColumn}」カラムが見つかりません。DBカラム追加または保存対象の見直しが必要です。`;
+    }
     return [error.message, error.details, error.hint, error.code ? `code: ${error.code}` : '']
       .filter(Boolean)
       .join(' / ');
   };
 
+  const HEALTH_RESERV_SAVE_COLUMNS = new Set([
+    'date', 'day_of_week', 'patient_id', 'patient_name', 'patient_name_kana', 'patient_gender',
+    'birth_date', 'age', 'contact', 'company_id', 'company_name', 'purpose',
+    'item_height_weight', 'item_abdominal_girth', 'item_blood_pressure', 'item_vision',
+    'item_color_vision', 'item_pulse', 'item_hearing', 'item_urine', 'item_x_ray', 'item_ecg',
+    'item_blood', 'item_blood_kuritas_regular', 'item_blood_kuritas_specific',
+    'item_blood_hapilus_b', 'item_blood_hapilus_c', 'item_blood_hapilus_hire',
+    'item_blood_hapilus_night', 'item_hba1c', 'item_endoscopy', 'item_echo', 'item_manganese',
+    'item_stool', 'item_norovirus', 'item_bacteria3', 'item_bacteria5', 'item_paratyphoid',
+    'item_methanol', 'item_hexane', 'item_methyl_hippuric', 'item_psa', 'item_hbs_ag',
+    'item_hbs_ab', 'item_hcv_ab', 'item_syphilis', 'item_mrsa',
+    'deadline_type', 'deadline_date', 'has_dedicated_form', 'payment_type', 'fee', 'others',
+    'bp_measure_count', 'bp1_sys', 'bp1_dia', 'bp2_sys', 'bp2_dia', 'pulse',
+    'height', 'weight', 'bmi', 'waist', 'vision_r', 'vision_l', 'vision_r2', 'vision_l2',
+    'hearing_r', 'hearing_l', 'hearing_r2', 'hearing_l2', 'color_vision',
+    'staff_id', 'staff_name', 'user_id', 'updated_at',
+  ]);
+
+  const sanitizeHealthReservRecord = (record) =>
+    Object.fromEntries(
+      Object.entries(record).filter(([key]) => HEALTH_RESERV_SAVE_COLUMNS.has(key))
+    );
+
   const saveHealthReservationRecord = async (record, overrideId = null) => {
     const targetId = overrideId || editingReservationId;
+    const payload = sanitizeHealthReservRecord(record);
     return targetId
-      ? supabase.from('health_reserv').update(record).eq('id', targetId)
-      : supabase.from('health_reserv').insert(record);
+      ? supabase.from('health_reserv').update(payload).eq('id', targetId)
+      : supabase.from('health_reserv').insert(payload);
   };
 
   const ensureHealthCompany = async (name) => {
@@ -550,28 +582,27 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        fetchCalendarData(calendarCompanyIdRef.current);
-        fetchHealthCompanies();
-      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) {
-        fetchCalendarData(calendarCompanyIdRef.current);
-        fetchHealthCompanies();
-      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    fetchCalendarData(calendarCompanyIdRef.current);
+    fetchHealthCompanies();
+  }, [session]);
+
   // 30分ごとに軽いクエリを発行してSupabaseを起こし続ける
   useEffect(() => {
+    if (!session) return;
     const keepAlive = setInterval(async () => {
       await supabase.from('health_reserv').select('date').limit(1);
     }, 30 * 60 * 1000);
     return () => clearInterval(keepAlive);
-  }, []);
+  }, [session]);
 
   // 自動バックアップ（ログイン後・1日1回）＋バックアップ確認後の古い予約自動削除
   const startupMaintenanceRanRef = useRef(false);
@@ -854,9 +885,7 @@ export default function App() {
   ].filter(Boolean);
 
   const formatReservationFee = (fee) => {
-    if (fee == null || fee === '') return '-';
-    const num = Number(fee);
-    return Number.isFinite(num) ? `¥${num.toLocaleString()}` : '-';
+    return formatYenAmount(fee) || '-';
   };
 
   // 健診目的フィルタ（''=すべて）
@@ -887,7 +916,7 @@ export default function App() {
 
   const getCalendarListTotalFee = () =>
     getFilteredCalendarListData().reduce((sum, r) => {
-      const num = Number(r.fee);
+      const num = getReservationFeeValue(r);
       return Number.isFinite(num) ? sum + num : sum;
     }, 0);
 
@@ -897,7 +926,7 @@ export default function App() {
     let billingCount = 0;
     const filtered = getFilteredCalendarListData();
     filtered.forEach(r => {
-      const num = Number(r.fee);
+      const num = getReservationFeeValue(r);
       if (Number.isFinite(num)) {
         map.set(num, (map.get(num) || 0) + 1);
       } else {
@@ -926,7 +955,7 @@ export default function App() {
     String(a.patient_name_kana || a.patient_name || '').localeCompare(String(b.patient_name_kana || b.patient_name || ''), 'ja');
 
   const getCalendarListFeeValue = (r) => {
-    const num = Number(r.fee);
+    const num = getReservationFeeValue(r);
     return Number.isFinite(num) ? num : null;
   };
 
@@ -1051,6 +1080,10 @@ export default function App() {
 
   // カレンダーデータ取得
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
+    if (!session) {
+      setCalendarLoading(false);
+      return;
+    }
     setCalendarLoading(true);
     const { start, end } = getCalendarDataRange();
     let query = supabase
@@ -1076,6 +1109,11 @@ export default function App() {
   };
 
   const fetchCalendarListData = async (companyId = calendarCompanyId) => {
+    if (!session) {
+      setCalendarListLoading(false);
+      setCalendarListData([]);
+      return;
+    }
     setCalendarListError('');
     setCalendarListLoading(true);
     const defaultRange = getCalendarDataRange();
@@ -1106,7 +1144,7 @@ export default function App() {
   useEffect(() => {
     if (rightTab !== 'calendar' || calendarViewMode !== 'list') return;
     fetchCalendarListData(calendarCompanyId);
-  }, [rightTab, calendarViewMode, calendarCompanyId, calendarDateFrom, calendarDateTo]);
+  }, [session, rightTab, calendarViewMode, calendarCompanyId, calendarDateFrom, calendarDateTo]);
 
   // リアルタイム同期：他端末での予約変更を検知し、表示中のビューを再取得する
   // （stale closure対策：最新のフェッチ関数と表示状態をrefで参照）
@@ -1181,7 +1219,7 @@ export default function App() {
 
   // カレンダー詳細はモーダルを開くたびに、現在の団体フィルターで取り直す
   useEffect(() => {
-    if (!selectedCalendarDate) {
+    if (!session || !selectedCalendarDate) {
       setCalendarDetailLoading(false);
       setCalendarDetailError('');
       return;
@@ -1210,22 +1248,20 @@ export default function App() {
     fetchCalendarDetails();
 
     return () => { cancelled = true; };
-  }, [selectedCalendarDate, calendarCompanyId]);
+  }, [session, selectedCalendarDate, calendarCompanyId]);
 
   // 実際の保存処理（overrideId 指定時はそのIDの既存レコードを更新）
   const performSave = async (overrideId = null) => {
+    if (!session) {
+      setSaveStatus('error');
+      setSaveErrorMessage('ログイン状態が確認できません。再ログインしてから保存してください。');
+      return;
+    }
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
-    const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
-    let fee = null;
-    const kuritasFee = calcKuritasFee(formData.purpose, items);
-    if (kuritasFee !== null) fee = kuritasFee;
-    else if (getCompanyBillingLabel(formData.purpose)) fee = null;
-    else if (zeroPurposes.includes(formData.purpose)) fee = 0;
-    else if (formData.purpose === '特定健診(社保)') fee = parseInt(shahoFee || 0);
-    else fee = calcFee(items);
-    const paymentType = getCompanyBillingLabel(formData.purpose) || formData.paymentType;
+    const fee = calculateReservationFee({ purpose: formData.purpose, items, shahoFee });
+    const paymentType = getReservationPaymentType(formData.purpose, formData.paymentType);
 
     const company = resolveSelectedHealthCompany(formData.companyId, formData.companyName);
 
@@ -2528,7 +2564,8 @@ export default function App() {
                   const cbClass = isSpecialPurpose
                     ? 'flex items-center gap-2 text-xs text-slate-600 cursor-not-allowed'
                     : 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600';
-                  const zeroPurposes = ['特定健診(国保)', '長寿健診', '入園児'];
+                  const billingLabel = getCompanyBillingLabel(formData.purpose);
+                  const currentFee = calculateReservationFee({ purpose: formData.purpose, items: formData.items, shahoFee });
                   const paymentTypeSelector = (
                     <select name="paymentType" value={formData.paymentType} onChange={handleChange} className="p-2 border rounded-lg bg-white text-sm font-bold">
                       <option value="当日支払">当日支払</option>
@@ -2536,18 +2573,15 @@ export default function App() {
                       <option value="会社請求">会社請求</option>
                     </select>
                   );
-                  const feeDisplay = getCompanyBillingLabel(formData.purpose) ? (() => {
-                    const kFee = calcKuritasFee(formData.purpose, formData.items);
-                    return (
-                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
-                        <div className="text-sm font-bold text-emerald-700">{getCompanyBillingLabel(formData.purpose)}</div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-emerald-500 font-bold">料金</span>
-                          {kFee != null && <span className="text-2xl font-black text-emerald-700">¥{kFee.toLocaleString()}</span>}
-                        </div>
+                  const feeDisplay = billingLabel ? (
+                    <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+                      <div className="text-sm font-bold text-emerald-700">{billingLabel}</div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-emerald-500 font-bold">料金</span>
+                        {currentFee != null && <span className="text-2xl font-black text-emerald-700">{formatYenAmount(currentFee)}</span>}
                       </div>
-                    );
-                  })() :zeroPurposes.includes(formData.purpose) ? (
+                    </div>
+                  ) : ZERO_FEE_PURPOSES.includes(formData.purpose) ? (
                     <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
                       {paymentTypeSelector}
                       <div className="flex items-center gap-3">
@@ -2565,13 +2599,12 @@ export default function App() {
                       </div>
                     </div>
                   ) : (() => {
-                    const fee = calcFee(formData.items);
                     return (
                       <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
                         {paymentTypeSelector}
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-blue-500 font-bold">料金</span>
-                          <span className="text-2xl font-black text-blue-700">¥{fee.toLocaleString()}</span>
+                          <span className="text-2xl font-black text-blue-700">{formatYenAmount(currentFee) || '¥0'}</span>
                         </div>
                       </div>
                     );
@@ -3909,7 +3942,7 @@ export default function App() {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-right font-black text-blue-600">{formatReservationFee(r.fee ?? calcKuritasFee(r.purpose, { xRay: r.item_xray, endoscopy: r.item_endoscopy, stool: r.item_stool, psa: r.item_psa }))}</div>
+                                  <div className="text-right font-black text-blue-600">{formatReservationFee(getReservationFeeValue(r))}</div>
                                 </div>
                               );
                             })}
@@ -4480,14 +4513,7 @@ export default function App() {
                           <div className="text-right text-xs text-slate-500">
                             <div>{r.purpose}</div>
                             {r.company_name && <div className="mt-0.5 font-bold text-slate-600">{r.company_name}</div>}
-                            <div className="font-bold text-blue-600">
-                              {getCompanyBillingLabel(r.purpose)
-                                ? (() => {
-                                    const kFee = r.fee ?? calcKuritasFee(r.purpose, { xRay: r.item_xray, endoscopy: r.item_endoscopy, stool: r.item_stool, psa: r.item_psa });
-                                    return `${getCompanyBillingLabel(r.purpose)}${kFee != null ? ` ¥${kFee.toLocaleString()}` : ''}`;
-                                  })()
-                                : `${r.fee != null ? `¥${r.fee.toLocaleString()}` : ''} ${r.payment_type || ''}`}
-                            </div>
+                            <div className="font-bold text-blue-600">{getReservationBillingText(r)}</div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1">
