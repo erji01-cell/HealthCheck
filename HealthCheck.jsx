@@ -1172,21 +1172,10 @@ export default function App() {
     showTodayReservationsModal,
     calendarCompanyId,
   };
-  // --- 変更後の自動バックアップ（最後の変更から3分後に実行） ---
-  const changeBackupTimer = useRef(null);
-  const scheduleChangeBackup = () => {
-    if (changeBackupTimer.current) clearTimeout(changeBackupTimer.current);
-    changeBackupTimer.current = setTimeout(async () => {
-      if (!isAutoBackupEnabled()) return;
-      try {
-        const { data: { session: s } } = await supabase.auth.getSession();
-        // 変更がなければスキップ／同じ日の分は上書き（backup.js側で処理）
-        await performBackup(s, { downloadLocal: false, skipIfUnchanged: true });
-      } catch {
-        /* 失敗しても次回起動時の健全性チェックで警告される */
-      }
-    }, 3 * 60 * 1000);
-  };
+  // --- 変更後の自動バックアップ（変更フラグ＋3分ごとの定期チェック方式） ---
+  // タイマーが認証イベント等で作り直されてもフラグはrefに残るため、次の周期で必ず拾われる
+  const backupDirty = useRef(false);
+  const markBackupDirty = () => { backupDirty.current = true; };
 
   useEffect(() => {
     if (!session) return;
@@ -1200,15 +1189,33 @@ export default function App() {
         if (h.calendarViewMode === 'list') h.fetchCalendarListData(h.calendarCompanyId);
         if (h.showTodayReservationsModal) h.fetchTodayReservations();
       }, 500);
-      scheduleChangeBackup();
+      markBackupDirty();
     };
     const channel = supabase
       .channel('health-reserv-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'health_reserv' }, scheduleRefresh)
       .subscribe();
+
+    // 変更後の自動バックアップ：3分ごとに変更フラグを確認して実行
+    const changeBackupTimer = setInterval(async () => {
+      if (!backupDirty.current || !isAutoBackupEnabled()) return;
+      // 実行前にフラグを下ろす（実行中に入った新しい変更は次の周期で拾う）
+      backupDirty.current = false;
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        // 変更がなければスキップ／同じ日の分は上書き（backup.js側で処理）
+        await performBackup(s, { downloadLocal: false, skipIfUnchanged: true });
+        setLastBackupAt(getLastBackupTime());
+      } catch (err) {
+        backupDirty.current = true; // 失敗した分は次の周期で再試行する
+        console.error('変更後の自動バックアップに失敗:', err);
+        setBackupWarning(`自動バックアップに失敗しました（${err?.message || '不明なエラー'}）。患者管理のバックアップ管理から手動バックアップを実行してください。`);
+      }
+    }, 3 * 60 * 1000);
+
     return () => {
       clearTimeout(refreshTimer);
-      if (changeBackupTimer.current) clearTimeout(changeBackupTimer.current);
+      clearInterval(changeBackupTimer);
       supabase.removeChannel(channel);
     };
   }, [session]);
@@ -1390,6 +1397,8 @@ export default function App() {
           if (patientInsertError) {
             console.error('患者マスタへの登録に失敗:', patientInsertError);
             showNotice('予約は保存されましたが、患者マスタへの自動登録に失敗しました。');
+          } else {
+            markBackupDirty();
           }
         }
       }
@@ -1938,7 +1947,7 @@ export default function App() {
         if (error) { console.error(error); showNotice('削除に失敗しました'); return; }
         setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
         setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
-        scheduleChangeBackup();
+        markBackupDirty();
       },
     });
   };
@@ -2066,7 +2075,7 @@ export default function App() {
     else {
       setKenshinData(prev => ({ ...prev, kCompanyId: company.id || '', kCompanyName: company.name || '' }));
       setKenshinSaveStatus('saved');
-      scheduleChangeBackup();
+      markBackupDirty();
     }
     setTimeout(() => setKenshinSaveStatus(''), 3000);
   };
@@ -4158,7 +4167,7 @@ export default function App() {
                         onChange={e => { setAutoBackupOn(e.target.checked); setAutoBackupEnabled(e.target.checked); }}
                         className="w-5 h-5"
                       />
-                      <span className="font-bold text-slate-700">自動バックアップ（起動時＋変更の3分後）</span>
+                      <span className="font-bold text-slate-700">自動バックアップ（起動時＋変更を3分ごとに確認して保存）</span>
                       <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
                     </label>
                     <span className="text-slate-400">同じ日の分は上書き保存 / 最大30日分保持 / 変更がない日は保存しない</span>
