@@ -206,6 +206,7 @@ export default function App() {
   const [showTodayReservationsModal, setShowTodayReservationsModal] = useState(false);
   const [todayReservationsDate, setTodayReservationsDate] = useState(getLocalIsoDate);
   const [todayReservations, setTodayReservations] = useState([]);
+  const [todayEndoscopyReservations, setTodayEndoscopyReservations] = useState([]);
   const [todayReservationsLoading, setTodayReservationsLoading] = useState(false);
   const [todayReservationsError, setTodayReservationsError] = useState('');
   const todayReservationsModalOpenedRef = useRef(false);
@@ -1043,21 +1044,32 @@ export default function App() {
     const today = getLocalIsoDate();
     setTodayReservationsDate(today);
     setTodayReservations([]);
+    setTodayEndoscopyReservations([]);
     setTodayReservationsError('');
     setTodayReservationsLoading(true);
 
-    const { data, error } = await supabase
+    const healthQuery = supabase
       .from('health_reserv')
       .select('*')
       .eq('date', today)
       .order('patient_name_kana', { ascending: true })
       .order('patient_name', { ascending: true });
 
-    if (error) {
-      console.error('today reservations fetch error:', error);
+    const endoscopyQuery = supabase
+      .from('reservations')
+      .select('*')
+      .eq('date', today)
+      .order('slotIndex', { ascending: true })
+      .order('time', { ascending: true });
+
+    const [healthResult, endoscopyResult] = await Promise.all([healthQuery, endoscopyQuery]);
+
+    if (healthResult.error || endoscopyResult.error) {
+      console.error('today reservations fetch error:', healthResult.error || endoscopyResult.error);
       setTodayReservationsError('\u672c\u65e5\u306e\u4e88\u7d04\u4e00\u89a7\u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002');
     } else {
-      setTodayReservations(data || []);
+      setTodayReservations(healthResult.data || []);
+      setTodayEndoscopyReservations((endoscopyResult.data || []).filter(r => !r.isLocked));
     }
     setTodayReservationsLoading(false);
   };
@@ -4458,6 +4470,7 @@ export default function App() {
               <TodayReservationsModal
                 date={todayReservationsDate}
                 reservations={todayReservations}
+                endoscopyReservations={todayEndoscopyReservations}
                 loading={todayReservationsLoading}
                 error={todayReservationsError}
                 getItemLabels={getReservationItemLabels}
