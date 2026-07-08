@@ -53,6 +53,15 @@ const normalizeCompanyName = (value = '') =>
 const getCompanyNameKey = (value = '') => normalizeCompanyName(value).toLowerCase();
 const CALENDAR_COMPANY_STORAGE_KEY = 'health_check_calendar_company_id';
 
+const fromSnakeCaseRow = (row) => {
+  if (!row) return row;
+  const result = {};
+  for (const [key, value] of Object.entries(row)) {
+    result[key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())] = value;
+  }
+  return result;
+};
+
 const getStoredCalendarCompanyId = () => {
   try {
     return window.localStorage.getItem(CALENDAR_COMPANY_STORAGE_KEY) || '';
@@ -1059,17 +1068,22 @@ export default function App() {
       .from('reservations')
       .select('*')
       .eq('date', today)
-      .order('slotIndex', { ascending: true })
+      .order('slot_index', { ascending: true })
       .order('time', { ascending: true });
 
     const [healthResult, endoscopyResult] = await Promise.all([healthQuery, endoscopyQuery]);
 
-    if (healthResult.error || endoscopyResult.error) {
-      console.error('today reservations fetch error:', healthResult.error || endoscopyResult.error);
+    if (healthResult.error) {
+      console.error('today health reservations fetch error:', healthResult.error);
       setTodayReservationsError('\u672c\u65e5\u306e\u4e88\u7d04\u4e00\u89a7\u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002');
     } else {
       setTodayReservations(healthResult.data || []);
-      setTodayEndoscopyReservations((endoscopyResult.data || []).filter(r => !r.isLocked));
+      if (endoscopyResult.error) {
+        console.error('today endoscopy reservations fetch error:', endoscopyResult.error);
+        setTodayEndoscopyReservations([]);
+      } else {
+        setTodayEndoscopyReservations((endoscopyResult.data || []).map(fromSnakeCaseRow).filter(r => !r.isLocked));
+      }
     }
     setTodayReservationsLoading(false);
   };
