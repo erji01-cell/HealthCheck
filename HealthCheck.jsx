@@ -2229,6 +2229,14 @@ export default function App() {
         });
         return updated;
       });
+      setSelectedCalendarDate(null);
+      setSingleReservationDetail(null);
+      setSingleReservationError('');
+      setRightTab('calendar');
+      setCalendarViewMode('calendar');
+      pendingCalendarScrollRef.current = true;
+      pendingCalendarScrollMonthRef.current = getLocalIsoDate().slice(0, 7);
+      await fetchCalendarData(calendarCompanyId);
     }
   };
 
