@@ -1,7 +1,6 @@
 import React from 'react';
-import { RefreshCw, Clock, Phone, Pill } from 'lucide-react';
-import { getReservationBillingText } from '../lib/healthCheckConfig.js';
-import { formatDobDisplay } from '../lib/kenshinUtils.js';
+import { CalendarDays, Clock, UserRound, X } from 'lucide-react';
+import { formatDobDisplay, getWeekdayFromIso } from '../lib/kenshinUtils.js';
 
 const toBirthIso = (raw) => {
   if (!raw) return '';
@@ -12,206 +11,146 @@ const toBirthIso = (raw) => {
 };
 
 const TEXT = {
-  title: '\u672c\u65e5\u306e\u4e88\u7d04\u4e00\u89a7',
-  healthTitle: '\u5065\u5eb7\u8a3a\u65ad',
-  gfTitle: 'GF\uff08\u80c3\u5185\u8996\u93e1\uff09',
-  cfTitle: 'CF\uff08\u5927\u8178\u5185\u8996\u93e1\uff09',
+  title: '\u672c\u65e5\u306e\u691c\u67fb\u4e00\u89a7',
+  healthTitle: '\u672c\u65e5\u306e\u5065\u5eb7\u8a3a\u65ad',
+  gfTitle: '\u80c3\u5185\u8996\u93e1\uff08GF\uff09',
+  cfTitle: '\u5927\u8178\u5185\u8996\u93e1\uff08CF\uff09',
+  healthShort: '\u5065\u8a3a',
   count: '\u4ef6',
-  refresh: '\u66f4\u65b0',
+  total: '\u8a08',
   close: '\u9589\u3058\u308b',
-  closeMark: '\u00d7',
   loading: '\u672c\u65e5\u306e\u4e88\u7d04\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...',
   empty: '\u672c\u65e5\u306e\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   healthEmpty: '\u672c\u65e5\u306e\u5065\u5eb7\u8a3a\u65ad\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   gfEmpty: '\u672c\u65e5\u306eGF\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   cfEmpty: '\u672c\u65e5\u306eCF\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   noCompany: '\u56e3\u4f53\u540d\u306a\u3057',
-  remarks: '\u5099\u8003',
-  purpose: '\u5065\u8a3a\u76ee\u7684',
   unset: '\u672a\u8a2d\u5b9a',
-  healthBadge: '\u5065\u8a3a',
-  doctor: '\u62c5\u5f53\u533b',
   consult: '\u8a3a\u5bdf\u304b\u3089',
   bloodTest: '\u63a1\u8840\u3042\u308a',
-  idName: 'ID / \u60a3\u8005\u540d',
-  attributes: '\u5c5e\u6027',
-  companyPurpose: '\u56e3\u4f53 / \u76ee\u7684',
-  paymentRemarks: '\u652f\u6255\u3044\u30fb\u5099\u8003',
-  contact: '\u9023\u7d61\u5148',
-  notes: '\u5099\u8003\u30fb\u670d\u7528\u85ac',
-  noData: '-',
 };
 
-const getGenderNameColor = (gender) => {
-  const normalized = (gender || '').trim();
-  if (normalized === '\u7537') return 'text-blue-800';
-  if (normalized === '\u5973') return 'text-red-800';
+const getDateHeaderLabel = (date) => {
+  if (!date) return '';
+  const [year, month, day] = date.split('-');
+  const weekday = getWeekdayFromIso(date);
+  return `${year}\u5e74${parseInt(month, 10)}\u6708${parseInt(day, 10)}\u65e5\uff08${weekday}\uff09`;
+};
+
+const getGenderColor = (gender) => {
+  const value = (gender || '').trim();
+  if (value === '\u7537') return 'text-blue-700 bg-blue-50 border-blue-100';
+  if (value === '\u5973') return 'text-rose-700 bg-rose-50 border-rose-100';
+  return 'text-slate-600 bg-slate-50 border-slate-100';
+};
+
+const getNameColor = (gender) => {
+  const value = (gender || '').trim();
+  if (value === '\u7537') return 'text-blue-700';
+  if (value === '\u5973') return 'text-rose-600';
   return 'text-slate-900';
 };
 
-function EmptySection({ text }) {
+function Section({ title, count, children }) {
   return (
-    <div className="p-8 text-center text-sm font-bold text-slate-400 bg-slate-50">
+    <section className="border-t border-slate-200">
+      <div className="flex items-center gap-3 bg-slate-50 px-6 py-2.5 text-sm font-black text-slate-600">
+        <span>{title}</span>
+        <span className="text-xs text-slate-500">{count}{TEXT.count}</span>
+      </div>
+      <div className="divide-y divide-slate-100">{children}</div>
+    </section>
+  );
+}
+
+function EmptyRow({ text }) {
+  return (
+    <div className="px-6 py-7 text-center text-sm font-bold text-slate-400">
       {text}
     </div>
   );
 }
 
-function SectionCard({ title, count, tone, children }) {
-  const badgeClass = tone === 'blue'
-    ? 'border-blue-400 bg-blue-50 text-blue-700'
-    : tone === 'cyan'
-      ? 'border-blue-400 bg-blue-50 text-blue-700'
-      : 'border-amber-400 bg-amber-50 text-amber-700';
+function EndoscopyRow({ reservation }) {
+  const gender = reservation.patientGender || '';
+  const birthIso = toBirthIso(reservation.patientDob);
+  const ageText = reservation.patientAge != null && reservation.patientAge !== '' ? `${reservation.patientAge}\u6b73` : '';
+  const examPillClass = reservation.examType === 'CF'
+    ? 'bg-orange-100 text-orange-700'
+    : 'bg-emerald-100 text-emerald-700';
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center flex-wrap gap-4">
-          <div className="text-2xl font-black text-slate-900">{title}</div>
-          <div className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-black">{count}{TEXT.count}</div>
-          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest ${badgeClass}`}>
-            {title}
-          </div>
+    <div className="grid grid-cols-[92px_52px_1fr_150px] items-center gap-3 px-6 py-5">
+      <div className="flex flex-col items-start gap-1">
+        {reservation.needsConsult && (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-600">{TEXT.consult}</span>
+        )}
+        {reservation.needsBloodTest && (
+          <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-600">{TEXT.bloodTest}</span>
+        )}
+        <div className="mt-1 flex items-center gap-1 text-2xl font-black text-indigo-600">
+          <Clock size={18} />
+          <span>{reservation.time || '--:--'}</span>
         </div>
       </div>
-      <div className="divide-y divide-slate-100">
-        {children}
+
+      <div className="flex justify-center">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${examPillClass}`}>
+          {reservation.examType || 'GF'}
+        </span>
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <span className="shrink-0 text-sm font-black text-slate-400">{reservation.patientId || '-'}</span>
+          <span className={`truncate text-xl font-black ${getNameColor(gender)}`}>{reservation.patientName || '-'}</span>
+          <span className="truncate text-xs font-black text-slate-400">{reservation.patientNameKana || ''}</span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+          {gender && <span className={`rounded-md border px-2 py-0.5 text-xs font-black ${getGenderColor(gender)}`}>{gender}</span>}
+          {ageText && <span>{ageText}</span>}
+          {birthIso && <span>\u751f\u5e74\u6708\u65e5 {formatDobDisplay(birthIso)}</span>}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        {reservation.doctor && (
+          <div className="flex items-center gap-1.5 text-sm font-black text-slate-600">
+            <UserRound size={15} className="text-indigo-500" />
+            <span>{reservation.doctor} \u5148\u751f</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function HealthRow({ reservation, itemLabels, onSelect }) {
-  const nameColor = getGenderNameColor(reservation.patient_gender);
+function HealthRow({ reservation, onSelect }) {
+  const gender = reservation.patient_gender || '';
+  const birthIso = toBirthIso(reservation.birth_date);
+  const ageText = reservation.age != null && reservation.age !== '' ? `${reservation.age}\u6b73` : '';
 
   return (
     <button
       type="button"
       onClick={() => onSelect(reservation)}
-      className="flex w-full group min-h-[110px] text-left transition-all bg-white hover:bg-slate-50/30"
+      className="grid w-full grid-cols-[78px_1fr] items-center gap-3 px-6 py-5 text-left transition-colors hover:bg-blue-50/40"
     >
-      <div className="w-40 flex-none border-r border-slate-100 p-2 flex flex-row items-stretch bg-slate-50/40 relative">
-        <div className="w-8 flex-none opacity-30" />
-        <div className="flex-grow flex flex-col items-center justify-center py-2 px-1">
-          <div className="text-center w-full px-1 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-black rounded-full border border-blue-200 truncate mb-2">
-            {TEXT.healthBadge}
-          </div>
-          <div className="text-xl font-black text-indigo-700 leading-none">
-            {reservation.purpose || TEXT.unset}
-          </div>
+      <div className="text-base font-black text-slate-400">{reservation.patient_id || '-'}</div>
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <span className={`truncate text-xl font-black ${getNameColor(gender)}`}>{reservation.patient_name || '-'}</span>
+          <span className="truncate text-xs font-black text-slate-400">{reservation.patient_name_kana || ''}</span>
         </div>
-      </div>
-
-      <div className="flex-grow p-4 flex items-center min-w-0">
-        <div className="flex gap-4 w-full items-center">
-          <div className="w-[22%] min-w-0">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.idName}</div>
-            <div className="text-xs font-bold text-slate-400">{reservation.patient_id || TEXT.noData}</div>
-            <div className="text-[10px] font-bold text-slate-500 truncate mt-1">{reservation.patient_name_kana || TEXT.noData}</div>
-            <div className={`text-lg font-black truncate ${nameColor}`}>{reservation.patient_name || TEXT.noData}</div>
-          </div>
-          <div className="w-[16%]">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.attributes}</div>
-            <div className="flex flex-wrap gap-1.5 font-black text-[11px]">
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">{reservation.patient_gender || TEXT.noData}</span>
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">{reservation.age || TEXT.noData}\u6b73</span>
-            </div>
-          </div>
-          <div className="w-[24%] min-w-0">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.companyPurpose}</div>
-            <div className="text-sm font-black text-slate-700 truncate">{reservation.company_name || TEXT.noCompany}</div>
-            <div className="text-xs font-bold text-slate-500 truncate">{reservation.purpose || TEXT.unset}</div>
-          </div>
-          <div className="w-[38%]">
-            <div className="w-[95%] bg-amber-50 p-2 rounded-xl border border-amber-100 min-h-[50px]">
-              <div className="text-[9px] font-black text-amber-600 flex items-center gap-1 mb-1">
-                <Pill size={12} /> {TEXT.paymentRemarks}
-              </div>
-              <div className="text-xs font-black text-blue-700 mb-1">{getReservationBillingText(reservation)}</div>
-              {itemLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {itemLabels.map(item => (
-                    <span key={item} className="rounded-md bg-white border border-amber-100 px-1.5 py-0.5 text-[9px] font-black text-slate-600">{item}</span>
-                  ))}
-                </div>
-              )}
-              {reservation.others && (
-                <div className="mt-1 text-[10px] font-bold text-amber-900 line-clamp-2 leading-relaxed break-words">
-                  {TEXT.remarks}: {reservation.others}
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+          {gender && <span className={`rounded-md border px-2 py-0.5 text-xs font-black ${getGenderColor(gender)}`}>{gender}</span>}
+          {ageText && <span>{ageText}</span>}
+          {birthIso && <span>\u751f\u5e74\u6708\u65e5 {formatDobDisplay(birthIso)}</span>}
+          <span>\u4f1a\u793e\u540d {reservation.company_name || TEXT.noCompany}</span>
+          {reservation.purpose && <span className="rounded-md bg-blue-50 px-2 py-0.5 font-black text-blue-700">{reservation.purpose}</span>}
         </div>
       </div>
     </button>
-  );
-}
-
-function EndoscopyRow({ reservation }) {
-  const nameColor = getGenderNameColor(reservation.patientGender);
-  const examLabel = reservation.examType === 'CF' ? '\u5927\u8178\u5185\u8996\u93e1' : '\u80c3\u5185\u8996\u93e1';
-
-  return (
-    <div className="flex group min-h-[110px] transition-all bg-white hover:bg-slate-50/30">
-      <div className="w-40 flex-none border-r border-slate-100 p-2 flex flex-row items-stretch bg-slate-50/40 relative">
-        <div className="w-8 flex-none opacity-30" />
-        <div className="flex-grow flex flex-col items-center justify-center py-2 px-1">
-          <div className="flex flex-col gap-1 w-full px-1 mb-2">
-            {reservation.needsConsult && <div className="text-center w-full px-1 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-full border border-emerald-200 truncate">{TEXT.consult}</div>}
-            {reservation.needsBloodTest && <div className="text-center w-full px-1 py-0.5 bg-rose-100 text-rose-700 text-[9px] font-black rounded-full border border-rose-200 truncate">{TEXT.bloodTest}</div>}
-          </div>
-          <div className="text-2xl font-black text-indigo-700 flex items-center gap-1.5 leading-none">
-            <Clock size={18} /> {reservation.time || TEXT.noData}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-grow p-4 flex items-center min-w-0">
-        <div className="flex gap-4 w-full items-center">
-          <div className="w-[22%] min-w-0">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.idName}</div>
-            <div className="text-xs font-bold text-slate-400">{reservation.patientId || TEXT.noData}</div>
-            <div className="text-[10px] font-bold text-slate-500 truncate mt-1">{reservation.patientNameKana || TEXT.noData}</div>
-            <div className={`text-lg font-black truncate ${nameColor}`}>{reservation.patientName || TEXT.noData}</div>
-          </div>
-          <div className="w-[16%]">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.attributes}</div>
-            <div className="flex flex-wrap gap-1.5 font-black text-[11px]">
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">{reservation.patientGender || TEXT.noData}</span>
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">{reservation.patientAge || TEXT.noData}\u6b73</span>
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200">{reservation.patientWeight || TEXT.noData}kg</span>
-            </div>
-          </div>
-          <div className="w-[20%]">
-            <div className="text-[10px] font-black text-slate-400 mb-1">{TEXT.contact}</div>
-            <div className="text-sm font-bold text-slate-600 flex items-center gap-2 min-w-0">
-              <Phone size={12} className="text-indigo-400 flex-shrink-0" />
-              <span className="truncate">{reservation.phoneNumber || TEXT.noData}</span>
-              {reservation.phone1Rel && <span className="text-[10px] text-slate-400 font-medium flex-shrink-0">({reservation.phone1Rel})</span>}
-            </div>
-            {reservation.doctor && <div className="mt-1 text-[11px] font-black text-slate-500">{TEXT.doctor}: {reservation.doctor}</div>}
-          </div>
-          <div className="w-[42%]">
-            <div className="w-[95%] bg-amber-50 p-2 rounded-xl border border-amber-100 min-h-[50px]">
-              <div className="text-[9px] font-black text-amber-600 flex items-center gap-1 mb-1">
-                <Pill size={12} /> {TEXT.notes}
-              </div>
-              <div className="flex flex-wrap gap-1 mb-1">
-                <span className="text-[8px] bg-indigo-500 text-white px-1 rounded shadow-sm">{examLabel}</span>
-                {reservation.hasAllergies && <span className="text-[8px] bg-rose-500 text-white px-1 rounded shadow-sm">\u30a2\u30ec\u30eb\u30ae\u30fc\u6709</span>}
-                {reservation.hasEpilepsy && <span className="text-[8px] bg-rose-500 text-white px-1 rounded shadow-sm">\u3066\u3093\u304b\u3093\u6709</span>}
-                {reservation.hasHPyloriEradication && <span className="text-[8px] bg-indigo-500 text-white px-1 rounded shadow-sm">\u30d4\u30ed\u30ea\u9664\u83cc</span>}
-              </div>
-              <div className="text-xs font-bold text-amber-900 line-clamp-2 leading-relaxed break-words">
-                {reservation.medications || TEXT.noData}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -221,81 +160,87 @@ export default function TodayReservationsModal({
   endoscopyReservations = [],
   loading,
   error,
-  getItemLabels,
   onClose,
   onRefresh,
   onSelect,
 }) {
-  const dateLabel = date ? date.replace(/-/g, '/') : '';
   const gfReservations = endoscopyReservations.filter(r => r.examType !== 'CF');
   const cfReservations = endoscopyReservations.filter(r => r.examType === 'CF');
   const totalCount = reservations.length + gfReservations.length + cfReservations.length;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[400] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-6xl overflow-hidden max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900">{TEXT.title}</h2>
-            <div className="mt-2 flex items-center flex-wrap gap-3">
-              <span className="text-sm font-black text-slate-500">{dateLabel}</span>
-              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-black">{totalCount}{TEXT.count}</span>
-              <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-[10px] font-black">{TEXT.healthTitle} {reservations.length}{TEXT.count}</span>
-              <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-200 text-[10px] font-black">GF {gfReservations.length}{TEXT.count}</span>
-              <span className="px-3 py-1 bg-sky-50 text-sky-700 rounded-full border border-sky-200 text-[10px] font-black">CF {cfReservations.length}{TEXT.count}</span>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-md" onClick={onClose}>
+      <div className="flex max-h-[92vh] w-full max-w-[768px] flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-100">
+              <CalendarDays size={26} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black leading-tight text-slate-900">{TEXT.title}</h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-black">
+                <span className="text-slate-400">{getDateHeaderLabel(date)}</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-blue-600">{TEXT.healthShort} {reservations.length}{TEXT.count}</span>
+                <span className="text-slate-400">/</span>
+                <span className="text-emerald-600">GF {gfReservations.length}{TEXT.count}</span>
+                <span className="text-slate-400">/</span>
+                <span className="text-orange-500">CF {cfReservations.length}{TEXT.count}</span>
+                <span className="text-slate-400">/</span>
+                <span className="text-slate-600">{TEXT.total} {totalCount}{TEXT.count}</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={onRefresh} disabled={loading} className="px-4 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 shadow-sm disabled:opacity-40">
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> {TEXT.refresh}
-            </button>
-            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-900 p-2 transition-all" aria-label={TEXT.close}>
-              <span className="text-3xl leading-none font-black">{TEXT.closeMark}</span>
-            </button>
-          </div>
+          <button type="button" onClick={onClose} className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700" aria-label={TEXT.close}>
+            <X size={30} />
+          </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-grow space-y-6 bg-slate-50/60">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white">
           {loading ? (
-            <div className="bg-white rounded-3xl p-20 text-center border border-slate-200 text-slate-400 font-bold text-lg">{TEXT.loading}</div>
+            <div className="px-6 py-16 text-center text-sm font-bold text-slate-400">{TEXT.loading}</div>
           ) : error ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-red-200 text-red-600 font-bold">{error}</div>
+            <div className="mx-6 my-8 rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm font-bold text-red-600">{error}</div>
           ) : totalCount === 0 ? (
-            <div className="bg-white rounded-3xl p-20 text-center border border-slate-200 text-slate-400 font-bold text-lg">{TEXT.empty}</div>
+            <div className="px-6 py-16 text-center text-sm font-bold text-slate-400">{TEXT.empty}</div>
           ) : (
             <>
-              <SectionCard title={TEXT.healthTitle} count={reservations.length} tone="blue">
+              <Section title={TEXT.healthTitle} count={reservations.length}>
                 {reservations.length === 0 ? (
-                  <EmptySection text={TEXT.healthEmpty} />
+                  <EmptyRow text={TEXT.healthEmpty} />
                 ) : (
                   reservations.map(reservation => (
-                    <HealthRow
-                      key={reservation.id}
-                      reservation={reservation}
-                      itemLabels={getItemLabels(reservation)}
-                      onSelect={onSelect}
-                    />
+                    <HealthRow key={reservation.id} reservation={reservation} onSelect={onSelect} />
                   ))
                 )}
-              </SectionCard>
+              </Section>
 
-              <SectionCard title={TEXT.gfTitle} count={gfReservations.length} tone="amber">
+              <Section title={TEXT.gfTitle} count={gfReservations.length}>
                 {gfReservations.length === 0 ? (
-                  <EmptySection text={TEXT.gfEmpty} />
+                  <EmptyRow text={TEXT.gfEmpty} />
                 ) : (
                   gfReservations.map(reservation => <EndoscopyRow key={reservation.id} reservation={reservation} />)
                 )}
-              </SectionCard>
+              </Section>
 
-              <SectionCard title={TEXT.cfTitle} count={cfReservations.length} tone="cyan">
+              <Section title={TEXT.cfTitle} count={cfReservations.length}>
                 {cfReservations.length === 0 ? (
-                  <EmptySection text={TEXT.cfEmpty} />
+                  <EmptyRow text={TEXT.cfEmpty} />
                 ) : (
                   cfReservations.map(reservation => <EndoscopyRow key={reservation.id} reservation={reservation} />)
                 )}
-              </SectionCard>
+              </Section>
             </>
           )}
+        </div>
+
+        <div className="flex shrink-0 justify-between border-t border-slate-100 bg-slate-50/40 px-6 py-3">
+          <button type="button" onClick={onRefresh} disabled={loading} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:bg-white hover:text-slate-700 disabled:opacity-40">
+            {TEXT.refresh}
+          </button>
+          <button type="button" onClick={onClose} className="rounded-xl bg-slate-700 px-6 py-2.5 text-sm font-black text-white shadow-sm transition-colors hover:bg-slate-800">
+            {TEXT.close}
+          </button>
         </div>
       </div>
     </div>
