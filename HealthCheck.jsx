@@ -118,6 +118,7 @@ export default function App() {
   const currentMonthRef = useRef(null);
   const calendarScrollRef = useRef(null);
   const pendingCalendarScrollRef = useRef(false);
+  const pendingCalendarScrollMonthRef = useRef('');
   const modalSearchRef = useRef(null);
   const kenshinTopRef = useRef(null);
   const kenshinBottomRef = useRef(null);
@@ -1088,10 +1089,12 @@ export default function App() {
     setTodayReservationsLoading(false);
   };
 
-  // カレンダーのスクロール枠を当月の月セルへ合わせる（stickyバー分オフセット）
-  const doScrollCalendarToCurrentMonth = () => {
+  // カレンダーのスクロール枠を指定月セルへ合わせる（stickyバー分オフセット）
+  const doScrollCalendarToMonth = (monthKey = '') => {
     const wrapper = calendarScrollRef.current;
-    const monthEl = currentMonthRef.current;
+    const monthEl = monthKey
+      ? wrapper?.querySelector(`[data-calendar-month="${monthKey}"]`)
+      : currentMonthRef.current;
     if (!wrapper || !monthEl) return false;
     const stickyBar = wrapper.querySelector('.company-list-print-hide');
     const headerH = stickyBar ? stickyBar.offsetHeight : 0;
@@ -1099,6 +1102,8 @@ export default function App() {
     wrapper.scrollTop += delta;
     return true;
   };
+
+  const doScrollCalendarToCurrentMonth = () => doScrollCalendarToMonth(getLocalIsoDate().slice(0, 7));
 
   const openTodayReservationsModal = () => {
     setShowTodayReservationsModal(true);
@@ -1399,6 +1404,9 @@ export default function App() {
       setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '', paymentType }));
       if (editingReservationId) setEditingReservationId(null);
       pendingCalendarScrollRef.current = true;
+      pendingCalendarScrollMonthRef.current = (formData.date || getLocalIsoDate()).slice(0, 7);
+      setRightTab('calendar');
+      setCalendarViewMode('calendar');
       await fetchCalendarData();
       // patients テーブルへの自動同期（患者IDがある場合のみ）
       if (formData.id) {
@@ -1744,7 +1752,11 @@ export default function App() {
     if (!pendingCalendarScrollRef.current) return;
     if (rightTab !== 'calendar' || calendarViewMode !== 'calendar' || calendarLoading) return;
     requestAnimationFrame(() => {
-      if (doScrollCalendarToCurrentMonth()) pendingCalendarScrollRef.current = false;
+      const targetMonth = pendingCalendarScrollMonthRef.current;
+      if (doScrollCalendarToMonth(targetMonth) || doScrollCalendarToCurrentMonth()) {
+        pendingCalendarScrollRef.current = false;
+        pendingCalendarScrollMonthRef.current = '';
+      }
     });
   }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
 
@@ -3833,8 +3845,9 @@ export default function App() {
                         weeks.push(week);
                       }
                       const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
+                      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
                       return (
-                        <div key={`${year}-${month}`} ref={isCurrentMonth ? currentMonthRef : null}>
+                        <div key={`${year}-${month}`} ref={isCurrentMonth ? currentMonthRef : null} data-calendar-month={monthKey}>
                           <div className="text-sm font-black text-indigo-700 mb-2">{year}年{month + 1}月</div>
                           <div className="grid grid-cols-7 text-center text-[10px] font-bold mb-1">
                             {['日','月','火','水','木','金','土'].map((d, i) => (
