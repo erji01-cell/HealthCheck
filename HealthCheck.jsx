@@ -4470,7 +4470,7 @@ export default function App() {
 
             {/* 確認ダイアログ（noticeOnly時はOKのみの通知ダイアログ） */}
             {confirmDialog.show && (
-              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
                   <p className="text-slate-700 mb-6 whitespace-pre-line">{confirmDialog.message}</p>
                   <div className="flex gap-3 justify-center">
