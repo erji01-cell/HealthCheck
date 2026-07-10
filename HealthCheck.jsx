@@ -2315,6 +2315,9 @@ export default function App() {
     setSelectedCalendarDate(null);
     if (editMode) setLeftTab('reservation');
     setRightTab('preview');
+    // カレンダーへ戻った際に先頭（最古の月）へ遡らないよう、対象予約の月をスクロール先に予約しておく
+    pendingCalendarScrollRef.current = true;
+    pendingCalendarScrollMonthRef.current = (data.date || getLocalIsoDate()).slice(0, 7);
   };
 
 
