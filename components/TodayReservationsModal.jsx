@@ -25,6 +25,8 @@ const TEXT = {
   gfEmpty: '\u672c\u65e5\u306eGF\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   cfEmpty: '\u672c\u65e5\u306eCF\u4e88\u7d04\u306f\u3042\u308a\u307e\u305b\u3093',
   noCompany: '\u56e3\u4f53\u540d\u306a\u3057',
+  birthDate: '\u751f\u5e74\u6708\u65e5',
+  companyName: '\u4f1a\u793e\u540d',
   unset: '\u672a\u8a2d\u5b9a',
   consult: '\u8a3a\u5bdf\u304b\u3089',
   bloodTest: '\u63a1\u8840\u3042\u308a',
@@ -109,7 +111,7 @@ function EndoscopyRow({ reservation }) {
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
           {gender && <span className={`rounded-md border px-2 py-0.5 text-xs font-black ${getGenderColor(gender)}`}>{gender}</span>}
           {ageText && <span>{ageText}</span>}
-          {birthIso && <span>\u751f\u5e74\u6708\u65e5 {formatDobDisplay(birthIso)}</span>}
+          {birthIso && <span>{TEXT.birthDate} {formatDobDisplay(birthIso)}</span>}
         </div>
       </div>
 
@@ -145,8 +147,8 @@ function HealthRow({ reservation, onSelect }) {
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
           {gender && <span className={`rounded-md border px-2 py-0.5 text-xs font-black ${getGenderColor(gender)}`}>{gender}</span>}
           {ageText && <span>{ageText}</span>}
-          {birthIso && <span>\u751f\u5e74\u6708\u65e5 {formatDobDisplay(birthIso)}</span>}
-          <span>\u4f1a\u793e\u540d {reservation.company_name || TEXT.noCompany}</span>
+          {birthIso && <span>{TEXT.birthDate} {formatDobDisplay(birthIso)}</span>}
+          <span>{TEXT.companyName} {reservation.company_name || TEXT.noCompany}</span>
           {reservation.purpose && <span className="rounded-md bg-blue-50 px-2 py-0.5 font-black text-blue-700">{reservation.purpose}</span>}
         </div>
       </div>
