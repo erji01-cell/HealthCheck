@@ -27,6 +27,7 @@ const TEXT = {
   noCompany: '\u56e3\u4f53\u540d\u306a\u3057',
   birthDate: '\u751f\u5e74\u6708\u65e5',
   companyName: '\u4f1a\u793e\u540d',
+  doctorSuffix: '\u5148\u751f',
   unset: '\u672a\u8a2d\u5b9a',
   consult: '\u8a3a\u5bdf\u304b\u3089',
   bloodTest: '\u63a1\u8840\u3042\u308a',
@@ -119,7 +120,7 @@ function EndoscopyRow({ reservation }) {
         {reservation.doctor && (
           <div className="flex items-center gap-1.5 text-sm font-black text-slate-600">
             <UserRound size={15} className="text-indigo-500" />
-            <span>{reservation.doctor} \u5148\u751f</span>
+            <span>{reservation.doctor} {TEXT.doctorSuffix}</span>
           </div>
         )}
       </div>
