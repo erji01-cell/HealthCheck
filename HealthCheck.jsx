@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -74,12 +74,20 @@ const getStoredCalendarCompanyId = () => {
 
 const getLocalIsoDate = (date = new Date()) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-// 健診目的フィルタの選択肢（健診目的ラジオと同じ並び）
-const CALENDAR_PURPOSE_OPTIONS = [
+const GENERAL_PURPOSES = [
   '就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他',
+];
+
+const SPECIAL_PURPOSES = [
   'クリタス定期健診', 'クリタス特定業務',
   'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業',
   '第一生命', '第一生命 採血も',
+];
+
+// 健診目的フィルタの選択肢（健診目的モーダルと同じ並び）
+const CALENDAR_PURPOSE_OPTIONS = [
+  ...GENERAL_PURPOSES,
+  ...SPECIAL_PURPOSES,
   ...INSURANCE_REVIEW_PURPOSES,
 ];
 
@@ -202,6 +210,8 @@ export default function App() {
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [showPurposeModal, setShowPurposeModal] = useState(false);
+  const [pendingPurpose, setPendingPurpose] = useState(initialState.purpose);
   const [staffMembers, setStaffMembers] = useState([]);
   const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved' | 'error'
   const [saveErrorMessage, setSaveErrorMessage] = useState('');
@@ -1889,6 +1899,25 @@ export default function App() {
     return parseDobToISO(s);
   };
 
+  const applyPurposeChange = (purpose) => {
+    setFormData(prev => ({
+      ...prev,
+      purpose,
+      items: getItemsForPurpose(purpose, prev.items),
+      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) ? { bpMeasureCount: '2' } : {}),
+    }));
+  };
+
+  const openPurposeModal = () => {
+    setPendingPurpose(formData.purpose);
+    setShowPurposeModal(true);
+  };
+
+  const confirmPurposeSelection = () => {
+    if (pendingPurpose !== formData.purpose) applyPurposeChange(pendingPurpose);
+    setShowPurposeModal(false);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox' && name.startsWith('item_')) {
@@ -1907,12 +1936,7 @@ export default function App() {
         };
       });
     } else if (name === 'purpose') {
-      setFormData(prev => ({
-        ...prev,
-        purpose: value,
-        items: getItemsForPurpose(value, prev.items),
-        ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(value) ? { bpMeasureCount: '2' } : {}),
-      }));
+      applyPurposeChange(value);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -2628,35 +2652,19 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                    <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                      {['就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '入園児', 'その他'].map(p => (
-                        <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                          <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-blue-600" /> {p}
-                        </label>
-                      ))}
-                    </div>
-                    <div className="border-t border-slate-200 pt-3">
-                      <div className="text-[11px] font-bold text-emerald-600 uppercase mb-2">特定企業</div>
-                      <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                        {['クリタス定期健診', 'クリタス特定業務', 'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業', '第一生命', '第一生命 採血も'].map(p => (
-                          <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                            <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-emerald-600" /> {p}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="border-t border-slate-200 pt-3">
-                      <div className="text-[11px] font-bold text-indigo-600 uppercase mb-2">保険審査</div>
-                      <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                        {INSURANCE_REVIEW_PURPOSES.map(p => (
-                          <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                            <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-indigo-600" /> {p}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={openPurposeModal}
+                    className="flex h-[52px] w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold text-slate-400">選択中</span>
+                      <span className="block truncate text-sm font-black text-slate-800">{formData.purpose}</span>
+                    </span>
+                    <span className="ml-3 flex shrink-0 items-center gap-1 text-xs font-bold text-blue-600">
+                      変更 <ChevronRight size={15} />
+                    </span>
+                  </button>
                 </div>
 
                 {(() => {
@@ -4361,6 +4369,79 @@ export default function App() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 健診目的選択モーダル */}
+            {showPurposeModal && (
+              <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" onClick={() => setShowPurposeModal(false)}>
+                <div className="flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <div>
+                      <h2 className="text-lg font-black text-slate-800">健診目的を選択</h2>
+                      <p className="mt-0.5 text-xs font-bold text-slate-400">現在: {formData.purpose}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPurposeModal(false)}
+                      title="閉じる"
+                      aria-label="閉じる"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto px-6 py-2">
+                    {[
+                      { title: '一般', purposes: GENERAL_PURPOSES, titleClass: 'text-blue-600' },
+                      { title: '特定企業', purposes: SPECIAL_PURPOSES, titleClass: 'text-emerald-600' },
+                      { title: '保険審査', purposes: INSURANCE_REVIEW_PURPOSES, titleClass: 'text-indigo-600' },
+                    ].map((group, groupIndex) => (
+                      <section key={group.title} className={`py-4 ${groupIndex > 0 ? 'border-t border-slate-200' : ''}`}>
+                        <h3 className={`mb-3 text-xs font-black ${group.titleClass}`}>{group.title}</h3>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {group.purposes.map(purpose => {
+                            const selected = pendingPurpose === purpose;
+                            return (
+                              <label
+                                key={purpose}
+                                className={`flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${selected ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50'}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="pendingPurpose"
+                                  value={purpose}
+                                  checked={selected}
+                                  onChange={() => setPendingPurpose(purpose)}
+                                  className="h-4 w-4 shrink-0 accent-blue-600"
+                                />
+                                <span className="min-w-0 break-words">{purpose}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+
+                  <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowPurposeModal(false)}
+                      className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmPurposeSelection}
+                      className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
+                    >
+                      この内容を選択
+                    </button>
                   </div>
                 </div>
               </div>
