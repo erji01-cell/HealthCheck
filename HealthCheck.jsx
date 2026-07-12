@@ -2652,19 +2652,19 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
-                  <button
-                    type="button"
-                    onClick={openPurposeModal}
-                    className="flex h-[52px] w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
+                  <div className="flex min-h-[42px] items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block text-[10px] font-bold text-slate-400">選択中</span>
                       <span className="block truncate text-sm font-black text-slate-800">{formData.purpose}</span>
                     </span>
-                    <span className="ml-3 flex shrink-0 items-center gap-1 text-xs font-bold text-blue-600">
-                      健診目的を選択 <ChevronRight size={15} />
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={openPurposeModal}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-blue-400 bg-white px-3 py-2 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <ClipboardCheck size={14} /> 健診目的を選択
+                    </button>
+                  </div>
                 </div>
 
                 {(() => {
