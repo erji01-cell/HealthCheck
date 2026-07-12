@@ -15,6 +15,7 @@ import {
   KURITAS_BLOOD_LABELS,
   HAPILUS_BLOOD_LABELS,
   SPECIAL_COMPANY_PURPOSES,
+  INSURANCE_REVIEW_PURPOSES,
   BP_TWO_MEASURE_LOCKED_PURPOSES,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
@@ -79,6 +80,7 @@ const CALENDAR_PURPOSE_OPTIONS = [
   'クリタス定期健診', 'クリタス特定業務',
   'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業',
   '第一生命', '第一生命 採血も',
+  ...INSURANCE_REVIEW_PURPOSES,
 ];
 
 
@@ -2640,6 +2642,16 @@ export default function App() {
                         {['クリタス定期健診', 'クリタス特定業務', 'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業', '第一生命', '第一生命 採血も'].map(p => (
                           <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                             <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-emerald-600" /> {p}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-200 pt-3">
+                      <div className="text-[11px] font-bold text-indigo-600 uppercase mb-2">保険審査</div>
+                      <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+                        {INSURANCE_REVIEW_PURPOSES.map(p => (
+                          <label key={p} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                            <input type="radio" name="purpose" value={p} checked={formData.purpose === p} onChange={handleChange} className="w-4 h-4 text-indigo-600" /> {p}
                           </label>
                         ))}
                       </div>
