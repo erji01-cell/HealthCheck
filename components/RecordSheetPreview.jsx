@@ -129,39 +129,43 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs text-center leading-tight shrink-0">視力・聴力</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {/* 視力 */}
-                    <div className="flex-1 flex flex-col divide-y-[1.5px] divide-black">
-                      {[
-                        { label: '裸眼', r: formData.visionR, l: formData.visionL },
-                        { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
-                      ].map(({ label, r, l }) => (
-                        <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
-                          <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
-                          <span className="text-[9px] text-black">右(</span>
-                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
-                          <span className="text-[9px] text-black">)</span>
-                          <span className="text-[9px] text-black">左(</span>
-                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
-                          <span className="text-[9px] text-black">)</span>
-                          {label === '矯正' && <span className="text-[9px] text-black ml-1">眼鏡 ・ CL</span>}
-                        </div>
-                      ))}
+                    <div className={`relative flex min-h-[64px] flex-1 flex-col divide-y-[1.5px] divide-black ${!formData.items.vision ? 'bg-slate-100' : ''}`}>
+                      {formData.items.vision ? ([
+                          { label: '裸眼', r: formData.visionR, l: formData.visionL },
+                          { label: '矯正', r: formData.visionR2, l: formData.visionL2 },
+                        ].map(({ label, r, l }) => (
+                          <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
+                            <span className="text-[9px] text-black w-8 shrink-0">{label}</span>
+                            <span className="text-[9px] text-black">右(</span>
+                            <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
+                            <span className="text-[9px] text-black">)</span>
+                            <span className="text-[9px] text-black">左(</span>
+                            <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
+                            <span className="text-[9px] text-black">)</span>
+                            {label === '矯正' && <span className="text-[9px] text-black ml-1">眼鏡 ・ CL</span>}
+                          </div>
+                        ))) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-500">不要</div>
+                        )}
                     </div>
                     {/* 聴力 */}
-                    <div className="flex-1 flex flex-col divide-y-[1.5px] divide-black">
-                      {[
-                        { label: '1000Hz', r: formData.hearingR, l: formData.hearingL },
-                        { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
-                      ].map(({ label, r, l }) => (
-                        <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
-                          <span className="hearing-label text-[9px] text-black w-8 shrink-0">{label}</span>
-                          <span className="text-[9px] text-black">右(</span>
-                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
-                          <span className="text-[9px] text-black">)</span>
-                          <span className="text-[9px] text-black">左(</span>
-                          <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
-                          <span className="text-[9px] text-black">)</span>
-                        </div>
-                      ))}
+                    <div className={`relative flex min-h-[64px] flex-1 flex-col divide-y-[1.5px] divide-black ${!formData.items.hearing ? 'bg-slate-100' : ''}`}>
+                      {formData.items.hearing ? ([
+                          { label: '1000Hz', r: formData.hearingR, l: formData.hearingL },
+                          { label: '4000Hz', r: formData.hearingR2, l: formData.hearingL2 },
+                        ].map(({ label, r, l }) => (
+                          <div key={label} className="vision-hearing-item flex items-center gap-1 px-2 py-[9px]">
+                            <span className="hearing-label text-[9px] text-black w-8 shrink-0">{label}</span>
+                            <span className="text-[9px] text-black">右(</span>
+                            <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{r || ''}</span>
+                            <span className="text-[9px] text-black">)</span>
+                            <span className="text-[9px] text-black">左(</span>
+                            <span className="vision-hearing-val text-xs min-w-[28px] text-center text-black">{l || ''}</span>
+                            <span className="text-[9px] text-black">)</span>
+                          </div>
+                        ))) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-500">不要</div>
+                        )}
                     </div>
                   </div>
                 </div>
