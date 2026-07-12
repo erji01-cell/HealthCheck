@@ -2725,7 +2725,7 @@ export default function App() {
                   return (
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診項目</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">健診項目：一般健診</label>
                         <label className="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
                           <input type="checkbox"
                             checked={['heightWeight','abdominalGirth','bloodPressure','vision','hearing','urine','xRay','ecg','blood'].every(k => formData.items[k])}
