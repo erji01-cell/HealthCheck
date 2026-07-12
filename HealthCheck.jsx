@@ -2652,10 +2652,10 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase">健診目的</label>
-                  <div className="flex min-h-[42px] items-center justify-between gap-3">
+                  <div className="flex min-h-[46px] items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
                     <span className="min-w-0">
-                      <span className="block text-[10px] font-bold text-slate-400">選択中</span>
-                      <span className="block truncate text-sm font-black text-slate-800">{formData.purpose}</span>
+                      <span className="block text-[10px] font-bold text-blue-500">選択中</span>
+                      <span className="block truncate text-sm font-black text-blue-950">{formData.purpose}</span>
                     </span>
                     <button
                       type="button"
@@ -2725,7 +2725,7 @@ export default function App() {
                   return (
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase">一般健診項目</label>
                         <label className="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
                           <input type="checkbox"
                             checked={['heightWeight','abdominalGirth','bloodPressure','vision','hearing','urine','xRay','ecg','blood'].every(k => formData.items[k])}
