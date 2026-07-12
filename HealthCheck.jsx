@@ -2662,7 +2662,7 @@ export default function App() {
                       <span className="block truncate text-sm font-black text-slate-800">{formData.purpose}</span>
                     </span>
                     <span className="ml-3 flex shrink-0 items-center gap-1 text-xs font-bold text-blue-600">
-                      変更 <ChevronRight size={15} />
+                      健診目的を選択 <ChevronRight size={15} />
                     </span>
                   </button>
                 </div>
