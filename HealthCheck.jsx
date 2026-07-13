@@ -1496,7 +1496,7 @@ export default function App() {
     setFormData(prev => {
       const manual = stripKuritasBloodNotes(prev.others)
         .split('\n')
-        .filter(line => line.trim() !== SONY_CHEST_NOTE)
+        .filter(line => ![SONY_CHEST_NOTE, '胸囲'].includes(line.trim()))
         .join('\n')
         .trim();
       const purposeNotes = formData.purpose === SONY_PURPOSE ? [SONY_CHEST_NOTE] : [];
