@@ -1924,6 +1924,7 @@ export default function App() {
       ...prev,
       purpose,
       items: getItemsForPurpose(purpose, prev.items),
+      hasDedicatedForm: INSURANCE_REVIEW_PURPOSES.includes(purpose),
       ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) ? { bpMeasureCount: '2' } : {}),
     }));
   };
