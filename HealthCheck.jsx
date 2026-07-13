@@ -4435,10 +4435,11 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                           {group.purposes.map(purpose => {
                             const selected = pendingPurpose === purpose;
+                            const isPinkPurpose = ['朝日生命', 'アフラック'].includes(purpose);
                             return (
                               <label
                                 key={purpose}
-                                className={`flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${selected ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50'}`}
+                                className={`flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${selected ? isPinkPurpose ? 'border-pink-500 bg-pink-100 text-pink-700' : 'border-blue-500 bg-blue-50 text-blue-700' : isPinkPurpose ? 'border-pink-200 bg-pink-50 text-pink-700 hover:border-pink-300 hover:bg-pink-100' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50'}`}
                               >
                                 <input
                                   type="radio"
@@ -4446,7 +4447,7 @@ export default function App() {
                                   value={purpose}
                                   checked={selected}
                                   onChange={() => setPendingPurpose(purpose)}
-                                  className="h-4 w-4 shrink-0 accent-blue-600"
+                                  className={`h-4 w-4 shrink-0 ${isPinkPurpose ? 'accent-pink-600' : 'accent-blue-600'}`}
                                 />
                                 <span className="min-w-0 break-words">{purpose}</span>
                               </label>
