@@ -2678,7 +2678,6 @@ export default function App() {
                   const isSpecialPurpose = [
                     '特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児',
                     ...SPECIAL_COMPANY_PURPOSES,
-                    ...INSURANCE_REVIEW_PURPOSES,
                   ].includes(formData.purpose);
                   const bloodLabel = ['特定健診(国保)', '長寿健診'].includes(formData.purpose)
                     ? '採血 セット3'
