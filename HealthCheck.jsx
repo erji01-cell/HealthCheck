@@ -2677,6 +2677,7 @@ export default function App() {
                   const cbClass = isSpecialPurpose
                     ? 'flex items-center gap-2 text-xs text-slate-600 cursor-not-allowed'
                     : 'flex items-center gap-2 text-xs cursor-pointer hover:text-blue-600';
+                  const isInsuranceReview = INSURANCE_REVIEW_PURPOSES.includes(formData.purpose);
                   const billingLabel = getCompanyBillingLabel(formData.purpose);
                   const currentFee = calculateReservationFee({ purpose: formData.purpose, items: formData.items, shahoFee });
                   const paymentTypeSelector = (
@@ -2686,7 +2687,11 @@ export default function App() {
                       <option value="会社請求">会社請求</option>
                     </select>
                   );
-                  const feeDisplay = billingLabel ? (
+                  const feeDisplay = isInsuranceReview ? (
+                    <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+                      <div className="text-sm font-bold text-emerald-700">保険会社請求</div>
+                    </div>
+                  ) : billingLabel ? (
                     <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
                       <div className="text-sm font-bold text-emerald-700">{billingLabel}</div>
                       <div className="flex items-center gap-3">
