@@ -1,9 +1,15 @@
 import React from 'react';
-import { calculateReservationFee, getCompanyBillingLabel, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS } from '../lib/healthCheckConfig.js';
+import { calculateReservationFee, getCompanyBillingLabel, INSURANCE_REVIEW_PURPOSES, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS } from '../lib/healthCheckConfig.js';
 import { getWeekdayFromIso, formatDobDisplay } from '../lib/kenshinUtils.js';
 
 // 健康診断の記録用紙プレビュー（rightTab === preview で表示・印刷対象）
 export default function RecordSheetPreview({ formData, shahoFee }) {
+  const purposeDisplay = INSURANCE_REVIEW_PURPOSES.includes(formData.purpose)
+    ? `${formData.purpose}(審査)`
+    : formData.purpose || '';
+  const billingDisplay = getCompanyBillingLabel(formData.purpose)
+    || (INSURANCE_REVIEW_PURPOSES.includes(formData.purpose) ? '保険会社請求' : '');
+
   return (
               <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
               <h1 className="text-[22px] font-bold text-center mb-[5mm] border-b-2 border-black pb-3 tracking-[0.4em]">健康診断の記録用紙</h1>
@@ -17,7 +23,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                     <span className="ml-4 font-normal text-sm">（{getWeekdayFromIso(formData.date) || '　曜日'}）</span>
                   </div>
                   <div className="w-[140px] bg-slate-100 p-2 flex items-center justify-center font-bold text-sm">
-                    {formData.purpose || ''}
+                    {purposeDisplay}
                   </div>
                 </div>
 
@@ -238,8 +244,8 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    {getCompanyBillingLabel(formData.purpose) ? (
-                      <span className="text-base font-bold">{getCompanyBillingLabel(formData.purpose)}</span>
+                    {billingDisplay ? (
+                      <span className="text-base font-bold">{billingDisplay}</span>
                     ) : (
                       <>
                         <span className="text-base font-bold underline decoration-[1.5px] underline-offset-4">
