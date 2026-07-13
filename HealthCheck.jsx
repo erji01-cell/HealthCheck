@@ -19,6 +19,8 @@ import {
   BP_TWO_MEASURE_LOCKED_PURPOSES,
   SONY_PURPOSE,
   SONY_CHEST_NOTE,
+  SUMITOMO_PURPOSE,
+  SUMITOMO_NOTE,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calculateReservationFee,
@@ -1503,10 +1505,14 @@ export default function App() {
     setFormData(prev => {
       const manual = stripKuritasBloodNotes(prev.others)
         .split('\n')
-        .filter(line => ![SONY_CHEST_NOTE, '胸囲'].includes(line.trim()))
+        .filter(line => ![SONY_CHEST_NOTE, '胸囲', SUMITOMO_NOTE].includes(line.trim()))
         .join('\n')
         .trim();
-      const purposeNotes = formData.purpose === SONY_PURPOSE ? [SONY_CHEST_NOTE] : [];
+      const purposeNotes = formData.purpose === SONY_PURPOSE
+        ? [SONY_CHEST_NOTE]
+        : formData.purpose === SUMITOMO_PURPOSE
+        ? [SUMITOMO_NOTE]
+        : [];
       const nextOthers = [...(manual ? [manual] : []), ...notes, ...purposeNotes].join('\n');
       return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
     });
