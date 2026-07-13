@@ -17,6 +17,8 @@ import {
   SPECIAL_COMPANY_PURPOSES,
   INSURANCE_REVIEW_PURPOSES,
   BP_TWO_MEASURE_LOCKED_PURPOSES,
+  SONY_PURPOSE,
+  SONY_CHEST_NOTE,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calculateReservationFee,
@@ -1492,11 +1494,16 @@ export default function App() {
   useEffect(() => {
     const notes = buildKuritasBloodNotes(formData.items);
     setFormData(prev => {
-      const manual = stripKuritasBloodNotes(prev.others);
-      const nextOthers = [...(manual ? [manual] : []), ...notes].join('\n');
+      const manual = stripKuritasBloodNotes(prev.others)
+        .split('\n')
+        .filter(line => line.trim() !== SONY_CHEST_NOTE)
+        .join('\n')
+        .trim();
+      const purposeNotes = formData.purpose === SONY_PURPOSE ? [SONY_CHEST_NOTE] : [];
+      const nextOthers = [...(manual ? [manual] : []), ...notes, ...purposeNotes].join('\n');
       return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
     });
-  }, [formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific, formData.items.bloodHapilusB, formData.items.bloodHapilusC, formData.items.bloodHapilusHire, formData.items.bloodHapilusNight]);
+  }, [formData.purpose, formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific, formData.items.bloodHapilusB, formData.items.bloodHapilusC, formData.items.bloodHapilusHire, formData.items.bloodHapilusNight]);
 
   // BMI自動計算（予約詳細入力）
   useEffect(() => {
