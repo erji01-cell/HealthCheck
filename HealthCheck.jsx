@@ -1126,6 +1126,18 @@ export default function App() {
 
   const doScrollCalendarToCurrentMonth = () => doScrollCalendarToMonth(getLocalIsoDate().slice(0, 7));
 
+  const scheduleCalendarScrollToMonth = (monthKey) => {
+    const scrollToSavedMonth = () => {
+      if (doScrollCalendarToMonth(monthKey) || doScrollCalendarToCurrentMonth()) {
+        pendingCalendarScrollRef.current = false;
+        pendingCalendarScrollMonthRef.current = '';
+      }
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(scrollToSavedMonth));
+    [100, 300, 700].forEach(delay => setTimeout(scrollToSavedMonth, delay));
+  };
+
   const openTodayReservationsModal = () => {
     setShowTodayReservationsModal(true);
     fetchTodayReservations();
@@ -1423,14 +1435,16 @@ export default function App() {
       setSaveErrorMessage(formatSupabaseError(error));
       setSaveStatus('error');
     } else {
+      const savedReservationMonth = (formData.date || getLocalIsoDate()).slice(0, 7);
       setSaveStatus('saved');
       setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '', paymentType }));
       if (editingReservationId) setEditingReservationId(null);
       pendingCalendarScrollRef.current = true;
-      pendingCalendarScrollMonthRef.current = (formData.date || getLocalIsoDate()).slice(0, 7);
+      pendingCalendarScrollMonthRef.current = savedReservationMonth;
       setRightTab('calendar');
       setCalendarViewMode('calendar');
       await fetchCalendarData();
+      scheduleCalendarScrollToMonth(savedReservationMonth);
       // patients テーブルへの自動同期（患者IDがある場合のみ）
       if (formData.id) {
         const { data: existing, error: patientSelectError } = await supabase
