@@ -3746,7 +3746,11 @@ export default function App() {
                 {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
                 <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                   <button
-                    onClick={() => { setRightTab('preview'); setLeftTab('reservation'); }}
+                    onClick={() => {
+                      setRightTab('preview');
+                      setLeftTab('reservation');
+                      requestAnimationFrame(() => calendarScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                   >
                     <ListTodo size={12} /> 予約プレビュー
