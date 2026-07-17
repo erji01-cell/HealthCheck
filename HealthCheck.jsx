@@ -226,6 +226,7 @@ export default function App() {
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
   const [calendarDetailData, setCalendarDetailData] = useState({}); // { 'YYYY-MM-DD': [detailed reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarHasLoaded, setCalendarHasLoaded] = useState(false);
   const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
   const [calendarDetailError, setCalendarDetailError] = useState('');
   const [singleReservationDetail, setSingleReservationDetail] = useState(null);
@@ -1161,6 +1162,7 @@ export default function App() {
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
     if (!session) {
       setCalendarLoading(false);
+      setCalendarHasLoaded(false);
       return;
     }
     setCalendarLoading(true);
@@ -1185,6 +1187,7 @@ export default function App() {
       setCalendarDetailData({});
     }
     setCalendarLoading(false);
+    setCalendarHasLoaded(true);
   };
 
   const fetchCalendarListData = async (companyId = calendarCompanyId) => {
@@ -3946,7 +3949,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                {calendarViewMode === 'calendar' ? (calendarLoading ? (
+                {calendarViewMode === 'calendar' ? (calendarLoading && !calendarHasLoaded ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
                   <div className="space-y-6">
