@@ -1792,6 +1792,28 @@ export default function App() {
     });
   }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
 
+  // ブラウザの別タブから戻った際、カレンダーが先頭（1年前）へ戻るのを防ぐ
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
+
+      pendingCalendarScrollRef.current = true;
+      pendingCalendarScrollMonthRef.current = getLocalIsoDate().slice(0, 7);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (doScrollCalendarToCurrentMonth()) {
+            pendingCalendarScrollRef.current = false;
+            pendingCalendarScrollMonthRef.current = '';
+          }
+        });
+      });
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [rightTab, calendarViewMode]);
+
   // 外側クリックで候補を閉じる
   useEffect(() => {
     const handleClick = (e) => {
