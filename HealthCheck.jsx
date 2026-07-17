@@ -1794,24 +1794,44 @@ export default function App() {
 
   // ブラウザの別タブから戻った際、カレンダーが先頭（1年前）へ戻るのを防ぐ
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const retryTimers = [];
+
+    const scrollToCurrentMonth = () => {
       if (document.visibilityState !== 'visible') return;
       if (rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
+      if (doScrollCalendarToCurrentMonth()) {
+        pendingCalendarScrollRef.current = false;
+        pendingCalendarScrollMonthRef.current = '';
+      }
+    };
 
+    const scheduleCurrentMonthScroll = () => {
       pendingCalendarScrollRef.current = true;
       pendingCalendarScrollMonthRef.current = getLocalIsoDate().slice(0, 7);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (doScrollCalendarToCurrentMonth()) {
-            pendingCalendarScrollRef.current = false;
-            pendingCalendarScrollMonthRef.current = '';
-          }
-        });
+
+      requestAnimationFrame(() => requestAnimationFrame(scrollToCurrentMonth));
+      [100, 300, 700].forEach(delay => {
+        retryTimers.push(setTimeout(scrollToCurrentMonth, delay));
       });
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      scheduleCurrentMonthScroll();
+    };
+
+    const handleWindowFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      scheduleCurrentMonthScroll();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+      retryTimers.forEach(clearTimeout);
+    };
   }, [rightTab, calendarViewMode]);
 
   // 外側クリックで候補を閉じる
