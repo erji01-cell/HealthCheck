@@ -1,5 +1,5 @@
 import React from 'react';
-import { calculateReservationFee, getCompanyBillingLabel, INSURANCE_REVIEW_PURPOSES, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS } from '../lib/healthCheckConfig.js';
+import { calculateReservationFee, getCompanyBillingLabel, INSURANCE_REVIEW_PURPOSES, KURITAS_BLOOD_LABELS, HAPILUS_BLOOD_LABELS, EDUCATION_BOARD_PURPOSE } from '../lib/healthCheckConfig.js';
 import { getWeekdayFromIso, formatDobDisplay } from '../lib/kenshinUtils.js';
 
 // 健康診断の記録用紙プレビュー（rightTab === preview で表示・印刷対象）
@@ -183,7 +183,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   </div>
                   <div className="flex-1 p-2 space-y-1.5">
                     {[
-                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: `血圧${formData.bpMeasureCount === '2' ? '2回' : '1回'}`, vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診', '情報提供'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : '採血 スクリ', pulse: '脈拍', colorVision: '色神' } },
+                      { label: '一般健診', bg: 'bg-blue-50', border: 'border-blue-200', labelColor: 'text-blue-700', entries: { heightWeight: '身長/体重', abdominalGirth: '腹囲', bloodPressure: `血圧${formData.bpMeasureCount === '2' ? '2回' : '1回'}`, vision: '視力', hearing: '聴力', urine: '尿検査', xRay: 'X-P', ecg: '心電図', blood: ['特定健診(国保)', '長寿健診', '情報提供'].includes(formData.purpose) ? '採血 セット3' : formData.purpose === '特定健診(社保)' ? '採血 セット2' : formData.purpose === EDUCATION_BOARD_PURPOSE ? '採血 備考参照' : '採血 スクリ', pulse: '脈拍', colorVision: '色神' } },
                       { label: '特定企業', bg: 'bg-emerald-50', border: 'border-emerald-200', labelColor: 'text-emerald-700', entries: { bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, bloodHapilusB: HAPILUS_BLOOD_LABELS.b, bloodHapilusC: HAPILUS_BLOOD_LABELS.c, bloodHapilusHire: HAPILUS_BLOOD_LABELS.hire, bloodHapilusNight: HAPILUS_BLOOD_LABELS.night, bloodInsuranceReview: '採血 保険診査' } },
                       { label: '検便', bg: 'bg-amber-50', border: 'border-amber-200', labelColor: 'text-amber-700', entries: { stool: '便潜血', norovirus: 'ノロウイルス', bacteria3: '3菌種(赤痢・サルモネラ・O157)', bacteria5: '5菌種(赤痢・サルモネラ・O157・O111・O26)', paratyphoid: 'パラチフス・腸チフス' } },
                       { label: '有機溶剤', bg: 'bg-green-50', border: 'border-green-200', labelColor: 'text-green-700', entries: { methanol: 'メタノール', hexane: 'ノルマルヘキサン', methylHippuric: 'メチル馬尿酸' } },

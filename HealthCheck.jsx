@@ -17,10 +17,13 @@ import {
   SPECIAL_COMPANY_PURPOSES,
   INSURANCE_REVIEW_PURPOSES,
   BP_TWO_MEASURE_LOCKED_PURPOSES,
+  BP_ONE_MEASURE_LOCKED_PURPOSES,
   SONY_PURPOSE,
   SONY_CHEST_NOTE,
   SUMITOMO_PURPOSE,
   SUMITOMO_NOTE,
+  EDUCATION_BOARD_PURPOSE,
+  EDUCATION_BOARD_BLOOD_NOTE,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calculateReservationFee,
@@ -85,7 +88,7 @@ const GENERAL_PURPOSES = [
 const SPECIAL_PURPOSES = [
   'クリタス定期健診', 'クリタス特定業務',
   'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業',
-  '第一生命', '第一生命 採血も',
+  '第一生命', '第一生命 採血も', EDUCATION_BOARD_PURPOSE,
 ];
 
 // 健診目的フィルタの選択肢（健診目的モーダルと同じ並び）
@@ -903,7 +906,7 @@ export default function App() {
     r.item_urine && '尿検査',
     r.item_x_ray && 'X-P',
     r.item_ecg && '心電図',
-    r.item_blood && '採血',
+    r.item_blood && (r.purpose === EDUCATION_BOARD_PURPOSE ? '採血 備考参照' : '採血'),
     r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular,
     r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific,
     r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b,
@@ -1522,13 +1525,15 @@ export default function App() {
     setFormData(prev => {
       const manual = stripKuritasBloodNotes(prev.others)
         .split('\n')
-        .filter(line => ![SONY_CHEST_NOTE, '胸囲', SUMITOMO_NOTE].includes(line.trim()))
+        .filter(line => ![SONY_CHEST_NOTE, '胸囲', SUMITOMO_NOTE, EDUCATION_BOARD_BLOOD_NOTE].includes(line.trim()))
         .join('\n')
         .trim();
       const purposeNotes = formData.purpose === SONY_PURPOSE
         ? [SONY_CHEST_NOTE]
         : formData.purpose === SUMITOMO_PURPOSE
         ? [SUMITOMO_NOTE]
+        : formData.purpose === EDUCATION_BOARD_PURPOSE
+        ? [EDUCATION_BOARD_BLOOD_NOTE]
         : [];
       const nextOthers = [...(manual ? [manual] : []), ...notes, ...purposeNotes].join('\n');
       return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
@@ -1984,7 +1989,11 @@ export default function App() {
       purpose,
       items: getItemsForPurpose(purpose, prev.items),
       hasDedicatedForm: INSURANCE_REVIEW_PURPOSES.includes(purpose),
-      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || purpose === '情報提供' ? { bpMeasureCount: '2' } : {}),
+      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || purpose === '情報提供'
+        ? { bpMeasureCount: '2' }
+        : BP_ONE_MEASURE_LOCKED_PURPOSES.includes(purpose)
+        ? { bpMeasureCount: '1', bp2Sys: '', bp2Dia: '' }
+        : {}),
     }));
   };
 
@@ -2008,7 +2017,7 @@ export default function App() {
       }));
     } else if (name === 'bpMeasureCount') {
       setFormData(prev => {
-        if (BP_TWO_MEASURE_LOCKED_PURPOSES.includes(prev.purpose)) return prev;
+        if (BP_TWO_MEASURE_LOCKED_PURPOSES.includes(prev.purpose) || BP_ONE_MEASURE_LOCKED_PURPOSES.includes(prev.purpose)) return prev;
         return {
           ...prev,
           bpMeasureCount: value,
@@ -2359,6 +2368,8 @@ export default function App() {
     const loadedCompany = resolveLoadedHealthCompany(data.company_id, data.company_name);
     const loadedBpMeasureCount = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
       ? '2'
+      : BP_ONE_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
+      ? '1'
       : Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
     setFormData({
       date: data.date || tomorrowStr,
@@ -2751,12 +2762,14 @@ export default function App() {
                 {(() => {
                   const isSpecialPurpose = [
                     '特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児',
-                    ...SPECIAL_COMPANY_PURPOSES,
+                    ...SPECIAL_COMPANY_PURPOSES, EDUCATION_BOARD_PURPOSE,
                   ].includes(formData.purpose);
                   const bloodLabel = ['特定健診(国保)', '長寿健診', '情報提供'].includes(formData.purpose)
                     ? '採血 セット3'
                     : formData.purpose === '特定健診(社保)'
                     ? '採血 セット2'
+                    : formData.purpose === EDUCATION_BOARD_PURPOSE
+                    ? '採血 備考参照'
                     : '採血 スクリーニング';
                   const cbClass = isSpecialPurpose
                     ? 'flex items-center gap-2 text-xs text-slate-600 cursor-not-allowed'
@@ -2872,7 +2885,7 @@ export default function App() {
                         </div>
                       </div>
                       {formData.items.bloodPressure && (() => {
-                        const bpLocked = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(formData.purpose);
+                        const bpLocked = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(formData.purpose) || BP_ONE_MEASURE_LOCKED_PURPOSES.includes(formData.purpose);
                         return (
                           <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                             <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
@@ -4774,7 +4787,7 @@ export default function App() {
                     {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                       const checkedItems = [
                         r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`, r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && '採血', r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
+                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && (r.purpose === EDUCATION_BOARD_PURPOSE ? '採血 備考参照' : '採血'), r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
                         r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン', r.item_cotinine && 'コチニン',
                         r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                         r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
