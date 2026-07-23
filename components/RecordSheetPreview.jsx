@@ -110,9 +110,9 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[12px] text-center leading-tight">身長・体重<br/>BMI・腹囲</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
-                      { label: '身長', value: formData.height, unit: 'cm' },
-                      { label: '体重', value: formData.weight, unit: 'kg' },
-                      { label: 'BMI', value: formData.bmi, unit: '' },
+                      { label: '身長', value: formData.height, unit: 'cm', notRequired: !formData.items.heightWeight },
+                      { label: '体重', value: formData.weight, unit: 'kg', notRequired: !formData.items.heightWeight },
+                      { label: 'BMI', value: formData.bmi, unit: '', notRequired: !formData.items.heightWeight },
                       { label: '腹囲', value: formData.waist, unit: 'cm', notRequired: !formData.items.abdominalGirth },
                     ].map(({ label, value, unit, notRequired }) => (
                       <div key={label} className={`flex-1 p-2 flex flex-col items-start justify-start relative ${notRequired ? 'bg-slate-100' : ''}`}>
