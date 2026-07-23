@@ -23,6 +23,7 @@ import {
   SUMITOMO_NOTE,
   EDUCATION_BOARD_PURPOSE,
   EDUCATION_BOARD_BLOOD_NOTE,
+  BLOOD_NOTE_REFERENCE_PURPOSES,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
   calculateReservationFee,
@@ -905,7 +906,7 @@ export default function App() {
     r.item_urine && '尿検査',
     r.item_x_ray && 'X-P',
     r.item_ecg && '心電図',
-    r.item_blood && (r.purpose === EDUCATION_BOARD_PURPOSE ? '採血 備考参照' : '採血'),
+    (r.item_blood || BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose)) && (BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose) ? '採血 備考参照' : '採血'),
     r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular,
     r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific,
     r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b,
@@ -2383,7 +2384,7 @@ export default function App() {
         bloodPressure: !!data.item_blood_pressure, vision: !!data.item_vision,
         colorVision: !!data.item_color_vision, pulse: !!data.item_pulse, hearing: !!data.item_hearing, urine: !!data.item_urine,
         xRay: !!data.item_x_ray, ecg: !!data.item_ecg,
-        blood: !!data.item_blood,
+        blood: !!data.item_blood || BLOOD_NOTE_REFERENCE_PURPOSES.includes(loadedPurpose),
         bloodKuritasRegular: !!data.item_blood_kuritas_regular,
         bloodKuritasSpecific: !!data.item_blood_kuritas_specific,
         bloodHapilusB: !!data.item_blood_hapilus_b,
@@ -2761,7 +2762,7 @@ export default function App() {
                     ? '採血 セット3'
                     : formData.purpose === '特定健診(社保)'
                     ? '採血 セット2'
-                    : formData.purpose === EDUCATION_BOARD_PURPOSE
+                    : BLOOD_NOTE_REFERENCE_PURPOSES.includes(formData.purpose)
                     ? '採血 備考参照'
                     : '採血 スクリーニング';
                   const cbClass = isSpecialPurpose
@@ -4780,7 +4781,7 @@ export default function App() {
                     {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                       const checkedItems = [
                         r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`, r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', r.item_blood && (r.purpose === EDUCATION_BOARD_PURPOSE ? '採血 備考参照' : '採血'), r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
+                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', (r.item_blood || BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose)) && (BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose) ? '採血 備考参照' : '採血'), r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
                         r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン', r.item_cotinine && 'コチニン',
                         r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                         r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',
