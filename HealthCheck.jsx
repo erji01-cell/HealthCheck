@@ -17,7 +17,6 @@ import {
   SPECIAL_COMPANY_PURPOSES,
   INSURANCE_REVIEW_PURPOSES,
   BP_TWO_MEASURE_LOCKED_PURPOSES,
-  BP_ONE_MEASURE_LOCKED_PURPOSES,
   SONY_PURPOSE,
   SONY_CHEST_NOTE,
   SUMITOMO_PURPOSE,
@@ -1989,11 +1988,7 @@ export default function App() {
       purpose,
       items: getItemsForPurpose(purpose, prev.items),
       hasDedicatedForm: INSURANCE_REVIEW_PURPOSES.includes(purpose),
-      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || purpose === '情報提供'
-        ? { bpMeasureCount: '2' }
-        : BP_ONE_MEASURE_LOCKED_PURPOSES.includes(purpose)
-        ? { bpMeasureCount: '1', bp2Sys: '', bp2Dia: '' }
-        : {}),
+      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || purpose === '情報提供' ? { bpMeasureCount: '2' } : {}),
     }));
   };
 
@@ -2017,7 +2012,7 @@ export default function App() {
       }));
     } else if (name === 'bpMeasureCount') {
       setFormData(prev => {
-        if (BP_TWO_MEASURE_LOCKED_PURPOSES.includes(prev.purpose) || BP_ONE_MEASURE_LOCKED_PURPOSES.includes(prev.purpose)) return prev;
+        if (BP_TWO_MEASURE_LOCKED_PURPOSES.includes(prev.purpose)) return prev;
         return {
           ...prev,
           bpMeasureCount: value,
@@ -2368,8 +2363,6 @@ export default function App() {
     const loadedCompany = resolveLoadedHealthCompany(data.company_id, data.company_name);
     const loadedBpMeasureCount = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
       ? '2'
-      : BP_ONE_MEASURE_LOCKED_PURPOSES.includes(loadedPurpose)
-      ? '1'
       : Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
     setFormData({
       date: data.date || tomorrowStr,
@@ -2885,7 +2878,7 @@ export default function App() {
                         </div>
                       </div>
                       {formData.items.bloodPressure && (() => {
-                        const bpLocked = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(formData.purpose) || BP_ONE_MEASURE_LOCKED_PURPOSES.includes(formData.purpose);
+                        const bpLocked = BP_TWO_MEASURE_LOCKED_PURPOSES.includes(formData.purpose);
                         return (
                           <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
                             <span className="text-[11px] font-black text-blue-600 whitespace-nowrap">血圧測定</span>
