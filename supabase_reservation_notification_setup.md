@@ -14,11 +14,11 @@ SupabaseのSQL Editorで `supabase_reservation_notification_log.sql` を実行�
 Supabase Dashboardの Edge Functions > Secrets で以下を設定します。
 
 - `RESEND_API_KEY`: 在庫管理システムで設定済みの値をそのまま利用可能
-- `RESERVATION_NOTIFICATION_EMAIL`: 健診専用の通知先。複数の場合はカンマ区切り
+- `HEALTH_RESERVATION_NOTIFICATION_EMAIL`: 健診専用の通知先。複数の場合はカンマ区切り
 - `RESERVATION_NOTIFICATION_FROM`: 健診専用の送信元（例: `HealthCheck <reservation@example.jp>`）
 - `RESERVATION_WEBHOOK_SECRET`: 十分に長いランダム文字列
 
-`RESERVATION_NOTIFICATION_EMAIL` が未設定の場合は、在庫管理で設定済みの
+`HEALTH_RESERVATION_NOTIFICATION_EMAIL` が未設定の場合は、在庫管理で設定済みの
 `ORDER_NOTIFICATION_EMAIL` を利用します。送信元も同様に
 `RESERVATION_NOTIFICATION_FROM` がなければ `ORDER_NOTIFICATION_FROM` を利用します。
 

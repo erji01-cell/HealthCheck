@@ -87,7 +87,7 @@ Deno.serve(async (request) => {
   }
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const notificationEmail = Deno.env.get('RESERVATION_NOTIFICATION_EMAIL')
+  const notificationEmail = Deno.env.get('HEALTH_RESERVATION_NOTIFICATION_EMAIL')
     || Deno.env.get('ORDER_NOTIFICATION_EMAIL');
   const from = Deno.env.get('RESERVATION_NOTIFICATION_FROM')
     || Deno.env.get('ORDER_NOTIFICATION_FROM')
