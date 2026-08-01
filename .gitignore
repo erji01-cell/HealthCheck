@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env.local
 .env
+supabase/functions/.env
 
 .vercel
 vite-dev.err.log
