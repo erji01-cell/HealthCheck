@@ -21,6 +21,7 @@ import {
   SONY_CHEST_NOTE,
   SUMITOMO_PURPOSE,
   SUMITOMO_NOTE,
+  SUMITOMO_BLOOD_NOTE,
   EDUCATION_BOARD_PURPOSE,
   EDUCATION_BOARD_BLOOD_NOTE,
   BLOOD_NOTE_REFERENCE_PURPOSES,
@@ -1525,13 +1526,13 @@ export default function App() {
     setFormData(prev => {
       const manual = stripKuritasBloodNotes(prev.others)
         .split('\n')
-        .filter(line => ![SONY_CHEST_NOTE, '胸囲', SUMITOMO_NOTE, EDUCATION_BOARD_BLOOD_NOTE].includes(line.trim()))
+        .filter(line => ![SONY_CHEST_NOTE, '胸囲', SUMITOMO_NOTE, SUMITOMO_BLOOD_NOTE, EDUCATION_BOARD_BLOOD_NOTE].includes(line.trim()))
         .join('\n')
         .trim();
       const purposeNotes = formData.purpose === SONY_PURPOSE
         ? [SONY_CHEST_NOTE]
         : formData.purpose === SUMITOMO_PURPOSE
-        ? [SUMITOMO_NOTE]
+        ? [SUMITOMO_NOTE, SUMITOMO_BLOOD_NOTE]
         : formData.purpose === EDUCATION_BOARD_PURPOSE
         ? [EDUCATION_BOARD_BLOOD_NOTE]
         : [];
