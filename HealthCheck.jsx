@@ -24,6 +24,8 @@ import {
   SUMITOMO_BLOOD_NOTE,
   EDUCATION_BOARD_PURPOSE,
   EDUCATION_BOARD_BLOOD_NOTE,
+  INFO_PROVISION_ELDERLY_PURPOSE,
+  INFO_PROVISION_PURPOSES,
   BLOOD_NOTE_REFERENCE_PURPOSES,
   getCompanyBillingLabel,
   buildKuritasBloodNotes,
@@ -83,7 +85,8 @@ const getStoredCalendarCompanyId = () => {
 const getLocalIsoDate = (date = new Date()) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const GENERAL_PURPOSES = [
-  '就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診', '情報提供', '入園児', 'その他',
+  '就職', '進学', '企業健診', '特定健診(社保)', '特定健診(国保)', '長寿健診',
+  '情報提供', INFO_PROVISION_ELDERLY_PURPOSE, '入園児', 'その他',
 ];
 
 const SPECIAL_PURPOSES = [
@@ -1990,7 +1993,7 @@ export default function App() {
       purpose,
       items: getItemsForPurpose(purpose, prev.items),
       hasDedicatedForm: INSURANCE_REVIEW_PURPOSES.includes(purpose),
-      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || purpose === '情報提供' ? { bpMeasureCount: '2' } : {}),
+      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || INFO_PROVISION_PURPOSES.includes(purpose) ? { bpMeasureCount: '2' } : {}),
     }));
   };
 
@@ -2759,7 +2762,7 @@ export default function App() {
                     '特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児',
                     ...SPECIAL_COMPANY_PURPOSES, EDUCATION_BOARD_PURPOSE,
                   ].includes(formData.purpose);
-                  const bloodLabel = ['特定健診(国保)', '長寿健診', '情報提供'].includes(formData.purpose)
+                  const bloodLabel = ['特定健診(国保)', '長寿健診', ...INFO_PROVISION_PURPOSES].includes(formData.purpose)
                     ? '採血 セット3'
                     : formData.purpose === '特定健診(社保)'
                     ? '採血 セット2'
