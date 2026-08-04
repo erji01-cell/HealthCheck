@@ -5115,11 +5115,12 @@ export default function App() {
             font-weight: 600 !important;
           }
           .specific-health-roster-provider {
-            width: 78mm !important;
+            width: 90mm !important;
             border-bottom: 0.35mm solid black !important;
             padding: 0 2mm 1mm !important;
-            font-size: 15pt !important;
+            font-size: 11pt !important;
             line-height: 1.1 !important;
+            white-space: nowrap !important;
           }
           .specific-health-roster-table {
             width: 100% !important;
