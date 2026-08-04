@@ -43,6 +43,7 @@ import TodayReservationsModal from './components/TodayReservationsModal.jsx';
 import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
 import AttachmentSheet from './components/AttachmentSheet.jsx';
+import SpecificHealthRoster from './components/SpecificHealthRoster.jsx';
 import {
   getBloodArrow,
   kenshinInitialState,
@@ -101,6 +102,8 @@ const CALENDAR_PURPOSE_OPTIONS = [
   ...SPECIAL_PURPOSES,
   ...INSURANCE_REVIEW_PURPOSES,
 ];
+
+const SPECIFIC_HEALTH_ROSTER_PURPOSES = ['特定健診(国保)', '長寿健診'];
 
 
 export default function App() {
@@ -259,6 +262,7 @@ export default function App() {
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
+  const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
   const [printAttachmentSheet, setPrintAttachmentSheet] = useState(true);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
@@ -1056,10 +1060,17 @@ export default function App() {
     return `${company.display_no != null ? `${company.display_no} ` : ''}${company.name}`;
   };
 
-  const handlePrintCompanyList = () => {
+  const getSpecificHealthRosterData = () => calendarListData
+    .filter(matchesCalendarDateRange)
+    .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
+    .sort(compareCalendarListByDate);
+
+  const handlePrintCompanyList = (mode = 'companyList') => {
     if (calendarViewMode !== 'list') return;
-    setPrintMode('companyList');
-    setTimeout(() => window.print(), 50);
+    if (mode === 'specificHealthRoster' && getSpecificHealthRosterData().length === 0) return;
+    setShowCompanyPrintMenu(false);
+    setPrintMode(mode);
+    setTimeout(() => window.print(), 100);
   };
 
   const fetchReservationDetailById = async (reservationId) => {
@@ -1211,7 +1222,7 @@ export default function App() {
     const end = hasDateRange ? (calendarDateTo || '2999-12-31') : defaultRange.end;
     let query = supabase
       .from('health_reserv')
-      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, birth_date, age, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .gte('date', start)
       .lte('date', end);
     // 団体未選択（すべての団体）の場合はフィルタなし
@@ -2566,7 +2577,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden ${printMode === 'companyList' ? 'print-company-list-active' : ''}`}>
+    <div className={`min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden ${printMode === 'companyList' ? 'print-company-list-active' : printMode === 'specificHealthRoster' ? 'print-specific-health-roster-active' : ''}`}>
       {/* バックアップ警告バナー */}
       {backupWarning && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[300] max-w-2xl w-[calc(100%-2rem)] px-4 py-3 bg-amber-50 border border-amber-300 rounded-2xl shadow-lg flex items-center gap-3 print-hide">
@@ -3886,8 +3897,8 @@ export default function App() {
                       {calendarViewMode === 'list' && (
                         <button
                           type="button"
-                          onClick={handlePrintCompanyList}
-                          disabled={calendarListLoading || getFilteredCalendarListData().length === 0}
+                          onClick={() => setShowCompanyPrintMenu(true)}
+                          disabled={calendarListLoading || (getFilteredCalendarListData().length === 0 && getSpecificHealthRosterData().length === 0)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                           <Printer size={13} /> 印刷
@@ -4553,6 +4564,62 @@ export default function App() {
               </div>
             )}
 
+            {/* 団体別一覧の印刷様式選択 */}
+            {showCompanyPrintMenu && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 print-hide"
+                onClick={() => setShowCompanyPrintMenu(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="company-print-menu-title"
+                  className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                    <h2 id="company-print-menu-title" className="text-base font-black text-slate-800">印刷様式を選択</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowCompanyPrintMenu(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="閉じる"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="space-y-3 p-5">
+                    <button
+                      type="button"
+                      onClick={() => handlePrintCompanyList('companyList')}
+                      disabled={getFilteredCalendarListData().length === 0}
+                      className="flex w-full items-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-indigo-600"><ListTodo size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">団体別 健康診断予約一覧</span>
+                        <span className="block text-xs font-bold text-slate-400">{getFilteredCalendarListData().length}件</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-slate-400" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePrintCompanyList('specificHealthRoster')}
+                      disabled={getSpecificHealthRosterData().length === 0}
+                      className="flex w-full items-center gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-left hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white"><ClipboardCheck size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">特定健診受診者名簿</span>
+                        <span className="block text-xs font-bold text-emerald-700">特定健診(国保)・長寿健診　{getSpecificHealthRosterData().length}件</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-emerald-700" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 団体マスタ管理モーダル */}
             {showCompanyModal && (() => {
               const q = getCompanyNameKey(companySearchQuery);
@@ -4863,12 +4930,17 @@ export default function App() {
 
       </div>
 
+      <SpecificHealthRoster
+        reservations={getSpecificHealthRosterData()}
+        formatBirthDate={birthDate => formatDobDisplay(parseDobToISO(birthDate))}
+      />
+
       <style>{`
         .print-only { display: none; }
         @media print {
           .kenshin-scroll-wrapper { overflow: visible !important; max-height: none !important; height: auto !important; }
           .print-only { display: inline !important; }
-          @page { size: A4 portrait; margin: 5mm 0 0 0; }
+          @page { size: ${printMode === 'specificHealthRoster' ? 'A4 landscape' : 'A4 portrait'}; margin: ${printMode === 'specificHealthRoster' ? '0' : '5mm 0 0 0'}; }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
@@ -4991,6 +5063,126 @@ export default function App() {
           .print-company-list-active .company-list-row {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+          }
+          .print-specific-health-roster-active > *:not(.specific-health-roster-print-root) {
+            display: none !important;
+          }
+          .print-specific-health-roster-active {
+            display: block !important;
+            width: 297mm !important;
+            min-height: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+          .print-specific-health-roster-active .specific-health-roster-print-root {
+            display: block !important;
+            width: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            color: black !important;
+          }
+          .specific-health-roster-page {
+            box-sizing: border-box !important;
+            width: 297mm !important;
+            height: 210mm !important;
+            padding: 7mm 7mm 5mm !important;
+            overflow: hidden !important;
+            background: white !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .specific-health-roster-header {
+            display: flex !important;
+            height: 20mm !important;
+            align-items: flex-end !important;
+            justify-content: space-between !important;
+            gap: 10mm !important;
+            padding: 0 6mm 2.5mm !important;
+          }
+          .specific-health-roster-header h1 {
+            margin: 0 !important;
+            font-size: 18pt !important;
+            font-weight: 700 !important;
+            letter-spacing: 0 !important;
+            line-height: 1.15 !important;
+          }
+          .specific-health-roster-company {
+            margin-top: 1.5mm !important;
+            font-size: 10pt !important;
+            font-weight: 600 !important;
+          }
+          .specific-health-roster-provider {
+            width: 78mm !important;
+            border-bottom: 0.35mm solid black !important;
+            padding: 0 2mm 1mm !important;
+            font-size: 15pt !important;
+            line-height: 1.1 !important;
+          }
+          .specific-health-roster-table {
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            border: 0.45mm solid black !important;
+            font-size: 10pt !important;
+          }
+          .specific-health-roster-table th,
+          .specific-health-roster-table td {
+            box-sizing: border-box !important;
+            border: 0.3mm solid black !important;
+            padding: 1mm 1.5mm !important;
+            vertical-align: middle !important;
+            line-height: 1.15 !important;
+            overflow: hidden !important;
+          }
+          .specific-health-roster-table thead tr {
+            height: 16mm !important;
+          }
+          .specific-health-roster-table th {
+            text-align: center !important;
+            font-size: 9.5pt !important;
+            font-weight: 600 !important;
+          }
+          .specific-health-roster-table th.p-0 {
+            padding: 0 !important;
+          }
+          .specific-health-roster-table tbody tr {
+            height: 13.5mm !important;
+          }
+          .specific-health-roster-result-title,
+          .specific-health-roster-result-types {
+            display: flex !important;
+            min-height: 7mm !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0.5mm 1mm !important;
+          }
+          .specific-health-roster-result-types {
+            border-top: 0.3mm solid black !important;
+          }
+          .specific-health-roster-birth {
+            font-size: 8.5pt !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+          .specific-health-roster-purpose {
+            font-size: 8.5pt !important;
+            font-weight: 600 !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+          .specific-health-roster-footer {
+            display: flex !important;
+            height: 9mm !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            border: 0.3mm solid black !important;
+            border-top: 0 !important;
+            padding: 0 4mm !important;
+            font-size: 12pt !important;
+            font-weight: 600 !important;
           }
         }
       `}</style>
