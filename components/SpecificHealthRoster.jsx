@@ -57,7 +57,10 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
               <h1>特定健診受診者名簿</h1>
               <div className="specific-health-roster-company">{page.companyName}</div>
             </div>
-            <div className="specific-health-roster-provider">医療機関名　陽春堂内科診療所</div>
+            <div className="specific-health-roster-provider">
+              <span>医療機関名</span>
+              <span>陽春堂内科診療所</span>
+            </div>
           </header>
 
           <table className="specific-health-roster-table">
