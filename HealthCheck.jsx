@@ -5115,14 +5115,14 @@ export default function App() {
             font-weight: 600 !important;
           }
           .specific-health-roster-provider {
-            display: flex !important;
-            width: 90mm !important;
+            display: inline-flex !important;
+            width: auto !important;
             align-items: center !important;
-            justify-content: space-between !important;
-            gap: 4mm !important;
+            justify-content: flex-start !important;
+            gap: 2mm !important;
             border-bottom: 0.35mm solid black !important;
-            padding: 0 2mm 1mm !important;
-            font-size: 11pt !important;
+            padding: 0 0 1mm !important;
+            font-size: 12pt !important;
             line-height: 1.1 !important;
             white-space: nowrap !important;
           }
