@@ -6,6 +6,12 @@ const formatVisitDate = (value) => {
   return `${Number(match[1])}月${Number(match[2])}日`;
 };
 
+const formatExamType = (purpose) => {
+  if (purpose === '特定健診(国保)') return '特定';
+  if (purpose === '長寿健診') return '長寿';
+  return purpose || '';
+};
+
 const buildRosterPages = (reservations) => {
   const groups = new Map();
   reservations.forEach((reservation) => {
@@ -75,10 +81,7 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
                 <th>生年月日</th>
                 <th>性別</th>
                 <th>健診種別</th>
-                <th className="p-0">
-                  <div className="specific-health-roster-result-title">特定健診結果（階層化）</div>
-                  <div className="specific-health-roster-result-types">情報・動機・積極</div>
-                </th>
+                <th>特定健診結果（階層化）</th>
                 <th>備考</th>
               </tr>
             </thead>
@@ -95,9 +98,11 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
                       {reservation?.birth_date ? formatBirthDate(reservation.birth_date) : ''}
                     </td>
                     <td className="text-center">{reservation?.patient_gender || ''}</td>
-                    <td className="specific-health-roster-purpose">{reservation?.purpose || ''}</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
+                    <td className="specific-health-roster-purpose">
+                      {reservation ? formatExamType(reservation.purpose) : ''}
+                    </td>
+                    <td className="specific-health-roster-result-entry">情報・動機・積極</td>
+                    <td className="specific-health-roster-note-entry">紹介状（有・無）</td>
                   </tr>
                 );
               })}

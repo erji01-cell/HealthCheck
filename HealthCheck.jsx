@@ -5145,22 +5145,8 @@ export default function App() {
             font-size: 9.5pt !important;
             font-weight: 600 !important;
           }
-          .specific-health-roster-table th.p-0 {
-            padding: 0 !important;
-          }
           .specific-health-roster-table tbody tr {
             height: 13.5mm !important;
-          }
-          .specific-health-roster-result-title,
-          .specific-health-roster-result-types {
-            display: flex !important;
-            min-height: 7mm !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0.5mm 1mm !important;
-          }
-          .specific-health-roster-result-types {
-            border-top: 0.3mm solid black !important;
           }
           .specific-health-roster-birth {
             font-size: 8.5pt !important;
@@ -5170,6 +5156,12 @@ export default function App() {
           .specific-health-roster-purpose {
             font-size: 8.5pt !important;
             font-weight: 600 !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+          .specific-health-roster-result-entry,
+          .specific-health-roster-note-entry {
+            font-size: 8.5pt !important;
             text-align: center !important;
             white-space: nowrap !important;
           }
