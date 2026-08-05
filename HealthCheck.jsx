@@ -2684,8 +2684,8 @@ export default function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">健診希望日</label>
-                    <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <label className="text-[11px] font-black text-teal-700 uppercase">健診希望日</label>
+                    <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full rounded-lg border-2 border-teal-400 bg-teal-50 p-2 font-black text-slate-900 shadow-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-200" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">カルテID (任意)</label>
