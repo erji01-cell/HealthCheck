@@ -1071,7 +1071,10 @@ export default function App() {
     .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
     .sort(compareCalendarListByDate);
 
-  const normalizeInsuranceNumber = (value) => String(value || '').replace(/\s+/g, '').trim();
+  const normalizeInsuranceNumber = (value) => String(value || '')
+    .replace(/[０-９]/g, digit => String.fromCharCode(digit.charCodeAt(0) - 0xFEE0))
+    .replace(/\s+/g, '')
+    .trim();
 
   const getMissingInsurancePatients = () => {
     const patientsById = new Map();
@@ -1230,7 +1233,7 @@ export default function App() {
     insuranceRows.forEach(row => {
       const patientId = String(row.patient_id || '').trim();
       if (patientId && !latestNumberByPatientId.has(patientId)) {
-        latestNumberByPatientId.set(patientId, String(row.insured_number || '').replace(/\s+/g, ''));
+        latestNumberByPatientId.set(patientId, normalizeInsuranceNumber(row.insured_number));
       }
     });
 

@@ -12,6 +12,9 @@ const formatExamType = (purpose) => {
   return purpose || '';
 };
 
+const formatInsuranceNumber = (value) => String(value || '')
+  .replace(/[0-9]/g, digit => String.fromCharCode(digit.charCodeAt(0) + 0xFEE0));
+
 const buildRosterPages = (reservations) => {
   const groups = new Map();
   reservations.forEach((reservation) => {
@@ -96,7 +99,7 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
                     <td className="text-center">{rosterNumber}</td>
                     <td className="text-center">{reservation ? formatVisitDate(reservation.date) : ''}</td>
                     <td className="specific-health-roster-insurance-number">
-                      {reservation?.insured_number || '\u00a0'}
+                      {formatInsuranceNumber(reservation?.insured_number) || '\u00a0'}
                     </td>
                     <td>{reservation?.patient_name || ''}</td>
                     <td className="specific-health-roster-birth">
