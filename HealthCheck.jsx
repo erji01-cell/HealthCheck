@@ -1090,7 +1090,7 @@ export default function App() {
     insuranceRows.forEach(row => {
       const patientId = String(row.patient_id || '').trim();
       if (patientId && !latestNumberByPatientId.has(patientId)) {
-        latestNumberByPatientId.set(patientId, String(row.insured_number || '').trim());
+        latestNumberByPatientId.set(patientId, String(row.insured_number || '').replace(/\s+/g, ''));
       }
     });
 
@@ -5196,6 +5196,14 @@ export default function App() {
           }
           .specific-health-roster-birth {
             font-size: 8.5pt !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+          .specific-health-roster-insurance-number {
+            padding-right: 0.5mm !important;
+            padding-left: 0.5mm !important;
+            font-size: 8pt !important;
+            letter-spacing: 0 !important;
             text-align: center !important;
             white-space: nowrap !important;
           }

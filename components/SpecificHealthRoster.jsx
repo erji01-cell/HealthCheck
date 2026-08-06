@@ -95,7 +95,9 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
                   <tr key={reservation?.id || `${page.key}-blank-${rowIndex}`}>
                     <td className="text-center">{rosterNumber}</td>
                     <td className="text-center">{reservation ? formatVisitDate(reservation.date) : ''}</td>
-                    <td className="text-center">{reservation?.insured_number || '\u00a0'}</td>
+                    <td className="specific-health-roster-insurance-number">
+                      {reservation?.insured_number || '\u00a0'}
+                    </td>
                     <td>{reservation?.patient_name || ''}</td>
                     <td className="specific-health-roster-birth">
                       {reservation?.birth_date ? formatBirthDate(reservation.birth_date) : ''}
