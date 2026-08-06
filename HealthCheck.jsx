@@ -1065,6 +1065,41 @@ export default function App() {
     .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
     .sort(compareCalendarListByDate);
 
+  const addLatestInsuranceNumbers = async (reservations) => {
+    const patientIds = [...new Set(
+      reservations
+        .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
+        .map(r => String(r.patient_id || '').trim())
+        .filter(Boolean)
+    )];
+    if (patientIds.length === 0) return reservations;
+
+    const batchSize = 200;
+    const insuranceRows = [];
+    for (let index = 0; index < patientIds.length; index += batchSize) {
+      const { data, error } = await supabase
+        .from('patient_insurance')
+        .select('patient_id, insured_number, updated_at')
+        .in('patient_id', patientIds.slice(index, index + batchSize))
+        .order('updated_at', { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      insuranceRows.push(...(data || []));
+    }
+
+    const latestNumberByPatientId = new Map();
+    insuranceRows.forEach(row => {
+      const patientId = String(row.patient_id || '').trim();
+      if (patientId && !latestNumberByPatientId.has(patientId)) {
+        latestNumberByPatientId.set(patientId, String(row.insured_number || '').trim());
+      }
+    });
+
+    return reservations.map(reservation => ({
+      ...reservation,
+      insured_number: latestNumberByPatientId.get(String(reservation.patient_id || '').trim()) || '',
+    }));
+  };
+
   const handlePrintCompanyList = (mode = 'companyList') => {
     if (calendarViewMode !== 'list') return;
     if (mode === 'specificHealthRoster' && getSpecificHealthRosterData().length === 0) return;
@@ -1236,7 +1271,13 @@ export default function App() {
       setCalendarListError('団体別一覧の取得に失敗しました。');
       setCalendarListData([]);
     } else {
-      setCalendarListData(data || []);
+      const reservations = data || [];
+      try {
+        setCalendarListData(await addLatestInsuranceNumbers(reservations));
+      } catch (insuranceError) {
+        console.error('patient insurance fetch error:', insuranceError);
+        setCalendarListData(reservations);
+      }
     }
     setCalendarListLoading(false);
   };
