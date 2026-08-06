@@ -5213,9 +5213,13 @@ export default function App() {
             text-align: center !important;
             white-space: nowrap !important;
           }
-          .specific-health-roster-result-entry,
+          .specific-health-roster-result-entry {
+            font-size: 10.2pt !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
           .specific-health-roster-note-entry {
-            font-size: 8.5pt !important;
+            font-size: 9.4pt !important;
             text-align: center !important;
             white-space: nowrap !important;
           }
