@@ -44,6 +44,7 @@ import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
 import AttachmentSheet from './components/AttachmentSheet.jsx';
 import SpecificHealthRoster from './components/SpecificHealthRoster.jsx';
+import InsuranceNumberModal from './components/InsuranceNumberModal.jsx';
 import {
   getBloodArrow,
   kenshinInitialState,
@@ -263,6 +264,11 @@ export default function App() {
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
   const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
+  const [showInsuranceNumberModal, setShowInsuranceNumberModal] = useState(false);
+  const [insuranceNumberValues, setInsuranceNumberValues] = useState({});
+  const [insuranceNumberSaving, setInsuranceNumberSaving] = useState(false);
+  const [insuranceNumberError, setInsuranceNumberError] = useState('');
+  const [insurancePrintAfterSave, setInsurancePrintAfterSave] = useState(false);
   const [printAttachmentSheet, setPrintAttachmentSheet] = useState(true);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
@@ -1065,6 +1071,140 @@ export default function App() {
     .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
     .sort(compareCalendarListByDate);
 
+  const normalizeInsuranceNumber = (value) => String(value || '').replace(/\s+/g, '').trim();
+
+  const getMissingInsurancePatients = () => {
+    const patientsById = new Map();
+    getSpecificHealthRosterData().forEach(reservation => {
+      const patientId = String(reservation.patient_id || '').trim();
+      if (!patientId || normalizeInsuranceNumber(reservation.insured_number)) return;
+      if (!patientsById.has(patientId)) {
+        patientsById.set(patientId, {
+          patientId,
+          patientName: reservation.patient_name || '',
+          date: reservation.date || '',
+          purpose: reservation.purpose || '',
+        });
+      }
+    });
+    return [...patientsById.values()];
+  };
+
+  const startCompanyListPrint = (mode) => {
+    setShowCompanyPrintMenu(false);
+    setPrintMode(mode);
+    setTimeout(() => window.print(), 100);
+  };
+
+  const openInsuranceNumberModal = (printAfterSave = false) => {
+    const missingPatients = getMissingInsurancePatients();
+    if (missingPatients.length === 0) {
+      if (printAfterSave) startCompanyListPrint('specificHealthRoster');
+      return;
+    }
+    setShowCompanyPrintMenu(false);
+    setInsuranceNumberValues(Object.fromEntries(missingPatients.map(patient => [patient.patientId, ''])));
+    setInsuranceNumberError('');
+    setInsurancePrintAfterSave(printAfterSave);
+    setShowInsuranceNumberModal(true);
+  };
+
+  const closeInsuranceNumberModal = () => {
+    if (insuranceNumberSaving) return;
+    setShowInsuranceNumberModal(false);
+    setInsuranceNumberError('');
+    setInsurancePrintAfterSave(false);
+  };
+
+  const handleInsuranceNumberChange = (patientId, value) => {
+    setInsuranceNumberValues(previous => ({ ...previous, [patientId]: value }));
+    if (insuranceNumberError) setInsuranceNumberError('');
+  };
+
+  const saveInsuranceNumbers = async () => {
+    const missingPatients = getMissingInsurancePatients();
+    const entries = missingPatients
+      .map(patient => ({
+        ...patient,
+        insuredNumber: normalizeInsuranceNumber(insuranceNumberValues[patient.patientId]),
+      }))
+      .filter(patient => patient.insuredNumber);
+
+    if (entries.length === 0) {
+      setInsuranceNumberError('保険証番号を1件以上入力してください。');
+      return;
+    }
+
+    setInsuranceNumberSaving(true);
+    setInsuranceNumberError('');
+    const savedNumbers = new Map();
+
+    try {
+      for (const entry of entries) {
+        const payload = {
+          insured_number: entry.insuredNumber,
+          updated_at: new Date().toISOString(),
+        };
+        const { data: existingRows, error: lookupError } = await supabase
+          .from('patient_insurance')
+          .select('patient_id')
+          .eq('patient_id', entry.patientId)
+          .limit(1);
+        if (lookupError) throw lookupError;
+
+        if (existingRows && existingRows.length > 0) {
+          const { data: updatedRows, error: updateError } = await supabase
+            .from('patient_insurance')
+            .update(payload)
+            .eq('patient_id', entry.patientId)
+            .select('patient_id');
+          if (updateError) throw updateError;
+          if (!updatedRows || updatedRows.length === 0) {
+            const permissionError = new Error('patient_insurance update was not permitted');
+            permissionError.code = '42501';
+            throw permissionError;
+          }
+        } else {
+          const { error: insertError } = await supabase
+            .from('patient_insurance')
+            .insert({ patient_id: entry.patientId, ...payload });
+          if (insertError) throw insertError;
+        }
+        savedNumbers.set(entry.patientId, entry.insuredNumber);
+      }
+
+      setCalendarListData(previous => previous.map(reservation => {
+        const patientId = String(reservation.patient_id || '').trim();
+        return savedNumbers.has(patientId)
+          ? { ...reservation, insured_number: savedNumbers.get(patientId) }
+          : reservation;
+      }));
+
+      const shouldPrint = insurancePrintAfterSave;
+      setShowInsuranceNumberModal(false);
+      setInsuranceNumberValues({});
+      setInsurancePrintAfterSave(false);
+      if (shouldPrint) startCompanyListPrint('specificHealthRoster');
+    } catch (error) {
+      console.error('insurance number save error:', error);
+      if (savedNumbers.size > 0) {
+        setCalendarListData(previous => previous.map(reservation => {
+          const patientId = String(reservation.patient_id || '').trim();
+          return savedNumbers.has(patientId)
+            ? { ...reservation, insured_number: savedNumbers.get(patientId) }
+            : reservation;
+        }));
+      }
+      setInsuranceNumberError(
+        error?.code === '42501'
+          ? '保存権限がありません。patient_insuranceのRLSポリシーを確認してください。'
+          : '保険証番号の保存に失敗しました。入力内容とSupabaseのテーブル設定を確認してください。'
+      );
+    } finally {
+      setInsuranceNumberSaving(false);
+    }
+  };
+
   const addLatestInsuranceNumbers = async (reservations) => {
     const patientIds = [...new Set(
       reservations
@@ -1103,9 +1243,11 @@ export default function App() {
   const handlePrintCompanyList = (mode = 'companyList') => {
     if (calendarViewMode !== 'list') return;
     if (mode === 'specificHealthRoster' && getSpecificHealthRosterData().length === 0) return;
-    setShowCompanyPrintMenu(false);
-    setPrintMode(mode);
-    setTimeout(() => window.print(), 100);
+    if (mode === 'specificHealthRoster' && getMissingInsurancePatients().length > 0) {
+      openInsuranceNumberModal(true);
+      return;
+    }
+    startCompanyListPrint(mode);
   };
 
   const fetchReservationDetailById = async (reservationId) => {
@@ -3936,14 +4078,27 @@ export default function App() {
                         リセット
                       </button>
                       {calendarViewMode === 'list' && (
-                        <button
-                          type="button"
-                          onClick={() => setShowCompanyPrintMenu(true)}
-                          disabled={calendarListLoading || (getFilteredCalendarListData().length === 0 && getSpecificHealthRosterData().length === 0)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                          <Printer size={13} /> 印刷
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openInsuranceNumberModal(false)}
+                            disabled={calendarListLoading || getMissingInsurancePatients().length === 0}
+                            className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-black text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-white disabled:text-slate-400 disabled:opacity-60 whitespace-nowrap"
+                          >
+                            <CreditCard size={13} /> 保険証番号
+                            <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">
+                              未入力 {getMissingInsurancePatients().length}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowCompanyPrintMenu(true)}
+                            disabled={calendarListLoading || (getFilteredCalendarListData().length === 0 && getSpecificHealthRosterData().length === 0)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            <Printer size={13} /> 印刷
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -4603,6 +4758,26 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {showInsuranceNumberModal && (
+              <InsuranceNumberModal
+                patients={getMissingInsurancePatients()}
+                values={insuranceNumberValues}
+                saving={insuranceNumberSaving}
+                error={insuranceNumberError}
+                printAfterSave={insurancePrintAfterSave}
+                onValueChange={handleInsuranceNumberChange}
+                onClose={closeInsuranceNumberModal}
+                onSave={saveInsuranceNumbers}
+                onPrintWithoutSaving={() => {
+                  setShowInsuranceNumberModal(false);
+                  setInsuranceNumberValues({});
+                  setInsuranceNumberError('');
+                  setInsurancePrintAfterSave(false);
+                  startCompanyListPrint('specificHealthRoster');
+                }}
+              />
             )}
 
             {/* 団体別一覧の印刷様式選択 */}
