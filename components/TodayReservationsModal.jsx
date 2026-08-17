@@ -31,6 +31,9 @@ const TEXT = {
   unset: '\u672a\u8a2d\u5b9a',
   consult: '\u8a3a\u5bdf\u304b\u3089',
   bloodTest: '\u63a1\u8840\u3042\u308a',
+  refresh: '\u66f4\u65b0',
+  kenshinDone: '\u8a3a\u65ad\u66f8\u4f5c\u6210\u6e08',
+  kenshinTodo: '\u8a3a\u65ad\u66f8\u672a\u4f5c\u6210',
 };
 
 const getDateHeaderLabel = (date) => {
@@ -128,7 +131,7 @@ function EndoscopyRow({ reservation }) {
   );
 }
 
-function HealthRow({ reservation, onSelect }) {
+function HealthRow({ reservation, onSelect, kenshinDone }) {
   const gender = reservation.patient_gender || '';
   const birthIso = toBirthIso(reservation.birth_date);
   const ageText = reservation.age != null && reservation.age !== '' ? `${reservation.age}\u6b73` : '';
@@ -144,6 +147,9 @@ function HealthRow({ reservation, onSelect }) {
         <div className="flex min-w-0 items-baseline gap-3">
           <span className={`truncate text-xl font-black ${getNameColor(gender)}`}>{reservation.patient_name || '-'}</span>
           <span className="truncate text-xs font-black text-slate-400">{reservation.patient_name_kana || ''}</span>
+          <span className={`ml-auto shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black ${kenshinDone ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-amber-200 bg-amber-50 text-amber-600'}`}>
+            {kenshinDone ? TEXT.kenshinDone : TEXT.kenshinTodo}
+          </span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
           {gender && <span className={`rounded-md border px-2 py-0.5 text-xs font-black ${getGenderColor(gender)}`}>{gender}</span>}
@@ -166,10 +172,12 @@ export default function TodayReservationsModal({
   onClose,
   onRefresh,
   onSelect,
+  hasKenshinRecord = () => false,
 }) {
   const gfReservations = endoscopyReservations.filter(r => r.examType !== 'CF');
   const cfReservations = endoscopyReservations.filter(r => r.examType === 'CF');
   const totalCount = reservations.length + gfReservations.length + cfReservations.length;
+  const kenshinTodoCount = reservations.filter(r => !hasKenshinRecord(r)).length;
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-md" onClick={onClose}>
@@ -185,6 +193,11 @@ export default function TodayReservationsModal({
                 <span className="text-slate-400">{getDateHeaderLabel(date)}</span>
                 <span className="text-slate-300">|</span>
                 <span className="text-blue-600">{TEXT.healthShort} {reservations.length}{TEXT.count}</span>
+                {kenshinTodoCount > 0 && (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-black text-amber-600">
+                    {TEXT.kenshinTodo} {kenshinTodoCount}{TEXT.count}
+                  </span>
+                )}
                 <span className="text-slate-400">/</span>
                 <span className="text-emerald-600">GF {gfReservations.length}{TEXT.count}</span>
                 <span className="text-slate-400">/</span>
@@ -213,7 +226,12 @@ export default function TodayReservationsModal({
                   <EmptyRow text={TEXT.healthEmpty} />
                 ) : (
                   reservations.map(reservation => (
-                    <HealthRow key={reservation.id} reservation={reservation} onSelect={onSelect} />
+                    <HealthRow
+                      key={reservation.id}
+                      reservation={reservation}
+                      onSelect={onSelect}
+                      kenshinDone={hasKenshinRecord(reservation)}
+                    />
                   ))
                 )}
               </Section>

@@ -131,6 +131,10 @@ export default function App() {
   const [showResultSuggestions, setShowResultSuggestions] = useState(false);
   const [resultSearching, setResultSearching] = useState(false);
   const [selectedKenshinReservation, setSelectedKenshinReservation] = useState(null);
+  // 編集中の診断書のレコードID（保存時に insert / update を切り替えて重複作成を防ぐ）
+  const [kenshinRecordId, setKenshinRecordId] = useState(null);
+  // 紐付く予約の検査項目ラベル（転記漏れ防止のため診断結果入力に表示する）
+  const [reservationExamItems, setReservationExamItems] = useState(null);
   const [birthDateInput, setBirthDateInput] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [modalQuery, setModalQuery] = useState('');
@@ -257,6 +261,8 @@ export default function App() {
   const [calendarListData, setCalendarListData] = useState([]);
   const [calendarListSortField, setCalendarListSortField] = useState('date'); // 'date' | 'fee' | 'kana' | 'registered'
   const [calendarListSortDir, setCalendarListSortDir] = useState('asc'); // 'asc' | 'desc'
+  // 診断書が作成済みの予約を判定するためのキー集合（予約ID／患者ID＋健診日）
+  const [kenshinDoneKeys, setKenshinDoneKeys] = useState({ reservIds: new Set(), patientDates: new Set() });
   const [calendarPurpose, setCalendarPurpose] = useState(''); // 健診目的フィルタ（''=すべて）
   const [calendarDateFrom, setCalendarDateFrom] = useState('');
   const [calendarDateTo, setCalendarDateTo] = useState('');
@@ -949,6 +955,13 @@ export default function App() {
     r.item_mrsa && 'MRSA',
   ].filter(Boolean);
 
+  // 予約に対する診断書が作成済みか（予約IDでの紐付け、または患者ID＋健診日の一致で判定）
+  const hasKenshinRecord = (r) => {
+    if (!r) return false;
+    if (r.id && kenshinDoneKeys.reservIds.has(r.id)) return true;
+    return !!r.patient_id && !!r.date && kenshinDoneKeys.patientDates.has(`${r.patient_id}|${r.date}`);
+  };
+
   const formatReservationFee = (fee) => {
     return formatYenAmount(fee) || '-';
   };
@@ -1277,6 +1290,7 @@ export default function App() {
     setTodayEndoscopyReservations([]);
     setTodayReservationsError('');
     setTodayReservationsLoading(true);
+    fetchKenshinDoneKeys();
 
     const healthQuery = supabase
       .from('health_reserv')
@@ -1356,6 +1370,50 @@ export default function App() {
     openTodayReservationsModal();
   }, [session]);
 
+  // 診断書の作成状況を取得（カレンダー・本日一覧の「作成済み」表示に使う）
+  // range を渡すとカレンダー既定期間との和集合で取得する（一覧の期間指定が既定より広い場合に対応）
+  const fetchKenshinDoneKeys = async (range = null) => {
+    if (!session) return;
+    const base = getCalendarDataRange();
+    const start = range?.start && range.start < base.start ? range.start : base.start;
+    const end = range?.end && range.end > base.end ? range.end : base.end;
+    const { data, error } = await supabase
+      .from('health_data')
+      .select('reserv_id, k_id, k_date')
+      .gte('k_date', start)
+      .lte('k_date', end);
+    if (error) {
+      console.error('診断書の作成状況の取得に失敗:', error);
+      return;
+    }
+    const reservIds = new Set();
+    const patientDates = new Set();
+    (data || []).forEach(row => {
+      if (row.reserv_id) reservIds.add(row.reserv_id);
+      if (row.k_id && row.k_date) patientDates.add(`${row.k_id}|${row.k_date}`);
+    });
+    setKenshinDoneKeys({ reservIds, patientDates });
+  };
+
+  // 紐付く予約の検査項目を取得（記録用紙と同じ実施項目を診断結果入力に表示する）
+  const fetchReservationExamItems = async (reservId) => {
+    if (!reservId) {
+      setReservationExamItems(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('purpose, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa')
+      .eq('id', reservId)
+      .maybeSingle();
+    if (error || !data) {
+      // 予約が1年経過で削除済みの場合もここに来る（診断書自体は保存済みなので警告は出さない）
+      setReservationExamItems(null);
+      return;
+    }
+    setReservationExamItems(getReservationItemLabels(data));
+  };
+
   // カレンダーデータ取得
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
     if (!session) {
@@ -1386,6 +1444,7 @@ export default function App() {
     }
     setCalendarLoading(false);
     setCalendarHasLoaded(true);
+    fetchKenshinDoneKeys();
   };
 
   const fetchCalendarListData = async (companyId = calendarCompanyId) => {
@@ -1400,6 +1459,7 @@ export default function App() {
     const hasDateRange = calendarDateFrom || calendarDateTo;
     const start = hasDateRange ? (calendarDateFrom || '1900-01-01') : defaultRange.start;
     const end = hasDateRange ? (calendarDateTo || '2999-12-31') : defaultRange.end;
+    fetchKenshinDoneKeys({ start, end });
     let query = supabase
       .from('health_reserv')
       .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
@@ -2297,7 +2357,10 @@ export default function App() {
         if (error) { console.error(error); showNotice('削除に失敗しました'); return; }
         setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
         setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
+        // 編集中の診断書を削除した場合は、次回保存が新規作成になるようIDを外す
+        if (kenshinRecordId === r.id) setKenshinRecordId(null);
         markBackupDirty();
+        fetchKenshinDoneKeys();
       },
     });
   };
@@ -2305,12 +2368,15 @@ export default function App() {
   // 診断書検索から選択してkenshinDataに復元
   const handleSelectKenshinRecord = (r) => {
     const loadedCompany = resolveLoadedHealthCompany(r.company_id, r.k_company_name);
+    // 以後の保存はこのレコードの更新にする（同じ診断書が増えないようにする）
+    setKenshinRecordId(r.id || null);
     setSelectedKenshinReservation(r.reserv_id ? {
       id: r.reserv_id,
       date: r.k_date || '',
       name: r.k_name || '',
       purpose: '',
     } : null);
+    fetchReservationExamItems(r.reserv_id || null);
     setKenshinData({
       kDate: r.k_date || '', kId: r.k_id || '', kName: r.k_name || '', kYurigana: r.k_yurigana || '',
       kBirthDate: r.k_birth_date || '', kAge: r.k_age != null ? String(r.k_age) : '',
@@ -2357,6 +2423,23 @@ export default function App() {
     setKenshinModalQuery('');
     setLeftTab('result');
     setRightTab('kenshin');
+  };
+
+  // 更新すべき既存の診断書レコードIDを解決する（重複作成の防止）
+  // 1) 画面で読み込み済みのID → 2) 紐付く予約 → 3) 患者ID＋健診日 の順に探す
+  const resolveKenshinRecordId = async (d, reservId) => {
+    if (kenshinRecordId) return kenshinRecordId;
+    if (reservId) {
+      const { data, error } = await supabase
+        .from('health_data').select('id').eq('reserv_id', reservId).limit(1);
+      if (!error && data && data.length > 0) return data[0].id;
+    }
+    if (d.kId && d.kDate) {
+      const { data, error } = await supabase
+        .from('health_data').select('id').eq('k_id', d.kId).eq('k_date', d.kDate).limit(1);
+      if (!error && data && data.length > 0) return data[0].id;
+    }
+    return null;
   };
 
   // 健康診断結果をSupabaseに保存
@@ -2418,14 +2501,32 @@ export default function App() {
       user_id: session?.user?.id,
       updated_at: new Date().toISOString(),
     };
-    const { error } = d.kId && d.kDate
-      ? await supabase.from('health_data').upsert(record, { onConflict: 'k_id,k_date' })
-      : await supabase.from('health_data').insert(record);
+    // 患者IDが無い受診者でも二重登録にならないよう、既存レコードがあれば update する
+    const targetId = await resolveKenshinRecordId(d, selectedKenshinReservation?.id || null);
+    let savedRow = null;
+    let error = null;
+    if (targetId) {
+      const res = await supabase.from('health_data').update(record).eq('id', targetId).select('id').maybeSingle();
+      savedRow = res.data;
+      error = res.error;
+      // 他端末で削除済みなどで対象行が無い場合は、入力内容を失わないよう新規作成に切り替える
+      if (!error && !savedRow) {
+        const retry = await supabase.from('health_data').insert(record).select('id').single();
+        savedRow = retry.data;
+        error = retry.error;
+      }
+    } else {
+      const res = await supabase.from('health_data').insert(record).select('id').single();
+      savedRow = res.data;
+      error = res.error;
+    }
     if (error) { console.error(error); setKenshinSaveStatus('error'); }
     else {
+      setKenshinRecordId(savedRow?.id ?? targetId);
       setKenshinData(prev => ({ ...prev, kCompanyId: company.id || '', kCompanyName: company.name || '' }));
       setKenshinSaveStatus('saved');
       markBackupDirty();
+      fetchKenshinDoneKeys();
     }
     setTimeout(() => setKenshinSaveStatus(''), 3000);
   };
@@ -2458,15 +2559,36 @@ export default function App() {
       address: p.address || '',
     }));
     if (iso) setKenshinBirthDateInput(iso);
+    // 患者マスタからの選択は新規作成扱い（同一患者・同一健診日の既存分は保存時に更新される）
+    setKenshinRecordId(null);
     setSelectedKenshinReservation(null);
+    setReservationExamItems(null);
     setResultQuery('');
     setShowResultSuggestions(false);
   };
 
   // 診断結果入力用：予約から選択
-  const handleSelectKenshinReservation = (r) => {
+  const handleSelectKenshinReservation = async (r) => {
+    // 既にこの予約の診断書がある場合は新規作成せず既存を読み込む
+    const { data: existing } = await supabase
+      .from('health_data').select('*').eq('reserv_id', r.id).limit(1);
+    if (existing && existing.length > 0) {
+      handleSelectKenshinRecord(existing[0]);
+      setSelectedKenshinReservation({
+        id: r.id,
+        date: r.date || '',
+        name: r.patient_name || '',
+        purpose: r.purpose || '',
+      });
+      setResultQuery('');
+      setShowResultSuggestions(false);
+      showNotice('この予約の診断書は作成済みです。既存の内容を読み込みました。');
+      return;
+    }
+
     const iso = r.birth_date ? parseDobToISO(r.birth_date) : '';
     const loadedCompany = resolveLoadedHealthCompany(r.company_id, r.company_name);
+    setKenshinRecordId(null);
     setKenshinData(prev => ({
       ...prev,
       kDate: r.date || prev.kDate,
@@ -2487,6 +2609,8 @@ export default function App() {
       name: r.patient_name || '',
       purpose: r.purpose || '',
     });
+    // 予約検索の結果には item_* 列が含まれないため、改めて取得する
+    fetchReservationExamItems(r.id);
     setResultQuery('');
     setShowResultSuggestions(false);
   };
@@ -2499,6 +2623,8 @@ export default function App() {
     setResultSuggestions([]);
     setShowResultSuggestions(false);
     setSelectedKenshinReservation(null);
+    setKenshinRecordId(null);
+    setReservationExamItems(null);
     setBirthDateInput('');
     setKenshinBirthDateInput('');
     setEditingReservationId(null);
@@ -3280,17 +3406,30 @@ export default function App() {
                         )}
                       </div>
                       {selectedKenshinReservation && (
-                        <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-800">
-                          <span className="font-bold">
-                            選択中の予約：{selectedKenshinReservation.name || '氏名未入力'} / {selectedKenshinReservation.date ? selectedKenshinReservation.date.replace(/-/g, '/') : '日付未入力'}{selectedKenshinReservation.purpose ? ` / ${selectedKenshinReservation.purpose}` : ''}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedKenshinReservation(null)}
-                            className="text-emerald-700 hover:text-emerald-900 font-bold"
-                          >
-                            解除
-                          </button>
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-800">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-bold">
+                              選択中の予約：{selectedKenshinReservation.name || '氏名未入力'} / {selectedKenshinReservation.date ? selectedKenshinReservation.date.replace(/-/g, '/') : '日付未入力'}{selectedKenshinReservation.purpose ? ` / ${selectedKenshinReservation.purpose}` : ''}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedKenshinReservation(null);
+                                setReservationExamItems(null);
+                              }}
+                              className="shrink-0 text-emerald-700 hover:text-emerald-900 font-bold"
+                            >
+                              解除
+                            </button>
+                          </div>
+                          {reservationExamItems && reservationExamItems.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-emerald-200 pt-1.5">
+                              <span className="font-bold text-emerald-700">実施項目:</span>
+                              {reservationExamItems.map(item => (
+                                <span key={item} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">{item}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -4337,6 +4476,10 @@ export default function App() {
                                       <div className="font-black text-slate-800 truncate">{r.patient_name}</div>
                                       {r.patient_id && <div className="shrink-0 text-xs font-black text-emerald-600">ID: {r.patient_id}</div>}
                                       <div className="shrink-0 text-[11px] font-bold text-slate-600">{r.purpose}</div>
+                                      {/* 団体提出用の印刷には出さない（院内確認用の表示） */}
+                                      <div className={`company-list-print-hide ml-auto shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-black ${hasKenshinRecord(r) ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-amber-200 bg-amber-50 text-amber-600'}`}>
+                                        {hasKenshinRecord(r) ? '診断書済' : '診断書未'}
+                                      </div>
                                     </div>
                                     {(r.patient_name_kana || r.company_name) && (
                                       <div className="flex items-baseline justify-between gap-2 leading-tight">
@@ -4997,6 +5140,7 @@ export default function App() {
                 loading={todayReservationsLoading}
                 error={todayReservationsError}
                 getItemLabels={getReservationItemLabels}
+                hasKenshinRecord={hasKenshinRecord}
                 onClose={() => setShowTodayReservationsModal(false)}
                 onRefresh={fetchTodayReservations}
                 onSelect={reservation => {
