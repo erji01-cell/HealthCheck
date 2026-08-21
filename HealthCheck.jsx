@@ -1360,15 +1360,16 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    if (!session) {
-      todayReservationsModalOpenedRef.current = false;
-      return;
-    }
-    if (todayReservationsModalOpenedRef.current) return;
-    todayReservationsModalOpenedRef.current = true;
-    openTodayReservationsModal();
-  }, [session]);
+  // 起動時の自動表示は一時的に無効化中。再度有効にする場合はこのコメントを解除してください。
+  // useEffect(() => {
+  //   if (!session) {
+  //     todayReservationsModalOpenedRef.current = false;
+  //     return;
+  //   }
+  //   if (todayReservationsModalOpenedRef.current) return;
+  //   todayReservationsModalOpenedRef.current = true;
+  //   openTodayReservationsModal();
+  // }, [session]);
 
   // 診断書の作成状況を取得（カレンダー・本日一覧の「作成済み」表示に使う）
   // range を渡すとカレンダー既定期間との和集合で取得する（一覧の期間指定が既定より広い場合に対応）
