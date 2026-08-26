@@ -428,6 +428,19 @@ export default function App() {
   const getUnselectedCompanyMessage = () =>
     '団体名は候補一覧から選択してください。\n新しい団体は「団体管理」で追加してください。\n団体名なしの場合は「団体名なし」を選択してください。';
 
+  const requiresMunicipalityCompany = (purpose) =>
+    SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(purpose);
+
+  const isMunicipalityCompanySelected = (companyId, companyName) => {
+    if (!companyId) return false;
+    const selectedCompany = healthCompanies.find(company => company.id === companyId);
+    const selectedName = normalizeCompanyName(selectedCompany?.name || companyName);
+    return /[市町村]$/.test(selectedName);
+  };
+
+  const getMunicipalityCompanyMessage = () =>
+    '長寿健診・特定健診（国保）は、団体名で市町村を選択してください。';
+
   const formatSupabaseError = (error) => {
     if (!error) return '';
     const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
@@ -1616,6 +1629,14 @@ export default function App() {
       setSaveErrorMessage(getUnselectedCompanyMessage());
       return;
     }
+    if (
+      requiresMunicipalityCompany(formData.purpose) &&
+      !isMunicipalityCompanySelected(formData.companyId, formData.companyName)
+    ) {
+      setSaveStatus('error');
+      setSaveErrorMessage(getMunicipalityCompanyMessage());
+      return;
+    }
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
@@ -1753,6 +1774,13 @@ export default function App() {
     }
     if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
       showNotice(getUnselectedCompanyMessage());
+      return;
+    }
+    if (
+      requiresMunicipalityCompany(formData.purpose) &&
+      !isMunicipalityCompanySelected(formData.companyId, formData.companyName)
+    ) {
+      showNotice(getMunicipalityCompanyMessage());
       return;
     }
     if (!formData.staffId) {
