@@ -2,10 +2,10 @@ import React from 'react';
 import { getBloodArrow, toWareki, toWareikiWithWestern, getBirthEra } from '../lib/kenshinUtils.js';
 
 // 健康診断書プレビュー（rightTab === kenshin で表示・印刷対象）
-export default function KenshinCertificate({ kenshinData, setHighlightedField }) {
+export default function KenshinCertificate({ kenshinData, setHighlightedField, blankForm = false }) {
   // 値が未入力のセルを薄いグレーで網掛け（入力済み/未入力を明確化）
   const EMPTY_BG = '#eef1f5';
-  const emptyBg = (v) => ((v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
+  const emptyBg = (v) => (!blankForm && (v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
   return (
     <>
               <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>

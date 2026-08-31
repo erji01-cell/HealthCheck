@@ -269,6 +269,8 @@ export default function App() {
   const [calendarListLoading, setCalendarListLoading] = useState(false);
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
+  const [showKenshinPrintMenu, setShowKenshinPrintMenu] = useState(false);
+  const [kenshinPrintVariant, setKenshinPrintVariant] = useState('filled');
   const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
   const [showInsuranceNumberModal, setShowInsuranceNumberModal] = useState(false);
   const [insuranceNumberValues, setInsuranceNumberValues] = useState({});
@@ -1125,6 +1127,12 @@ export default function App() {
     setTimeout(() => window.print(), 100);
   };
 
+  const startKenshinPrint = (variant) => {
+    setShowKenshinPrintMenu(false);
+    setKenshinPrintVariant(variant);
+    setTimeout(() => window.print(), 100);
+  };
+
   const openInsuranceNumberModal = (printAfterSave = false) => {
     const missingPatients = getMissingInsurancePatients();
     if (missingPatients.length === 0) {
@@ -1579,7 +1587,10 @@ export default function App() {
   }, [calendarCompanyId]);
 
   useEffect(() => {
-    const clearPrintMode = () => setPrintMode('');
+    const clearPrintMode = () => {
+      setPrintMode('');
+      setKenshinPrintVariant('filled');
+    };
     window.addEventListener('afterprint', clearPrintMode);
     return () => window.removeEventListener('afterprint', clearPrintMode);
   }, []);
@@ -4184,7 +4195,7 @@ export default function App() {
                         貼付台紙も印刷
                       </label>
                     )}
-                    <button onClick={() => window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
+                    <button onClick={() => rightTab === 'kenshin' ? setShowKenshinPrintMenu(true) : window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
                       <Printer size={14} /> 用紙印刷
                     </button>
                   </>
@@ -4955,6 +4966,60 @@ export default function App() {
               />
             )}
 
+            {/* 健康診断書の印刷内容選択 */}
+            {showKenshinPrintMenu && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 print-hide"
+                onClick={() => setShowKenshinPrintMenu(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="kenshin-print-menu-title"
+                  className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                    <h2 id="kenshin-print-menu-title" className="text-base font-black text-slate-800">診断書の印刷内容を選択</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowKenshinPrintMenu(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="閉じる"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="space-y-3 p-5">
+                    <button
+                      type="button"
+                      onClick={() => startKenshinPrint('filled')}
+                      className="flex w-full items-center gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-left hover:bg-emerald-100"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white"><ClipboardCheck size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">入力済みの診断書を印刷</span>
+                        <span className="block text-xs font-bold text-emerald-700">現在入力されている内容を印刷します</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-emerald-700" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startKenshinPrint('blank')}
+                      className="flex w-full items-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-3 text-left hover:border-blue-300 hover:bg-blue-50"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-100 text-blue-600"><Printer size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">白紙の診断書を印刷</span>
+                        <span className="block text-xs font-bold text-slate-400">入力内容のない診断書用紙を印刷します</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-slate-400" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 団体別一覧の印刷様式選択 */}
             {showCompanyPrintMenu && (
               <div
@@ -5305,7 +5370,11 @@ export default function App() {
 
             {/* ===== 健康診断書 ===== */}
             {rightTab === 'kenshin' && (
-              <KenshinCertificate kenshinData={kenshinData} setHighlightedField={setHighlightedField} />
+              <KenshinCertificate
+                kenshinData={kenshinPrintVariant === 'blank' ? kenshinInitialState : kenshinData}
+                setHighlightedField={setHighlightedField}
+                blankForm={kenshinPrintVariant === 'blank'}
+              />
             )}
 
             {/* A4帳票再現 */}
