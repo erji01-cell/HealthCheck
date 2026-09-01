@@ -8,7 +8,20 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
   const emptyBg = (v) => (!blankForm && (v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
   return (
     <>
-              <style>{`.kenshin-certificate .bg-slate-50 { background-color: #d9d9d9 !important; }`}</style>
+              <style>{`
+                .kenshin-certificate .bg-slate-50,
+                .kenshin-certificate-bessi .bg-slate-100 {
+                  background-color: #cfd2d6 !important;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
+                @media print {
+                  .kenshin-certificate .bg-slate-50,
+                  .kenshin-certificate-bessi .bg-slate-100 {
+                    background-color: #aeb4ba !important;
+                  }
+                }
+              `}</style>
               <div className="kenshin-certificate bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
@@ -292,7 +305,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                 ].some(Boolean);
                 if (!hasBessiData) return null;
                 return (
-              <div className="bessi-page-break bg-white text-black" style={{padding: '8mm 12mm', fontSize: '11px', width: '180mm', minHeight: '297mm', borderTop: '2px dashed #ccc', marginTop: '8mm'}}>
+              <div className="kenshin-certificate-bessi bessi-page-break bg-white text-black" style={{padding: '8mm 12mm', fontSize: '11px', width: '180mm', minHeight: '297mm', borderTop: '2px dashed #ccc', marginTop: '8mm'}}>
 
                 {/* 別紙タイトル */}
                 <div className="text-center font-bold text-[16px] mb-3 border-b-2 border-black pb-2 tracking-widest">別　　紙</div>
