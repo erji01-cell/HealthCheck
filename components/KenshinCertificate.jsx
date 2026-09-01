@@ -8,7 +8,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
   const emptyBg = (v) => (!blankForm && (v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
   return (
     <>
-              <div className="bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
+              <style>{`.kenshin-certificate .bg-slate-50 { background-color: #d9d9d9 !important; }`}</style>
+              <div className="kenshin-certificate bg-white shadow-2xl rounded-sm border border-slate-300 min-h-[841px] flex flex-col text-black leading-normal print-container" id="kenshin-printable" style={{padding: '8mm 12mm', fontSize: '12px', width: '180mm'}}>
 
                 {/* タイトル */}
                 <h1 className="font-bold text-center mb-4" style={{fontSize: '22px', letterSpacing: '0.25em'}}>健　康　診　断　書</h1>
