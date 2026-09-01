@@ -332,11 +332,11 @@ export default function App() {
     setConfirmDialog({ show: true, message, onConfirm: null, noticeOnly: true });
   };
 
-  // 1年以上前の予約データを自動削除
+  // 3年以上前の予約データを自動削除
   const deleteOldReservations = async () => {
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const cutoffDate = getLocalIsoDate(oneYearAgo);
+    const threeYearsAgo = new Date();
+    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+    const cutoffDate = getLocalIsoDate(threeYearsAgo);
     const { error } = await supabase.from('health_reserv').delete().lt('date', cutoffDate);
     if (error) {
       console.error('古い予約の自動削除に失敗:', error);

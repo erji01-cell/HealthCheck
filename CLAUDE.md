@@ -60,7 +60,7 @@ The DB is **shared with a separate inventory system** — don't assume every tab
 | `invent_staff` | staff list — **owned by the inventory system**, read-only here |
 | `reservations` | endoscopy bookings — **owned by the inventory system**, read-only, shown in the today's-reservations modal |
 
-`health_reserv` rows older than 1 year are auto-deleted at startup (`deleteOldReservations`).
+`health_reserv` rows older than 3 years are auto-deleted at startup (`deleteOldReservations`).
 
 ### The purpose (健診目的) system — the core domain concept
 
