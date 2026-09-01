@@ -11,14 +11,14 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
               <style>{`
                 .kenshin-certificate .bg-slate-50,
                 .kenshin-certificate-bessi .bg-slate-100 {
-                  background-color: #cfd2d6 !important;
+                  background-color: #d9dbde !important;
                   -webkit-print-color-adjust: exact;
                   print-color-adjust: exact;
                 }
                 @media print {
                   .kenshin-certificate .bg-slate-50,
                   .kenshin-certificate-bessi .bg-slate-100 {
-                    background-color: #aeb4ba !important;
+                    background-color: #c3c8cd !important;
                   }
                 }
               `}</style>
