@@ -206,7 +206,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                     </div>
 
                     {/* 胸部X-P */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2, minHeight: '20px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2.25, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>胸部X-P</div>
                       <div className="flex-1 flex flex-col justify-start p-1" style={{fontSize: '11px', ...emptyBg(kenshinData.xRayResult || kenshinData.xRayDate || kenshinData.xRayCategory)}}>
                         {[kenshinData.xRayDate ? `${toWareki(kenshinData.xRayDate)}撮影` : '', kenshinData.xRayCategory].filter(Boolean).join('　') && (
@@ -219,27 +219,9 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                     </div>
 
                     {/* 心電図 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2.25, minHeight: '20px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>心電図</div>
                       <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.ecgResult)}}>{kenshinData.ecgResult}</div>
-                    </div>
-
-                    {/* 胃内視鏡 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>胃内視鏡</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.endoscopyResult)}}>{kenshinData.endoscopyResult}</div>
-                    </div>
-
-                    {/* 腹部エコー */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '10px'}}>腹部エコー</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.echoResult)}}>{kenshinData.echoResult}</div>
-                    </div>
-
-                    {/* マンガン */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 1, minHeight: '20px'}}>
-                      <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>マンガン</div>
-                      <div className="flex-1 flex items-center px-2" style={{fontSize: '11px', ...emptyBg(kenshinData.manganeseResult)}}>{kenshinData.manganeseResult}</div>
                     </div>
 
                     {/* 尿検査 */}
@@ -261,13 +243,13 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                     </div>
 
                     {/* 診察所見 */}
-                    <div className="flex" style={{borderBottom: '1px solid black', flex: 2.5, minHeight: '22px'}}>
+                    <div className="flex" style={{borderBottom: '1px solid black', flex: 3.25, minHeight: '22px'}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>診察所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px', ...emptyBg(kenshinData.doctorFindings)}}>{kenshinData.doctorFindings}</div>
                     </div>
 
                     {/* 総合所見 */}
-                    <div className="flex" style={{flex: 2.5}}>
+                    <div className="flex" style={{flex: 3.25}}>
                       <div className="bg-slate-50 flex items-center justify-center font-bold text-center" style={{width: '58px', borderRight: '1px solid black', fontSize: '11px'}}>総合所見</div>
                       <div className="flex-1 p-2 whitespace-pre-wrap" style={{fontSize: '11px', ...emptyBg(kenshinData.overallFindings)}}>{kenshinData.overallFindings}</div>
                     </div>
@@ -276,11 +258,13 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                 </div>
 
                 {/* フッター */}
-                <div className="mt-4 flex justify-end" style={{paddingRight: '10mm'}}>
-                  <div className="space-y-1" style={{fontSize: '12px'}}>
+                <div className="mt-2 flex items-start justify-between gap-8" style={{padding: '0 4mm', fontSize: '12px'}}>
+                  <div className="space-y-1 pt-1">
                     <div>上記のとおり診断します</div>
                     {kenshinData.issueDate && <div>{toWareki(kenshinData.issueDate)}</div>}
-                    <div className="mt-2">鹿児島県志布志市志布志町志布志286-4</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div>鹿児島県志布志市志布志町志布志286-4</div>
                     <div>医療法人一斉会　陽春堂内科診療所</div>
                     <div>医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}　　㊞</div>
                   </div>
@@ -303,6 +287,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone,
                   kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid,
                   kenshinData.methanol, kenshinData.normalHexane, kenshinData.methylHippuric,
+                  kenshinData.endoscopyResult, kenshinData.echoResult, kenshinData.manganeseResult,
                   kenshinData.otherExams,
                 ].some(Boolean);
                 if (!hasBessiData) return null;
@@ -323,6 +308,18 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
 
                 {/* 追加検査結果テーブル */}
                 <div className="border border-black" style={{borderCollapse: 'collapse'}}>
+
+                  {/* 画像・特殊検査 */}
+                  {[
+                    ['胃内視鏡', kenshinData.endoscopyResult],
+                    ['腹部エコー', kenshinData.echoResult],
+                    ['マンガン', kenshinData.manganeseResult],
+                  ].map(([label, value]) => value ? (
+                    <div key={label} className="flex" style={{borderBottom: '1px solid black'}}>
+                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>{label}</div>
+                      <div className="p-2 flex-1 whitespace-pre-wrap" style={{fontSize: '12px'}}>{value}</div>
+                    </div>
+                  ) : null)}
 
                   {/* 総蛋白・ビリルビン */}
                   {[kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
