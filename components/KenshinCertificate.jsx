@@ -25,7 +25,6 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                       <div className="px-2 py-0.5" style={{fontSize: '11px', borderBottom: '1px solid black', minHeight: '20px'}}>{kenshinData.kYurigana}</div>
                       <div className="px-2 py-1 flex items-center gap-2">
                         <span className="font-bold" style={{fontSize: '17px'}}>{kenshinData.kName}</span>
-                        <span style={{fontSize: '14px'}} className="ml-1">様</span>
                         {kenshinData.kGender && <span className="ml-2 font-bold" style={{fontSize: '14px'}}>（{kenshinData.kGender}）</span>}
                       </div>
                     </div>
