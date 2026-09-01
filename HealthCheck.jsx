@@ -1963,6 +1963,20 @@ export default function App() {
     return null;
   };
 
+  // 漢字氏名は姓名間の空白なし・半角空白・全角空白をすべて検索する
+  const getPatientNameVariants = (input) => {
+    const normalized = input.normalize('NFKC').trim().replace(/\s+/g, ' ');
+    const compact = normalized.replace(/\s+/g, '');
+    if (!compact) return [];
+    const variants = [normalized, compact];
+    for (let i = 1; i < compact.length; i += 1) {
+      const familyName = compact.slice(0, i);
+      const givenName = compact.slice(i);
+      variants.push(`${familyName} ${givenName}`, `${familyName}　${givenName}`);
+    }
+    return [...new Set(variants)];
+  };
+
   // 患者検索
   useEffect(() => {
     if (!session || patientQuery.length < 1) {
@@ -1977,10 +1991,11 @@ export default function App() {
         const q = patientQuery.trim();
         const variants = getKanaVariants(q);
         const qNorm = variants[0]; // normalize('NFKC')の結果
+        const nameOr = getPatientNameVariants(q).map(v => `patient_name.ilike.%${v}%`).join(',');
         const kanaOr = variants.map(v => `patient_name_kana.ilike.%${v}%`).join(',');
         const dobCond = getDobSearchCondition(q);
         const orStr = [
-          `patient_name.ilike.%${qNorm}%`,
+          nameOr,
           `patient_id.ilike.%${qNorm}%`,
           kanaOr,
           ...(dobCond ? [dobCond] : []),
