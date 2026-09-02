@@ -9,6 +9,11 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
     : formData.purpose || '';
   const billingDisplay = getCompanyBillingLabel(formData.purpose)
     || (INSURANCE_REVIEW_PURPOSES.includes(formData.purpose) ? '保険会社請求' : '');
+  const addressTextClass = formData.address?.length > 44
+    ? 'text-[10px]'
+    : formData.address?.length > 32
+      ? 'text-[11px]'
+      : 'text-sm';
 
   return (
               <div className="bg-white shadow-2xl rounded-sm p-12 border border-slate-300 min-h-[841px] flex flex-col relative text-black leading-normal print-container" id="printable">
@@ -17,40 +22,48 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
               <div className="border-[1.5px] border-black text-sm print-table">
                 {/* 行: 健診日 + 健診目的 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
-                  <div className="flex-1 p-2 border-r-[1.5px] border-black flex items-center font-bold text-lg">
+                  <div className="w-[100px] bg-slate-100 px-2 py-1 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">健診日</div>
+                  <div className="flex-1 px-2 py-1 border-r-[1.5px] border-black flex items-center font-bold text-base">
                     {formData.date ? (() => { const [y,m,d] = formData.date.split('-'); return `${y}年${parseInt(m)}月${parseInt(d)}日`; })() : '　年　月　日'}
                     <span className="ml-4 font-normal text-sm">（{getWeekdayFromIso(formData.date) || '　曜日'}）</span>
                   </div>
-                  <div className="w-[140px] bg-slate-100 p-2 flex items-center justify-center font-bold text-sm">
+                  <div className="w-[140px] bg-slate-100 px-2 py-1 flex items-center justify-center font-bold text-sm">
                     {purposeDisplay}
                   </div>
                 </div>
 
                 {/* 行: 氏名（読み仮名上・ID右） */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">氏名</div>
-                  <div className="flex-1 px-4 py-2 flex flex-col justify-center border-r-[1.5px] border-black">
-                    <span className="text-xs text-slate-500 leading-tight">{formData.yurigana}</span>
+                  <div className="w-[100px] bg-slate-100 px-2 py-1 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">氏名</div>
+                  <div className="flex-1 px-4 py-1 flex flex-col justify-center border-r-[1.5px] border-black">
+                    <span className="text-[10px] text-slate-500 leading-tight">{formData.yurigana}</span>
                     <div className="flex items-baseline gap-3">
-                      <span className="text-xl font-bold">{formData.name}</span>
+                      <span className="text-lg font-bold">{formData.name}</span>
                       <span className="text-sm font-normal">様</span>
                     </div>
                   </div>
-                  <div className="print-id w-[140px] p-2 flex items-center justify-center text-[21px] font-mono">
+                  <div className="print-id w-[140px] px-2 py-1 flex items-center justify-center text-[19px] font-mono">
                     {formData.id ? `ID: ${formData.id}` : ''}
                   </div>
                 </div>
 
                 {/* 行: 生年月日 */}
                 <div className="flex border-b-[1.5px] border-black">
-                  <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
-                  <div className="flex-1 p-2 flex justify-between items-center pr-6">
-                    <span className="text-lg">{formData.birthDate ? formatDobDisplay(formData.birthDate) : '　　　年　月　日'}</span>
+                  <div className="w-[100px] bg-slate-100 px-2 py-1 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">生年月日</div>
+                  <div className="flex-1 px-2 py-1 flex justify-between items-center pr-6">
+                    <span className="text-base">{formData.birthDate ? formatDobDisplay(formData.birthDate) : '　　　年　月　日'}</span>
                     <div className="flex items-center gap-6">
-                      <span className="text-lg font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
-                      <span className="text-lg font-bold">{formData.gender || ''}</span>
+                      <span className="text-base font-bold">{formData.age} <span className="text-xs font-normal">歳</span></span>
+                      <span className="text-base font-bold">{formData.gender || ''}</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* 行: 住所 */}
+                <div className="flex border-b-[1.5px] border-black">
+                  <div className="w-[100px] bg-slate-100 px-2 py-1 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">住所</div>
+                  <div className={`flex-1 px-2 py-1 flex items-center whitespace-nowrap ${addressTextClass}`}>
+                    {formData.address || '　'}
                   </div>
                 </div>
 

@@ -5585,7 +5585,7 @@ export default function App() {
           .vision-hearing-item span { font-size: 12px !important; }
           .vision-hearing-val { min-width: 63px !important; font-size: 16px !important; }
           .hearing-label { min-width: 48px !important; width: auto !important; }
-          .print-id { font-size: 21px !important; }
+          .print-id { font-size: 19px !important; }
           .bp-title { font-size: 12px !important; }
           .print-table { border: 1.5px solid black !important; }
           .print-table > div { border-bottom: 1.5px solid black !important; }
