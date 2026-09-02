@@ -3119,6 +3119,24 @@ export default function App() {
                       </select>
                     </div>
                   </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="患者住所を入力"
+                      className="w-full rounded-lg border p-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(formData.purpose) && (
+                      <p className={`text-xs font-bold ${inferMunicipalityFromAddress(formData.address) ? 'text-teal-700' : 'text-amber-600'}`}>
+                        {inferMunicipalityFromAddress(formData.address)
+                          ? `市町村判定: ${inferMunicipalityFromAddress(formData.address)}`
+                          : '市町村判定: 不明（住所を確認してください）'}
+                      </p>
+                    )}
+                  </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">連絡先電話番号</label>
                     <input type="text" name="contact" value={formData.contact} onChange={handleChange} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -3137,24 +3155,6 @@ export default function App() {
                       focusClass: 'focus:ring-2 focus:ring-blue-500',
                       inputRef: reservationCompanyRef,
                     })}
-                  </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      placeholder="患者住所を入力"
-                      className="w-full rounded-lg border p-2 outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(formData.purpose) && (
-                      <p className={`text-xs font-bold ${inferMunicipalityFromAddress(formData.address) ? 'text-teal-700' : 'text-amber-600'}`}>
-                        {inferMunicipalityFromAddress(formData.address)
-                          ? `市町村判定: ${inferMunicipalityFromAddress(formData.address)}`
-                          : '市町村判定: 不明（住所を確認してください）'}
-                      </p>
-                    )}
                   </div>
                 </div>
 
