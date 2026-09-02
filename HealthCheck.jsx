@@ -46,6 +46,10 @@ import AttachmentSheet from './components/AttachmentSheet.jsx';
 import SpecificHealthRoster from './components/SpecificHealthRoster.jsx';
 import InsuranceNumberModal from './components/InsuranceNumberModal.jsx';
 import {
+  getReservationMunicipality,
+  inferMunicipalityFromAddress,
+} from './lib/municipality.js';
+import {
   getBloodArrow,
   kenshinInitialState,
   getWeekdayFromIso,
@@ -168,6 +172,7 @@ export default function App() {
     age: '',
     gender: '',
     contact: '',
+    address: '',
     companyName: '',
     companyId: '',
     purpose: '就職',
@@ -432,19 +437,6 @@ export default function App() {
   const getUnselectedCompanyMessage = () =>
     '団体名は候補一覧から選択してください。\n新しい団体は「団体管理」で追加してください。\n団体名なしの場合は「団体名なし」を選択してください。';
 
-  const requiresMunicipalityCompany = (purpose) =>
-    SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(purpose);
-
-  const isMunicipalityCompanySelected = (companyId, companyName) => {
-    if (!companyId) return false;
-    const selectedCompany = healthCompanies.find(company => company.id === companyId);
-    const selectedName = normalizeCompanyName(selectedCompany?.name || companyName);
-    return /[市町村]$/.test(selectedName);
-  };
-
-  const getMunicipalityCompanyMessage = () =>
-    '長寿健診・特定健診（国保）は、団体名で市町村を選択してください。';
-
   const formatSupabaseError = (error) => {
     if (!error) return '';
     const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
@@ -458,7 +450,7 @@ export default function App() {
 
   const HEALTH_RESERV_SAVE_COLUMNS = new Set([
     'date', 'day_of_week', 'patient_id', 'patient_name', 'patient_name_kana', 'patient_gender',
-    'birth_date', 'age', 'contact', 'company_id', 'company_name', 'purpose',
+    'birth_date', 'age', 'contact', 'address', 'company_id', 'company_name', 'purpose',
     'item_height_weight', 'item_abdominal_girth', 'item_blood_pressure', 'item_vision',
     'item_color_vision', 'item_pulse', 'item_hearing', 'item_urine', 'item_x_ray', 'item_ecg',
     'item_blood', 'item_blood_kuritas_regular', 'item_blood_kuritas_specific',
@@ -1120,7 +1112,19 @@ export default function App() {
   const getSpecificHealthRosterData = () => calendarListData
     .filter(matchesCalendarDateRange)
     .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
+    .map(reservation => {
+      const municipality = getReservationMunicipality(reservation);
+      return {
+        ...reservation,
+        municipality_name: municipality.name,
+        municipality_source: municipality.source,
+      };
+    })
     .sort(compareSpecificHealthRosterRows);
+
+  const getUnknownMunicipalityRosterCount = () => getSpecificHealthRosterData()
+    .filter(reservation => reservation.municipality_source === 'unknown')
+    .length;
 
   const normalizeInsuranceNumber = (value) => String(value || '')
     .replace(/[０-９]/g, digit => String.fromCharCode(digit.charCodeAt(0) - 0xFEE0))
@@ -1513,7 +1517,7 @@ export default function App() {
     fetchKenshinDoneKeys({ start, end });
     let query = supabase
       .from('health_reserv')
-      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, address, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .gte('date', start)
       .lte('date', end);
     // 団体未選択（すべての団体）の場合はフィルタなし
@@ -1669,14 +1673,6 @@ export default function App() {
       setSaveErrorMessage(getUnselectedCompanyMessage());
       return;
     }
-    if (
-      requiresMunicipalityCompany(formData.purpose) &&
-      !isMunicipalityCompanySelected(formData.companyId, formData.companyName)
-    ) {
-      setSaveStatus('error');
-      setSaveErrorMessage(getMunicipalityCompanyMessage());
-      return;
-    }
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
@@ -1695,6 +1691,7 @@ export default function App() {
       birth_date: formData.birthDate ? formData.birthDate.replace(/-/g, '') : null,
       age: formData.age,
       contact: formData.contact,
+      address: formData.address,
       company_id: company.id,
       company_name: company.name,
       purpose: formData.purpose,
@@ -1791,7 +1788,7 @@ export default function App() {
             patient_name_kana: formData.yurigana || '',
             patient_dob: formData.birthDate ? formData.birthDate.replace(/-/g, '') : '',
             zipcode: '',
-            address: '',
+            address: formData.address || '',
             phone_number: formData.contact || '',
           });
           if (patientInsertError) {
@@ -1814,13 +1811,6 @@ export default function App() {
     }
     if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
       showNotice(getUnselectedCompanyMessage());
-      return;
-    }
-    if (
-      requiresMunicipalityCompany(formData.purpose) &&
-      !isMunicipalityCompanySelected(formData.companyId, formData.companyName)
-    ) {
-      showNotice(getMunicipalityCompanyMessage());
       return;
     }
     if (!formData.staffId) {
@@ -2111,7 +2101,7 @@ export default function App() {
           ];
           const { data, error } = await supabase
             .from('health_reserv')
-            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, company_id, company_name, purpose, pulse')
+            .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, contact, address, company_id, company_name, purpose, pulse')
             .or(orParts.join(','))
             .order('date', { ascending: false })
             .limit(100);
@@ -2263,6 +2253,7 @@ export default function App() {
       birthDate: iso,
       gender: patient.patient_gender || '',
       contact: patient.phone_number || '',
+      address: patient.address || '',
     }));
     setBirthDateInput(iso);
     setPatientQuery(patient.patient_name || '');
@@ -2682,6 +2673,7 @@ export default function App() {
       kBirthDate: iso,
       kGender: r.patient_gender || '',
       kContact: r.contact || '',
+      address: r.address || '',
       kCompanyName: loadedCompany.name || '',
       kCompanyId: loadedCompany.id || '',
       pulse: r.pulse || prev.pulse,
@@ -2786,6 +2778,7 @@ export default function App() {
       birthDate: birthDateIso,
       age: data.age || '',
       contact: data.contact || '',
+      address: data.address || '',
       companyName: loadedCompany.name || '',
       companyId: loadedCompany.id || '',
       purpose: loadedPurpose,
@@ -3144,6 +3137,24 @@ export default function App() {
                       focusClass: 'focus:ring-2 focus:ring-blue-500',
                       inputRef: reservationCompanyRef,
                     })}
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="患者住所を入力"
+                      className="w-full rounded-lg border p-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(formData.purpose) && (
+                      <p className={`text-xs font-bold ${inferMunicipalityFromAddress(formData.address) ? 'text-teal-700' : 'text-amber-600'}`}>
+                        {inferMunicipalityFromAddress(formData.address)
+                          ? `市町村判定: ${inferMunicipalityFromAddress(formData.address)}`
+                          : '市町村判定: 不明（住所を確認してください）'}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -5136,7 +5147,7 @@ export default function App() {
                   <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <div>
                       <h2 id="specific-roster-sort-title" className="text-base font-black text-slate-800">名簿の印刷順を選択</h2>
-                      <p className="mt-1 text-xs font-bold text-slate-400">各団体の名簿内で並び替えます</p>
+                      <p className="mt-1 text-xs font-bold text-slate-400">各市町村の名簿内で並び替えます</p>
                     </div>
                     <button
                       type="button"
@@ -5148,6 +5159,11 @@ export default function App() {
                     </button>
                   </div>
                   <div className="space-y-2 p-5">
+                    {getUnknownMunicipalityRosterCount() > 0 && (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+                        市町村を判定できない受診者が{getUnknownMunicipalityRosterCount()}名います。「市町村不明」の名簿に出力されます。
+                      </div>
+                    )}
                     {[
                       { value: 'date', label: '日付順', description: '健診日の古い順' },
                       { value: 'purposeDate', label: '健診種類・日付順', description: '特定健診(国保) → 長寿健診、それぞれ日付順' },

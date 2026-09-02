@@ -18,20 +18,24 @@ const formatInsuranceNumber = (value) => String(value || '')
 const buildRosterPages = (reservations) => {
   const groups = new Map();
   reservations.forEach((reservation) => {
-    const companyKey = reservation.company_id || reservation.company_name || '__no_company__';
-    if (!groups.has(companyKey)) groups.set(companyKey, []);
-    groups.get(companyKey).push(reservation);
+    const municipalityName = reservation.municipality_name || '市町村不明';
+    if (!groups.has(municipalityName)) groups.set(municipalityName, []);
+    groups.get(municipalityName).push(reservation);
   });
 
   return [...groups.entries()]
-    .sort(([, a], [, b]) => String(a[0]?.company_name || '').localeCompare(String(b[0]?.company_name || ''), 'ja'))
-    .flatMap(([companyKey, rows]) => {
+    .sort(([a], [b]) => {
+      if (a === '市町村不明') return 1;
+      if (b === '市町村不明') return -1;
+      return String(a).localeCompare(String(b), 'ja');
+    })
+    .flatMap(([municipalityName, rows]) => {
       const pageCount = Math.ceil(rows.length / PAGE_SIZE);
       return Array.from({ length: pageCount }, (_, pageIndex) => {
         const pageRows = rows.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
         return {
-          key: `${companyKey}-${pageIndex}`,
-          companyName: rows[0]?.company_name || '団体名なし',
+          key: `${municipalityName}-${pageIndex}`,
+          municipalityName,
           pageIndex,
           pageCount,
           totalCount: rows.length,
@@ -58,7 +62,7 @@ export default function SpecificHealthRoster({ reservations, formatBirthDate }) 
           <header className="specific-health-roster-header">
             <div>
               <h1>特定健診受診者名簿</h1>
-              <div className="specific-health-roster-company">{page.companyName}</div>
+              <div className="specific-health-roster-company">{page.municipalityName}</div>
             </div>
             <div className="specific-health-roster-provider">
               <span>医療機関名</span>
