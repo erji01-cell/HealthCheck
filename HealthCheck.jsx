@@ -272,6 +272,8 @@ export default function App() {
   const [showKenshinPrintMenu, setShowKenshinPrintMenu] = useState(false);
   const [kenshinPrintVariant, setKenshinPrintVariant] = useState('filled');
   const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
+  const [showSpecificRosterSortMenu, setShowSpecificRosterSortMenu] = useState(false);
+  const [specificRosterSortOrder, setSpecificRosterSortOrder] = useState('date');
   const [showInsuranceNumberModal, setShowInsuranceNumberModal] = useState(false);
   const [insuranceNumberValues, setInsuranceNumberValues] = useState({});
   const [insuranceNumberSaving, setInsuranceNumberSaving] = useState(false);
@@ -1094,10 +1096,31 @@ export default function App() {
     return `${company.display_no != null ? `${company.display_no} ` : ''}${company.name}`;
   };
 
+  const compareSpecificHealthRosterRows = (a, b) => {
+    const compareDate = () =>
+      String(a.date || '').localeCompare(String(b.date || ''));
+    const compareName = () =>
+      String(a.patient_name_kana || a.patient_name || '').localeCompare(
+        String(b.patient_name_kana || b.patient_name || ''),
+        'ja'
+      );
+
+    if (specificRosterSortOrder === 'purposeDate') {
+      const purposeOrder = { '特定健診(国保)': 0, '長寿健診': 1 };
+      return (purposeOrder[a.purpose] ?? 99) - (purposeOrder[b.purpose] ?? 99)
+        || compareDate()
+        || compareName();
+    }
+    if (specificRosterSortOrder === 'name') {
+      return compareName() || compareDate();
+    }
+    return compareDate() || compareName();
+  };
+
   const getSpecificHealthRosterData = () => calendarListData
     .filter(matchesCalendarDateRange)
     .filter(r => SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(r.purpose))
-    .sort(compareCalendarListByDate);
+    .sort(compareSpecificHealthRosterRows);
 
   const normalizeInsuranceNumber = (value) => String(value || '')
     .replace(/[０-９]/g, digit => String.fromCharCode(digit.charCodeAt(0) - 0xFEE0))
@@ -1280,11 +1303,17 @@ export default function App() {
   const handlePrintCompanyList = (mode = 'companyList') => {
     if (calendarViewMode !== 'list') return;
     if (mode === 'specificHealthRoster' && getSpecificHealthRosterData().length === 0) return;
-    if (mode === 'specificHealthRoster' && getMissingInsurancePatients().length > 0) {
-      openInsuranceNumberModal(true);
+    if (mode === 'specificHealthRoster') {
+      setShowCompanyPrintMenu(false);
+      setShowSpecificRosterSortMenu(true);
       return;
     }
     startCompanyListPrint(mode);
+  };
+
+  const confirmSpecificRosterPrint = () => {
+    setShowSpecificRosterSortMenu(false);
+    openInsuranceNumberModal(true);
   };
 
   const fetchReservationDetailById = async (reservationId) => {
@@ -5085,6 +5114,82 @@ export default function App() {
                         <span className="block text-xs font-bold text-emerald-700">特定健診(国保)・長寿健診　{getSpecificHealthRosterData().length}件</span>
                       </span>
                       <Printer size={17} className="shrink-0 text-emerald-700" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 特定健診受診者名簿の印刷順選択 */}
+            {showSpecificRosterSortMenu && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 print-hide"
+                onClick={() => setShowSpecificRosterSortMenu(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="specific-roster-sort-title"
+                  className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                    <div>
+                      <h2 id="specific-roster-sort-title" className="text-base font-black text-slate-800">名簿の印刷順を選択</h2>
+                      <p className="mt-1 text-xs font-bold text-slate-400">各団体の名簿内で並び替えます</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSpecificRosterSortMenu(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="閉じる"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="space-y-2 p-5">
+                    {[
+                      { value: 'date', label: '日付順', description: '健診日の古い順' },
+                      { value: 'purposeDate', label: '健診種類・日付順', description: '特定健診(国保) → 長寿健診、それぞれ日付順' },
+                      { value: 'name', label: '名前順', description: 'ヨミガナ（未登録の場合は氏名）の五十音順' },
+                    ].map(option => (
+                      <label
+                        key={option.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                          specificRosterSortOrder === option.value
+                            ? 'border-emerald-400 bg-emerald-50'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="specific-roster-sort-order"
+                          value={option.value}
+                          checked={specificRosterSortOrder === option.value}
+                          onChange={() => setSpecificRosterSortOrder(option.value)}
+                          className="h-4 w-4 accent-emerald-600"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-black text-slate-800">{option.label}</span>
+                          <span className="block text-xs font-bold text-slate-400">{option.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowSpecificRosterSortMenu(false)}
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmSpecificRosterPrint}
+                      className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-black text-white hover:bg-emerald-700"
+                    >
+                      <Printer size={16} /> 印刷へ進む
                     </button>
                   </div>
                 </div>
