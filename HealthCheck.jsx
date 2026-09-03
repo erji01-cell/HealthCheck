@@ -437,6 +437,15 @@ export default function App() {
   const getUnselectedCompanyMessage = () =>
     '団体名は候補一覧から選択してください。\n新しい団体は「団体管理」で追加してください。\n団体名なしの場合は「団体名なし」を選択してください。';
 
+  const requiresMunicipalityAddress = (purpose) =>
+    SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(purpose);
+
+  const hasMunicipalityAddress = (address) =>
+    !!inferMunicipalityFromAddress(address);
+
+  const getMunicipalityAddressMessage = () =>
+    '長寿健診・特定健診（国保）は、住所欄に市町村まで入力してください。';
+
   const formatSupabaseError = (error) => {
     if (!error) return '';
     const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
@@ -1673,6 +1682,14 @@ export default function App() {
       setSaveErrorMessage(getUnselectedCompanyMessage());
       return;
     }
+    if (
+      requiresMunicipalityAddress(formData.purpose) &&
+      !hasMunicipalityAddress(formData.address)
+    ) {
+      setSaveStatus('error');
+      setSaveErrorMessage(getMunicipalityAddressMessage());
+      return;
+    }
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const { items } = formData;
@@ -1811,6 +1828,13 @@ export default function App() {
     }
     if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
       showNotice(getUnselectedCompanyMessage());
+      return;
+    }
+    if (
+      requiresMunicipalityAddress(formData.purpose) &&
+      !hasMunicipalityAddress(formData.address)
+    ) {
+      showNotice(getMunicipalityAddressMessage());
       return;
     }
     if (!formData.staffId) {
@@ -3120,20 +3144,31 @@ export default function App() {
                     </div>
                   </div>
                   <div className="space-y-1 md:col-span-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase">住所</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase">
+                      住所
+                      {requiresMunicipalityAddress(formData.purpose) && (
+                        <span className="ml-2 text-red-500">市町村まで必須</span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
                       placeholder="患者住所を入力"
-                      className="w-full rounded-lg border p-2 outline-none focus:ring-2 focus:ring-blue-500"
+                      required={requiresMunicipalityAddress(formData.purpose)}
+                      aria-invalid={requiresMunicipalityAddress(formData.purpose) && !hasMunicipalityAddress(formData.address)}
+                      className={`w-full rounded-lg border p-2 outline-none focus:ring-2 focus:ring-blue-500 ${
+                        requiresMunicipalityAddress(formData.purpose) && !hasMunicipalityAddress(formData.address)
+                          ? 'border-amber-400 bg-amber-50'
+                          : ''
+                      }`}
                     />
                     {SPECIFIC_HEALTH_ROSTER_PURPOSES.includes(formData.purpose) && (
                       <p className={`text-xs font-bold ${inferMunicipalityFromAddress(formData.address) ? 'text-teal-700' : 'text-amber-600'}`}>
                         {inferMunicipalityFromAddress(formData.address)
                           ? `市町村判定: ${inferMunicipalityFromAddress(formData.address)}`
-                          : '市町村判定: 不明（住所を確認してください）'}
+                          : '市町村判定: 不明（市町村まで入力してください）'}
                       </p>
                     )}
                   </div>
