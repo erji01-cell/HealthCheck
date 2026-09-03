@@ -37,6 +37,58 @@ function formatDate(value) {
   return match ? `${match[1]}/${match[2]}/${match[3]}` : String(value || '-');
 }
 
+const reservationSummaryFields = [
+  { label: '健診日', getValue: (row) => formatDate(row?.date) },
+  { label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
+  { label: '団体名', getValue: (row) => String(row?.company_name || '団体名なし') },
+  { label: '健診目的', getValue: (row) => String(row?.purpose || '-') },
+  { label: '担当者', getValue: (row) => String(row?.staff_name || '-') },
+];
+
+function buildReservationSummaryTable(eventType, record, oldRecord) {
+  const tableStyle = 'border-collapse:collapse;width:100%;max-width:720px';
+  const headerStyle = 'background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left';
+  const cellStyle = 'border:1px solid #cbd5e1;padding:8px 12px';
+
+  if (eventType === 'UPDATE' && oldRecord) {
+    const rows = reservationSummaryFields.map((field) => {
+      const before = field.getValue(oldRecord);
+      const after = field.getValue(record);
+      const changedStyle = before !== after ? ';background:#fef3c7;font-weight:700' : '';
+      return `
+        <tr>
+          <th style="${headerStyle}">${escapeHtml(field.label)}</th>
+          <td style="${cellStyle}${changedStyle}">${escapeHtml(before)}</td>
+          <td style="${cellStyle}${changedStyle}">${escapeHtml(after)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <table style="${tableStyle}">
+        <thead>
+          <tr>
+            <th style="${headerStyle}">項目</th>
+            <th style="${headerStyle}">修正前</th>
+            <th style="${headerStyle}">修正後</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin:8px 0 0;color:#92400e;font-size:12px">変更された項目を薄い黄色で表示しています。</p>
+    `;
+  }
+
+  const rows = reservationSummaryFields.map((field) => `
+    <tr>
+      <th style="${headerStyle}">${escapeHtml(field.label)}</th>
+      <td style="${cellStyle}">${escapeHtml(field.getValue(record))}</td>
+    </tr>
+  `).join('');
+
+  return `<table style="${tableStyle}"><tbody>${rows}</tbody></table>`;
+}
+
 async function writeAuditLog(entry) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -105,6 +157,7 @@ Deno.serve(async (request) => {
 
   const eventLabel = eventType === 'INSERT' ? '新規予約' : '予約修正';
   const reservationDate = formatDate(record.date);
+  const reservationSummaryTable = buildReservationSummaryTable(eventType, record, oldRecord);
   const recipients = notificationEmail
     .split(',')
     .map((value) => value.trim())
@@ -139,15 +192,7 @@ Deno.serve(async (request) => {
       html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.7">
           <h2 style="margin: 0 0 16px">${eventLabel}がありました</h2>
-          <table style="border-collapse: collapse; width: 100%; max-width: 640px">
-            <tbody>
-              <tr><th style="background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left">健診日</th><td style="border:1px solid #cbd5e1;padding:8px 12px">${escapeHtml(reservationDate)}</td></tr>
-              <tr><th style="background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left">氏名</th><td style="border:1px solid #cbd5e1;padding:8px 12px">${escapeHtml(record.patient_name || '-')}</td></tr>
-              <tr><th style="background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left">団体名</th><td style="border:1px solid #cbd5e1;padding:8px 12px">${escapeHtml(record.company_name || '団体名なし')}</td></tr>
-              <tr><th style="background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left">健診目的</th><td style="border:1px solid #cbd5e1;padding:8px 12px">${escapeHtml(record.purpose || '-')}</td></tr>
-              <tr><th style="background:#f1f5f9;border:1px solid #cbd5e1;padding:8px 12px;text-align:left">担当者</th><td style="border:1px solid #cbd5e1;padding:8px 12px">${escapeHtml(record.staff_name || '-')}</td></tr>
-            </tbody>
-          </table>
+          ${reservationSummaryTable}
           <p style="margin-top:16px;color:#64748b;font-size:12px">検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。</p>
         </div>
       `,
