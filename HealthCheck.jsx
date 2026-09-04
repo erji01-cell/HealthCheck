@@ -4828,13 +4828,13 @@ export default function App() {
                       <span className="font-bold text-slate-700">自動バックアップ（起動時＋変更を3分ごとに確認して保存）</span>
                       <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
                     </label>
-                    <span className="text-slate-400">同じ日の分は上書き保存 / 最大30日分保持 / 変更がない日は保存しない</span>
+                    <span className="text-slate-400">同じ日の分は上書き保存 / 最大14日分保持 / 変更がない日は保存しない</span>
                   </div>
                   {backupMessage && (
                     <div className="px-8 py-3 text-sm text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
                   )}
                   <div className="px-8 py-5">
-                    <div className="text-sm font-bold text-slate-600 mb-3">Storage 内のバックアップ（{backupList.length} 件 / 最大30日分保持）</div>
+                    <div className="text-sm font-bold text-slate-600 mb-3">Storage 内のバックアップ（{backupList.length} 件 / 最大14日分保持）</div>
                     {backupListLoading && <div className="text-center text-slate-400 py-6 text-sm">読み込み中...</div>}
                     {!backupListLoading && backupList.length === 0 && (
                       <div className="text-center text-slate-400 py-8 text-sm">バックアップがありません</div>
