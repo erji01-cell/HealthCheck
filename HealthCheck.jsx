@@ -43,6 +43,7 @@ import TodayReservationsModal from './components/TodayReservationsModal.jsx';
 import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
 import AttachmentSheet from './components/AttachmentSheet.jsx';
+import DoctorFindingsSheet from './components/DoctorFindingsSheet.jsx';
 import SpecificHealthRoster from './components/SpecificHealthRoster.jsx';
 import InsuranceNumberModal from './components/InsuranceNumberModal.jsx';
 import {
@@ -5553,6 +5554,7 @@ export default function App() {
               <>
                 <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
                 {printAttachmentSheet && <AttachmentSheet formData={formData} />}
+                <DoctorFindingsSheet formData={formData} />
               </>
             )}
 
@@ -5615,6 +5617,23 @@ export default function App() {
             print-color-adjust: exact !important;
           }
           #attachment-sheet h1 { font-size: 20px !important; margin-bottom: 3mm !important; padding-bottom: 3px !important; }
+          #doctor-findings-sheet {
+            width: 210mm !important;
+            height: 292mm !important;
+            padding: 7mm 10mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: white !important;
+            page-break-before: always !important;
+            break-before: page !important;
+            break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #doctor-findings-sheet h1 { font-size: 22px !important; }
+          .doctor-findings-table { break-inside: avoid !important; }
           .bg-slate-100 { background-color: #f1f5f9 !important; }
           .bg-white { background-color: white !important; }
           .vision-hearing-item span { font-size: 12px !important; }
