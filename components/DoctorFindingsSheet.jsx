@@ -87,9 +87,8 @@ export default function DoctorFindingsSheet({ formData }) {
           </div>
         ))}
 
-        <div className="grid min-h-[130px] grid-cols-[120px_205px_1fr]">
+        <div className="grid min-h-[130px] grid-cols-[120px_1fr]">
           <div className="flex items-center justify-center border-r-[1.5px] border-black bg-slate-100 px-2 text-sm font-bold">総合所見</div>
-          <div className="flex items-start justify-center border-r-[1.5px] border-black px-2 pt-5"><JudgmentOptions /></div>
           <div className="px-3 py-2" />
         </div>
       </div>
