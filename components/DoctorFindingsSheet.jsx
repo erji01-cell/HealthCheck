@@ -18,7 +18,8 @@ const FINDING_ITEMS = [
   { label: '胃カメラ', itemKeys: ['endoscopy'] },
   { label: '腹部エコー', itemKeys: ['echo'] },
   { label: 'マンガン', itemKeys: ['manganese'] },
-  { label: 'その他検査', itemKeys: ['cotinine', 'mrsa'] },
+  { label: 'コチニン', itemKeys: ['cotinine'] },
+  { label: 'その他検査', alwaysActive: true, itemKeys: [] },
 ];
 
 const formatVisitDate = (value) => {
@@ -86,8 +87,8 @@ export default function DoctorFindingsSheet({ formData }) {
           <div className="px-2 py-2">所見記入欄</div>
         </div>
 
-        {FINDING_ITEMS.map(({ label, itemKeys }) => {
-          const isSelected = itemKeys.some(itemKey => !!formData.items?.[itemKey]);
+        {FINDING_ITEMS.map(({ label, itemKeys, alwaysActive = false }) => {
+          const isSelected = alwaysActive || itemKeys.some(itemKey => !!formData.items?.[itemKey]);
           return (
             <div
               key={label}
