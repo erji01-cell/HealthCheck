@@ -2,16 +2,23 @@ import React from 'react';
 import { formatDobDisplay, getWeekdayFromIso } from '../lib/kenshinUtils.js';
 
 const FINDING_ITEMS = [
-  '尿検査',
-  'レントゲン',
-  '心電図',
-  '採血',
-  '検便',
-  '有機溶剤',
-  '胃カメラ',
-  '腹部エコー',
-  'マンガン',
-  'その他検査',
+  { label: '尿検査', itemKeys: ['urine'] },
+  { label: 'レントゲン', itemKeys: ['xRay'] },
+  { label: '心電図', itemKeys: ['ecg'] },
+  {
+    label: '採血',
+    itemKeys: [
+      'blood', 'bloodKuritasRegular', 'bloodKuritasSpecific', 'bloodHapilusB',
+      'bloodHapilusC', 'bloodHapilusHire', 'bloodHapilusNight', 'bloodInsuranceReview',
+      'hba1c', 'psa', 'hbsAg', 'hbsAb', 'hcvAb', 'syphilis',
+    ],
+  },
+  { label: '検便', itemKeys: ['stool', 'norovirus', 'bacteria3', 'bacteria5', 'paratyphoid'] },
+  { label: '有機溶剤', itemKeys: ['methanol', 'hexane', 'methylHippuric'] },
+  { label: '胃カメラ', itemKeys: ['endoscopy'] },
+  { label: '腹部エコー', itemKeys: ['echo'] },
+  { label: 'マンガン', itemKeys: ['manganese'] },
+  { label: 'その他検査', itemKeys: ['cotinine', 'mrsa'] },
 ];
 
 const formatVisitDate = (value) => {
@@ -79,13 +86,19 @@ export default function DoctorFindingsSheet({ formData }) {
           <div className="px-2 py-2">所見記入欄</div>
         </div>
 
-        {FINDING_ITEMS.map(item => (
-          <div key={item} className="grid min-h-[49px] grid-cols-[120px_205px_1fr] border-b-[1.5px] border-black">
-            <div className="flex items-center justify-center border-r-[1.5px] border-black bg-slate-100 px-2 text-sm font-bold">{item}</div>
-            <div className="flex items-center justify-center border-r-[1.5px] border-black px-2"><JudgmentOptions /></div>
-            <div className="px-3 py-2" />
-          </div>
-        ))}
+        {FINDING_ITEMS.map(({ label, itemKeys }) => {
+          const isSelected = itemKeys.some(itemKey => !!formData.items?.[itemKey]);
+          return (
+            <div
+              key={label}
+              className={`grid min-h-[49px] grid-cols-[120px_205px_1fr] border-b-[1.5px] border-black ${isSelected ? 'bg-white text-black' : 'bg-slate-100 text-slate-400'}`}
+            >
+              <div className={`flex items-center justify-center border-r-[1.5px] border-black px-2 text-sm font-bold ${isSelected ? 'bg-slate-100' : 'bg-slate-200 text-slate-500'}`}>{label}</div>
+              <div className="flex items-center justify-center border-r-[1.5px] border-black px-2"><JudgmentOptions /></div>
+              <div className="px-3 py-2" />
+            </div>
+          );
+        })}
 
         <div className="grid min-h-[130px] grid-cols-[120px_1fr]">
           <div className="flex items-center justify-center border-r-[1.5px] border-black bg-slate-100 px-2 text-sm font-bold">総合所見</div>
