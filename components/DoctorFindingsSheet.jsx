@@ -29,11 +29,12 @@ const formatVisitDate = (value) => {
   return `${year}年${Number(month)}月${Number(day)}日`;
 };
 
+const JUDGMENT_OPTIONS = ['異常なし', '軽度異常', '要再検', '要精検', '治療中'];
+
 function JudgmentOptions() {
   return (
-    <div className="flex items-center justify-center gap-7 whitespace-nowrap text-[15px] font-bold">
-      <span>異常なし</span>
-      <span>異常あり</span>
+    <div className="flex items-center justify-center gap-3 whitespace-nowrap text-[13px] font-bold">
+      {JUDGMENT_OPTIONS.map(option => <span key={option}>{option}</span>)}
     </div>
   );
 }
@@ -81,10 +82,10 @@ export default function DoctorFindingsSheet({ formData }) {
       <p className="mb-2 mt-3 text-right text-[11px] font-bold">該当する判定を○で囲んでください。</p>
 
       <div className="doctor-findings-table border-[1.5px] border-black">
-        <div className="grid grid-cols-[120px_205px_1fr] border-b-[1.5px] border-black bg-slate-100 text-center text-xs font-bold">
+        <div className="grid grid-cols-[110px_300px_1fr] border-b-[1.5px] border-black bg-slate-100 text-center text-xs font-bold">
           <div className="border-r-[1.5px] border-black px-2 py-2">検査項目</div>
           <div className="border-r-[1.5px] border-black px-2 py-2">判定</div>
-          <div className="px-2 py-2">所見記入欄</div>
+          <div className="px-2 py-2">所見</div>
         </div>
 
         {FINDING_ITEMS.map(({ label, itemKeys, alwaysActive = false }) => {
@@ -92,7 +93,7 @@ export default function DoctorFindingsSheet({ formData }) {
           return (
             <div
               key={label}
-              className={`grid min-h-[49px] grid-cols-[120px_205px_1fr] border-b-[1.5px] border-black ${isSelected ? 'bg-white text-black' : 'bg-slate-100 text-slate-400'}`}
+              className={`grid min-h-[49px] grid-cols-[110px_300px_1fr] border-b-[1.5px] border-black ${isSelected ? 'bg-white text-black' : 'bg-slate-100 text-slate-400'}`}
             >
               <div className={`flex items-center justify-center border-r-[1.5px] border-black px-2 text-sm font-bold ${isSelected ? 'bg-slate-100' : 'bg-slate-200 text-slate-500'}`}>{label}</div>
               <div className="flex items-center justify-center border-r-[1.5px] border-black px-2"><JudgmentOptions /></div>
@@ -101,7 +102,7 @@ export default function DoctorFindingsSheet({ formData }) {
           );
         })}
 
-        <div className="grid min-h-[130px] grid-cols-[120px_1fr]">
+        <div className="grid min-h-[130px] grid-cols-[110px_1fr]">
           <div className="flex items-center justify-center border-r-[1.5px] border-black bg-slate-100 px-2 text-sm font-bold">総合所見</div>
           <div className="px-3 py-2" />
         </div>
