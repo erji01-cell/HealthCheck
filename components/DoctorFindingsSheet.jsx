@@ -31,9 +31,9 @@ const formatVisitDate = (value) => {
 
 const JUDGMENT_OPTIONS = ['異常なし', '軽度異常', '要再検', '要精検', '治療中'];
 
-function JudgmentOptions() {
+function JudgmentOptions({ justify = 'justify-center' }) {
   return (
-    <div className="flex items-center justify-center gap-3 whitespace-nowrap text-[13px] font-bold">
+    <div className={`flex items-center ${justify} gap-3 whitespace-nowrap text-[13px] font-bold`}>
       {JUDGMENT_OPTIONS.map(option => <span key={option}>{option}</span>)}
     </div>
   );
@@ -104,7 +104,9 @@ export default function DoctorFindingsSheet({ formData }) {
 
         <div className="grid min-h-[130px] grid-cols-[110px_1fr]">
           <div className="flex items-center justify-center border-r-[1.5px] border-black bg-slate-100 px-2 text-sm font-bold">総合所見</div>
-          <div className="px-3 py-2" />
+          <div className="px-3 py-2">
+            <JudgmentOptions justify="justify-start" />
+          </div>
         </div>
       </div>
 
