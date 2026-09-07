@@ -3040,21 +3040,30 @@ export default function App() {
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
                   </div>
-                  <div className="flex items-center gap-[5mm]">
-                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 px-3 py-1.5 rounded-lg transition-colors">
-                      <Search size={13} /> 予約患者検索
-                    </button>
-                    <div className="relative w-[116px]">
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={handleQuickBackup}
                         disabled={quickBackupBusy}
-                        className="absolute bottom-full inset-x-0 mb-1 flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-purple-500 hover:bg-purple-600 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                        className="flex min-w-[116px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-purple-600 disabled:opacity-50"
                         title="今すぐバックアップ"
                       >
                         <Save size={13} /> {quickBackupBusy ? '...' : 'バックアップ'}
                       </button>
-                      <button onClick={handleReset} className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                      <button onClick={handleReset} className="flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-red-400 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500">
                         <RotateCcw size={13} /> リセット
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
+                        <Search size={13} /> 予約患者検索
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
+                        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                      >
+                        <Search size={13} /> 登録済み診断書検索
                       </button>
                     </div>
                   </div>
@@ -3852,7 +3861,7 @@ export default function App() {
                               { label: 'MCV(fL)', name: 'mcv' },
                               { label: 'MCH(pg)', name: 'mch' },
                               { label: 'MCHC(%)', name: 'mchc' },
-                              { label: 'PLT(×10⁴)', name: 'platelet' },
+                              { label: 'PLT(×10³/μL)', name: 'platelet' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -4239,7 +4248,7 @@ export default function App() {
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[118px] print-hide lg:shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー・診断書検索 */}
+                {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー */}
                 <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                   <button
                     onClick={() => {
@@ -4263,13 +4272,6 @@ export default function App() {
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'kenshin' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-emerald-600 hover:bg-white'}`}
                   >
                     <ClipboardCheck size={12} /> 診断書プレビュー
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 text-slate-500 hover:text-emerald-600 hover:bg-white flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    <Search size={12} /> 診断書検索
                   </button>
                 </div>
               </div>

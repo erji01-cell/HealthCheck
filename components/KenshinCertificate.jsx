@@ -358,7 +358,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         <span>
                           <b>血小板</b>: {kenshinData.platelet}
-                          {(() => { const a = getBloodArrow('platelet', kenshinData.platelet, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} ×10⁴/μL
+                          {(() => { const a = getBloodArrow('platelet', kenshinData.platelet, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} ×10³/μL
                         </span>
                       </div>
                     </div>
