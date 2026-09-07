@@ -3856,21 +3856,21 @@ export default function App() {
                     {/* 血液検査 */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">血液検査（採血結果）</label>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-4">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-4 [&_.leading-tight]:flex [&_.leading-tight]:h-8 [&_.leading-tight]:items-center [&_.leading-tight]:justify-center">
 
                         {/* 血算 */}
                         <div>
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">血算（CBC）</div>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: '白血球数(×10³/μL)', name: 'wbc' },
-                              { label: '赤血球数(×10⁶/μL)', name: 'rbc' },
-                              { label: '血色素量(g/dL)', name: 'hemoglobin' },
-                              { label: 'ヘマトクリット値(%)', name: 'ht' },
-                              { label: '平均赤血球容積(MCV・fL)', name: 'mcv' },
-                              { label: '平均赤血球血色素量(MCH・pg)', name: 'mch' },
-                              { label: '平均赤血球血色素濃度(MCHC・%)', name: 'mchc' },
-                              { label: '血小板数(×10³/μL)', name: 'platelet' },
+                              { label: '白血球(×10³/μL)', name: 'wbc' },
+                              { label: '赤血球(×10⁶/μL)', name: 'rbc' },
+                              { label: '血色素(g/dL)', name: 'hemoglobin' },
+                              { label: 'Ht(%)', name: 'ht' },
+                              { label: 'MCV(fL)', name: 'mcv' },
+                              { label: 'MCH(pg)', name: 'mch' },
+                              { label: 'MCHC(%)', name: 'mchc' },
+                              { label: '血小板(×10³/μL)', name: 'platelet' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -3910,12 +3910,12 @@ export default function App() {
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">肝機能・酵素</div>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: 'アルカリホスファターゼ(ALP・IU/L)', name: 'alp' },
-                              { label: '乳酸脱水素酵素(LDH・IU/L)', name: 'ldh' },
+                              { label: 'ALP(IU/L)', name: 'alp' },
+                              { label: 'LDH(IU/L)', name: 'ldh' },
                               { label: 'AST(GOT・IU/L)', name: 'got' },
                               { label: 'ALT(GPT・IU/L)', name: 'gpt' },
-                              { label: 'γ-GT(γ-GTP・IU/L)', name: 'gammaGtp' },
-                              { label: 'クレアチンキナーゼ(CK・IU/L)', name: 'ck' },
+                              { label: 'γ-GTP(IU/L)', name: 'gammaGtp' },
+                              { label: 'CK(IU/L)', name: 'ck' },
                               { label: 'アミラーゼ(IU/L)', name: 'amy' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
@@ -3934,11 +3934,11 @@ export default function App() {
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">脂質</div>
                           <div className="grid grid-cols-5 gap-2">
                             {[
-                              { label: '総コレステロール(mg/dL)', name: 'tCho' },
-                              { label: 'HDLコレステロール(mg/dL)', name: 'hdl' },
-                              { label: 'LDLコレステロール(mg/dL)', name: 'ldl' },
-                              { label: '中性脂肪(TG・mg/dL)', name: 'triglyceride' },
-                              { label: 'LDL/HDL比', name: 'lhRatio' },
+                              { label: '総コレステロール', name: 'tCho' },
+                              { label: 'HDL-C(mg/dL)', name: 'hdl' },
+                              { label: 'LDL-C(mg/dL)', name: 'ldl' },
+                              { label: '中性脂肪(mg/dL)', name: 'triglyceride' },
+                              { label: 'L/H比', name: 'lhRatio' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -3956,9 +3956,9 @@ export default function App() {
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">腎機能</div>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: '尿素窒素(UN・mg/dL)', name: 'un' },
-                              { label: 'クレアチニン(Cre・mg/dL)', name: 'cre' },
-                              { label: '推算糸球体濾過量(eGFR)', name: 'egfr' },
+                              { label: '尿素窒素(mg/dL)', name: 'un' },
+                              { label: 'クレアチニン(mg/dL)', name: 'cre' },
+                              { label: 'eGFR', name: 'egfr' },
                               { label: '尿酸(mg/dL)', name: 'uricAcid' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
@@ -3977,13 +3977,13 @@ export default function App() {
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">電解質</div>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: 'ナトリウム(Na・mEq/L)', name: 'na' },
-                              { label: 'カリウム(K・mEq/L)', name: 'k' },
-                              { label: 'クロール(Cl・mEq/L)', name: 'cl' },
-                              { label: 'カルシウム(Ca・mg/dL)', name: 'ca' },
-                              { label: '無機リン(IP・mg/dL)', name: 'ip' },
-                              { label: 'マグネシウム(Mg・mg/dL)', name: 'mgElec' },
-                              { label: '血清鉄(Fe・μg/dL)', name: 'fe' },
+                              { label: 'Na(mEq/L)', name: 'na' },
+                              { label: 'K(mEq/L)', name: 'k' },
+                              { label: 'Cl(mEq/L)', name: 'cl' },
+                              { label: 'Ca(mg/dL)', name: 'ca' },
+                              { label: '無機リン(mg/dL)', name: 'ip' },
+                              { label: 'Mg(mg/dL)', name: 'mgElec' },
+                              { label: '血清鉄(μg/dL)', name: 'fe' },
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -4002,10 +4002,10 @@ export default function App() {
                           <div className="grid grid-cols-5 gap-2">
                             {[
                               { label: '血糖(mg/dL)', name: 'bloodGlucose' },
-                              { label: 'ヘモグロビンA1c(HbA1c・%)', name: 'hba1c' },
-                              { label: 'C反応性蛋白(CRP・mg/dL)', name: 'crp' },
-                              { label: 'リウマトイド因子(RF・IU/mL)', name: 'rf' },
-                              { label: '抗ストレプトリジンO価(ASO・IU/mL)', name: 'aso' },
+                              { label: 'HbA1c(%)', name: 'hba1c' },
+                              { label: 'CRP(mg/dL)', name: 'crp' },
+                              { label: 'RF(IU/mL)', name: 'rf' },
+                              { label: 'ASO(IU/mL)', name: 'aso' },
                             ].map(({ label, name }) => (
                               <div key={name} id={`kenshin-field-${name}`} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -4023,10 +4023,10 @@ export default function App() {
                           <div className="text-[11px] font-bold text-blue-600 mb-1 border-b border-blue-200 pb-0.5">腫瘍マーカー</div>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { label: '癌胎児性抗原(CEA・ng/mL)', name: 'cea' },
+                              { label: 'CEA(ng/mL)', name: 'cea' },
                               { label: 'CA19-9(U/mL)', name: 'ca199' },
-                              { label: '前立腺特異抗原(PSA・ng/mL)', name: 'psaValue' },
-                              { label: '脳性ナトリウム利尿ペプチド(BNP・pg/mL)', name: 'bnp' },
+                              { label: 'PSA(ng/mL)', name: 'psaValue' },
+                              { label: 'BNP(pg/mL)', name: 'bnp' },
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
