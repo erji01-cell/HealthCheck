@@ -3025,40 +3025,36 @@ export default function App() {
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex items-center justify-between border-b bg-white px-6 pt-6 pb-4 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
-                  <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
+                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex flex-col items-stretch border-b bg-white px-6 pt-6 pb-4 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
+                  <div className="flex justify-end">
+                    <button onClick={handleReset} className="flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-red-400 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500">
+                      <RotateCcw size={13} /> リセット
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2 overflow-x-auto pb-1">
                     <button
                       onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'reservation' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-black shadow-sm transition-all duration-200 ${leftTab === 'reservation' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-100 text-slate-400 hover:text-slate-600'}`}
                     >
                       <PlusCircle size={13} /> 予約詳細入力
                     </button>
                     <button
                       type="button"
                       onClick={() => { setLeftTab('result'); setRightTab('kenshin'); }}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all duration-200 flex items-center gap-1.5 ${leftTab === 'result' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-black shadow-sm transition-all duration-200 ${leftTab === 'result' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 bg-slate-100 text-slate-400 hover:text-slate-600'}`}
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <button onClick={handleReset} className="flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-red-400 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500">
-                        <RotateCcw size={13} /> リセット
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
-                        <Search size={13} /> 予約患者検索
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
-                        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
-                      >
-                        <Search size={13} /> 登録済み診断書検索
-                      </button>
-                    </div>
+                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
+                      <Search size={13} /> 予約患者検索
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
+                      className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                    >
+                      <Search size={13} /> 登録済み診断書検索
+                    </button>
                   </div>
                 </div>
 

@@ -26,14 +26,14 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
               <style>{`
                 .kenshin-certificate .bg-slate-50,
                 .kenshin-certificate-bessi .bg-slate-100 {
-                  background-color: #e2e4e7 !important;
+                  background-color: #d9dbde !important;
                   -webkit-print-color-adjust: exact;
                   print-color-adjust: exact;
                 }
                 @media print {
                   .kenshin-certificate .bg-slate-50,
                   .kenshin-certificate-bessi .bg-slate-100 {
-                    background-color: #d1d5da !important;
+                    background-color: #c3c8cd !important;
                   }
                 }
               `}</style>
