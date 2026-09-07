@@ -277,7 +277,9 @@ export default function App() {
   const [calendarListError, setCalendarListError] = useState('');
   const [printMode, setPrintMode] = useState('');
   const [showKenshinPrintMenu, setShowKenshinPrintMenu] = useState(false);
+  const [showReservationPrintMenu, setShowReservationPrintMenu] = useState(false);
   const [kenshinPrintVariant, setKenshinPrintVariant] = useState('filled');
+  const [printBlankKenshinWithReservation, setPrintBlankKenshinWithReservation] = useState(false);
   const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
   const [showSpecificRosterSortMenu, setShowSpecificRosterSortMenu] = useState(false);
   const [specificRosterSortOrder, setSpecificRosterSortOrder] = useState('date');
@@ -1172,6 +1174,12 @@ export default function App() {
     setTimeout(() => window.print(), 100);
   };
 
+  const startReservationPrint = (includeBlankKenshin) => {
+    setShowReservationPrintMenu(false);
+    setPrintBlankKenshinWithReservation(includeBlankKenshin);
+    setTimeout(() => window.print(), 100);
+  };
+
   const openInsuranceNumberModal = (printAfterSave = false) => {
     const missingPatients = getMissingInsurancePatients();
     if (missingPatients.length === 0) {
@@ -1635,6 +1643,7 @@ export default function App() {
     const clearPrintMode = () => {
       setPrintMode('');
       setKenshinPrintVariant('filled');
+      setPrintBlankKenshinWithReservation(false);
     };
     window.addEventListener('afterprint', clearPrintMode);
     return () => window.removeEventListener('afterprint', clearPrintMode);
@@ -4299,7 +4308,7 @@ export default function App() {
                         </label>
                       </>
                     )}
-                    <button onClick={() => rightTab === 'kenshin' ? setShowKenshinPrintMenu(true) : window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
+                    <button onClick={() => rightTab === 'kenshin' ? setShowKenshinPrintMenu(true) : setShowReservationPrintMenu(true)} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
                       <Printer size={14} /> 用紙印刷
                     </button>
                   </>
@@ -5124,6 +5133,60 @@ export default function App() {
               </div>
             )}
 
+            {/* 予約用紙の印刷内容選択 */}
+            {showReservationPrintMenu && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 print-hide"
+                onClick={() => setShowReservationPrintMenu(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="reservation-print-menu-title"
+                  className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                    <h2 id="reservation-print-menu-title" className="text-base font-black text-slate-800">予約用紙の印刷内容を選択</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowReservationPrintMenu(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="閉じる"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="space-y-3 p-5">
+                    <button
+                      type="button"
+                      onClick={() => startReservationPrint(false)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-blue-300 bg-blue-50 px-4 py-3 text-left hover:bg-blue-100"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white"><Printer size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">予約用紙を印刷</span>
+                        <span className="block text-xs font-bold text-blue-700">選択中の予約用紙だけを印刷します</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-blue-700" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startReservationPrint(true)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700"><ClipboardCheck size={18} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-slate-800">白紙の診断書も一緒に印刷</span>
+                        <span className="block text-xs font-bold text-slate-500">予約用紙の末尾に白紙の診断書を追加します</span>
+                      </span>
+                      <Printer size={17} className="shrink-0 text-emerald-700" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 団体別一覧の印刷様式選択 */}
             {showCompanyPrintMenu && (
               <div
@@ -5568,6 +5631,15 @@ export default function App() {
                 <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
                 {printAttachmentSheet && <AttachmentSheet formData={formData} />}
                 {printDoctorFindingsSheet && <DoctorFindingsSheet formData={formData} />}
+                {printBlankKenshinWithReservation && (
+                  <div className="reservation-blank-kenshin-page">
+                    <KenshinCertificate
+                      kenshinData={kenshinInitialState}
+                      setHighlightedField={setHighlightedField}
+                      blankForm
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -5668,6 +5740,10 @@ export default function App() {
             background: white !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          .reservation-blank-kenshin-page {
+            page-break-before: always !important;
+            break-before: page !important;
           }
           .bessi-page-break {
             page-break-before: always !important;
