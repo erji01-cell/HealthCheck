@@ -21,6 +21,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
   // 値が未入力のセルを薄いグレーで網掛け（入力済み/未入力を明確化）
   const EMPTY_BG = '#eef1f5';
   const emptyBg = (v) => (!blankForm && (v === undefined || v === null || String(v).trim() === '') ? { backgroundColor: EMPTY_BG } : null);
+  const doctorDisplayName = String((kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName) || '').trim();
+  const showDoctorSeal = !blankForm && Boolean(doctorDisplayName);
   return (
     <>
               <style>{`
@@ -294,7 +296,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   <div className="space-y-1">
                     <div>鹿児島県志布志市志布志町志布志286-4</div>
                     <div>医療法人一斉会　陽春堂内科診療所</div>
-                    <div>医師　{kenshinData.doctorName === 'その他' ? kenshinData.doctorNameCustom : kenshinData.doctorName}　　㊞</div>
+                    <div>医師　{doctorDisplayName}{showDoctorSeal ? '　　㊞' : ''}</div>
                   </div>
                 </div>
 
