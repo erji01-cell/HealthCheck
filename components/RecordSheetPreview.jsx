@@ -3,7 +3,7 @@ import { calculateReservationFee, getCompanyBillingLabel, INSURANCE_REVIEW_PURPO
 import { getWeekdayFromIso, formatDobDisplay } from '../lib/kenshinUtils.js';
 
 // 健康診断の記録用紙プレビュー（rightTab === preview で表示・印刷対象）
-export default function RecordSheetPreview({ formData, shahoFee }) {
+export default function RecordSheetPreview({ formData, shahoFee, blankForm = false }) {
   const purposeDisplay = INSURANCE_REVIEW_PURPOSES.includes(formData.purpose)
     ? `${formData.purpose}(審査)`
     : formData.purpose || '';
@@ -123,10 +123,10 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-[12px] text-center leading-tight">身長・体重<br/>BMI・腹囲</div>
                   <div className="flex-1 flex divide-x-[1.5px] divide-black">
                     {[
-                      { label: '身長', value: formData.height, unit: 'cm', notRequired: !formData.items.heightWeight },
-                      { label: '体重', value: formData.weight, unit: 'kg', notRequired: !formData.items.heightWeight },
-                      { label: 'BMI', value: formData.bmi, unit: '', notRequired: !formData.items.heightWeight },
-                      { label: '腹囲', value: formData.waist, unit: 'cm', notRequired: !formData.items.abdominalGirth },
+                      { label: '身長', value: formData.height, unit: 'cm', notRequired: !blankForm && !formData.items.heightWeight },
+                      { label: '体重', value: formData.weight, unit: 'kg', notRequired: !blankForm && !formData.items.heightWeight },
+                      { label: 'BMI', value: formData.bmi, unit: '', notRequired: !blankForm && !formData.items.heightWeight },
+                      { label: '腹囲', value: formData.waist, unit: 'cm', notRequired: !blankForm && !formData.items.abdominalGirth },
                     ].map(({ label, value, unit, notRequired }) => (
                       <div key={label} className={`flex-1 p-2 flex flex-col items-start justify-start relative ${notRequired ? 'bg-slate-100' : ''}`}>
                         <div className="text-[10px] text-black mb-0.5">{label}</div>
@@ -208,7 +208,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                         <div className="grid grid-cols-4 gap-x-2 gap-y-0.5">
                           {Object.entries(entries).map(([key, lbl]) => (
                             <div key={key} className="flex items-center gap-1">
-                              <span className={`w-3 h-3 border border-black flex-shrink-0 ${formData.items[key] ? 'bg-black' : ''}`}></span>
+                              <span className={`w-3 h-3 border border-black flex-shrink-0 ${!blankForm && formData.items[key] ? 'bg-black' : ''}`}></span>
                               <span className={`text-[10px] ${formData.items[key] ? 'font-bold text-slate-800' : 'text-slate-400'}`}>
                                 {lbl}{key === 'manganese' && <span className="print-only"> 右(  　　)左( 　　)</span>}{key === 'blood' && lbl === '採血 スクリ' && <span className="print-only">ーニング</span>}
                               </span>
@@ -225,11 +225,11 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">提出期限</div>
                   <div className="flex-1 p-2 flex items-center gap-10">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '無' ? 'bg-black' : ''}`}></span>
+                      <span className={`w-3.5 h-3.5 border border-black ${!blankForm && formData.deadlineType === '無' ? 'bg-black' : ''}`}></span>
                       <span>無</span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-1">
-                      <span className={`w-3.5 h-3.5 border border-black ${formData.deadlineType === '有' ? 'bg-black' : ''}`}></span>
+                      <span className={`w-3.5 h-3.5 border border-black ${!blankForm && formData.deadlineType === '有' ? 'bg-black' : ''}`}></span>
                       <span>有</span>
                       <span className="font-mono h-5 text-sm" style={{marginLeft: '10mm', marginTop: '1mm', fontSize: '14px'}}>
                         {formData.deadlineType === '有' && formData.deadlineDate ? formData.deadlineDate.replace(/-/g, '/') : '　　/　/　'}
@@ -243,11 +243,11 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">専用用紙</div>
                   <div className="flex-1 p-2 flex items-center gap-10">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-3.5 h-3.5 border border-black ${!formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span className={`w-3.5 h-3.5 border border-black ${!blankForm && !formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
                       <span>無</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-3.5 h-3.5 border border-black ${formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
+                      <span className={`w-3.5 h-3.5 border border-black ${!blankForm && formData.hasDedicatedForm ? 'bg-black' : ''}`}></span>
                       <span>有（持参あり）</span>
                     </div>
                   </div>
@@ -257,7 +257,9 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                 <div className="flex border-b-[1.5px] border-black">
                   <div className="w-[100px] bg-slate-100 p-2 font-bold border-r-[1.5px] border-black flex items-center justify-center text-xs">支払い</div>
                   <div className="flex-1 p-2 flex justify-between items-center pr-10">
-                    {billingDisplay ? (
+                    {blankForm ? (
+                      <span className="text-base font-bold">¥　　　　　　　　 -</span>
+                    ) : billingDisplay ? (
                       <span className="text-base font-bold">{billingDisplay}</span>
                     ) : (
                       <>
@@ -269,7 +271,7 @@ export default function RecordSheetPreview({ formData, shahoFee }) {
                         </span>
                         <div className="flex gap-4">
                           {['当日支払', '後日支払', '会社請求'].map(type => (
-                            <span key={type} className={`px-2 py-0.5 border ${formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
+                            <span key={type} className={`px-2 py-0.5 border ${!blankForm && formData.paymentType === type ? "border-black font-bold text-xs" : "border-transparent text-slate-200 text-xs"}`}>
                               {type}
                             </span>
                           ))}
