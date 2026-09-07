@@ -286,6 +286,7 @@ export default function App() {
   const [insuranceNumberError, setInsuranceNumberError] = useState('');
   const [insurancePrintAfterSave, setInsurancePrintAfterSave] = useState(false);
   const [printAttachmentSheet, setPrintAttachmentSheet] = useState(true);
+  const [printDoctorFindingsSheet, setPrintDoctorFindingsSheet] = useState(true);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
@@ -4276,15 +4277,26 @@ export default function App() {
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
                   <>
                     {rightTab === 'preview' && (
-                      <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={printAttachmentSheet}
-                          onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
-                          className="h-3.5 w-3.5 accent-blue-600"
-                        />
-                        貼付台紙も印刷
-                      </label>
+                      <>
+                        <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={printAttachmentSheet}
+                            onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
+                            className="h-3.5 w-3.5 accent-blue-600"
+                          />
+                          貼付台紙も印刷
+                        </label>
+                        <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={printDoctorFindingsSheet}
+                            onChange={(e) => setPrintDoctorFindingsSheet(e.target.checked)}
+                            className="h-3.5 w-3.5 accent-blue-600"
+                          />
+                          医師所見記入用紙も印刷
+                        </label>
+                      </>
                     )}
                     <button onClick={() => rightTab === 'kenshin' ? setShowKenshinPrintMenu(true) : window.print()} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
                       <Printer size={14} /> 用紙印刷
@@ -5554,7 +5566,7 @@ export default function App() {
               <>
                 <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
                 {printAttachmentSheet && <AttachmentSheet formData={formData} />}
-                <DoctorFindingsSheet formData={formData} />
+                {printDoctorFindingsSheet && <DoctorFindingsSheet formData={formData} />}
               </>
             )}
 

@@ -13,7 +13,7 @@ const FINDING_ITEMS = [
       'hba1c', 'psa', 'hbsAg', 'hbsAb', 'hcvAb', 'syphilis',
     ],
   },
-  { label: '検便', itemKeys: ['stool', 'norovirus', 'bacteria3', 'bacteria5', 'paratyphoid'] },
+  { label: '便潜血・検便', itemKeys: ['stool', 'norovirus', 'bacteria3', 'bacteria5', 'paratyphoid'] },
   { label: '有機溶剤', itemKeys: ['methanol', 'hexane', 'methylHippuric'] },
   { label: '胃カメラ', itemKeys: ['endoscopy'] },
   { label: '腹部エコー', itemKeys: ['echo'] },
