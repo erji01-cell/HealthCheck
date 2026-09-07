@@ -184,7 +184,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                       <div className="flex flex-col flex-1">
 
                         {[
-                          { group: '貧血検査', rows: [{ label: '白血球(10²/mm³)', val: kenshinData.wbc, field: 'wbc' }, { label: '赤血球(万/mm³)', val: kenshinData.rbc, field: 'rbc' }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin, field: 'hemoglobin' }, { label: 'ヘマトクリット(%)', val: kenshinData.ht, field: 'ht' }] },
+                          { group: '貧血検査', rows: [{ label: '白血球(10²/mm³)', val: kenshinData.wbc, field: 'wbc' }, { label: '赤血球(×10⁶/μL)', val: kenshinData.rbc, field: 'rbc' }, { label: '血色素(g/dL)', val: kenshinData.hemoglobin, field: 'hemoglobin' }, { label: 'ヘマトクリット(%)', val: kenshinData.ht, field: 'ht' }] },
                           { group: '肝機能', rows: [{ label: 'GOT(IU/L)', val: kenshinData.got, field: 'got' }, { label: 'GPT(IU/L)', val: kenshinData.gpt, field: 'gpt' }, { label: 'γ-GTP(IU/L)', val: kenshinData.gammaGtp, field: 'gammaGtp' }] },
                           { group: '血中脂質', rows: [{ label: 'HDLコレステロール(mg/dL)', val: kenshinData.hdl, field: 'hdl' }, { label: 'LDLコレステロール(mg/dL)', val: kenshinData.ldl, field: 'ldl' }, { label: '中性脂肪(mg/dL)', val: kenshinData.triglyceride, field: 'triglyceride' }] },
                           { group: '血糖', rows: [{ label: '血糖検査(mg/dL)', val: kenshinData.bloodGlucose, field: 'bloodGlucose' }, { label: 'HbA1c(%)', val: kenshinData.hba1c, field: 'hba1c' }] },

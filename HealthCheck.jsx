@@ -58,6 +58,7 @@ import {
   toWareikiWithWestern,
   getBirthEra,
   formatDobDisplay,
+  normalizeRbcToMillions,
 } from './lib/kenshinUtils.js';
 
 const supabase = createClient(
@@ -2493,7 +2494,7 @@ export default function App() {
       medBP: r.med_bp || '', medBG: r.med_bg || '', medLipid: r.med_lipid || '',
       smokingHistory: r.smoking_history || '', drinkingHistory: r.drinking_history || '',
       subjective: r.subjective || '',
-      wbc: r.wbc || '', rbc: r.rbc || '', hemoglobin: r.hemoglobin || '', ht: r.ht || '',
+      wbc: r.wbc || '', rbc: normalizeRbcToMillions(r.rbc), hemoglobin: r.hemoglobin || '', ht: r.ht || '',
       mcv: r.mcv || '', mch: r.mch || '', mchc: r.mchc || '', platelet: r.platelet || '',
       tp: r.tp || '', alb: r.alb || '', agRatio: r.ag_ratio || '', tBil: r.t_bil || '', dBil: r.d_bil || '',
       alp: r.alp || '', ldh: r.ldh || '', got: r.got || '', gpt: r.gpt || '',
@@ -3855,7 +3856,7 @@ export default function App() {
                           <div className="grid grid-cols-4 gap-2">
                             {[
                               { label: 'WBC(×10³)', name: 'wbc' },
-                              { label: 'RBC(万/μL)', name: 'rbc' },
+                              { label: 'RBC(×10⁶/μL)', name: 'rbc' },
                               { label: 'Hb(g/dL)', name: 'hemoglobin' },
                               { label: 'Ht(%)', name: 'ht' },
                               { label: 'MCV(fL)', name: 'mcv' },
