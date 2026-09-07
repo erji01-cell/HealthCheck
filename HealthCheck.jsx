@@ -279,7 +279,7 @@ export default function App() {
   const [showKenshinPrintMenu, setShowKenshinPrintMenu] = useState(false);
   const [showReservationPrintMenu, setShowReservationPrintMenu] = useState(false);
   const [kenshinPrintVariant, setKenshinPrintVariant] = useState('filled');
-  const [printBlankKenshinWithReservation, setPrintBlankKenshinWithReservation] = useState(false);
+  const [printBlankKenshinOnly, setPrintBlankKenshinOnly] = useState(false);
   const [showCompanyPrintMenu, setShowCompanyPrintMenu] = useState(false);
   const [showSpecificRosterSortMenu, setShowSpecificRosterSortMenu] = useState(false);
   const [specificRosterSortOrder, setSpecificRosterSortOrder] = useState('date');
@@ -1174,9 +1174,9 @@ export default function App() {
     setTimeout(() => window.print(), 100);
   };
 
-  const startReservationPrint = (includeBlankKenshin) => {
+  const startReservationPrint = (blankKenshinOnly) => {
     setShowReservationPrintMenu(false);
-    setPrintBlankKenshinWithReservation(includeBlankKenshin);
+    setPrintBlankKenshinOnly(blankKenshinOnly);
     setTimeout(() => window.print(), 100);
   };
 
@@ -1643,7 +1643,7 @@ export default function App() {
     const clearPrintMode = () => {
       setPrintMode('');
       setKenshinPrintVariant('filled');
-      setPrintBlankKenshinWithReservation(false);
+      setPrintBlankKenshinOnly(false);
     };
     window.addEventListener('afterprint', clearPrintMode);
     return () => window.removeEventListener('afterprint', clearPrintMode);
@@ -5177,8 +5177,8 @@ export default function App() {
                     >
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700"><ClipboardCheck size={18} /></span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-black text-slate-800">白紙の診断書も一緒に印刷</span>
-                        <span className="block text-xs font-bold text-slate-500">予約用紙の末尾に白紙の診断書を追加します</span>
+                        <span className="block text-sm font-black text-slate-800">白紙の診断書のみを印刷</span>
+                        <span className="block text-xs font-bold text-slate-500">予約用紙を含めず、白紙の診断書だけを印刷します</span>
                       </span>
                       <Printer size={17} className="shrink-0 text-emerald-700" />
                     </button>
@@ -5627,20 +5627,19 @@ export default function App() {
 
             {/* A4帳票再現 */}
             {rightTab === 'preview' && (
-              <>
-                <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
-                {printAttachmentSheet && <AttachmentSheet formData={formData} />}
-                {printDoctorFindingsSheet && <DoctorFindingsSheet formData={formData} />}
-                {printBlankKenshinWithReservation && (
-                  <div className="reservation-blank-kenshin-page">
-                    <KenshinCertificate
-                      kenshinData={kenshinInitialState}
-                      setHighlightedField={setHighlightedField}
-                      blankForm
-                    />
-                  </div>
-                )}
-              </>
+              printBlankKenshinOnly ? (
+                <KenshinCertificate
+                  kenshinData={kenshinInitialState}
+                  setHighlightedField={setHighlightedField}
+                  blankForm
+                />
+              ) : (
+                <>
+                  <RecordSheetPreview formData={formData} shahoFee={shahoFee} />
+                  {printAttachmentSheet && <AttachmentSheet formData={formData} />}
+                  {printDoctorFindingsSheet && <DoctorFindingsSheet formData={formData} />}
+                </>
+              )
             )}
 
             </div>
@@ -5740,10 +5739,6 @@ export default function App() {
             background: white !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-          }
-          .reservation-blank-kenshin-page {
-            page-break-before: always !important;
-            break-before: page !important;
           }
           .bessi-page-break {
             page-break-before: always !important;
