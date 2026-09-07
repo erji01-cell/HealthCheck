@@ -4267,32 +4267,32 @@ export default function App() {
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[246px] print-hide lg:shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                {/* 表示切替：予約プレビュー・予約カレンダー・診断書プレビュー */}
-                <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
-                  <button
-                    onClick={() => {
-                      setRightTab('preview');
-                      setLeftTab('reservation');
-                      requestAnimationFrame(() => calendarScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
-                  >
-                    <ListTodo size={12} /> 予約プレビュー
-                  </button>
-                  <button
-                    onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); }}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
-                  >
-                    <Calendar size={12} /> 予約カレンダー
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${rightTab === 'kenshin' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:text-emerald-600 hover:bg-white'}`}
-                  >
-                    <ClipboardCheck size={12} /> 診断書プレビュー
-                  </button>
+                {/* 予約表示の切替 */}
+                <div className="flex gap-1.5 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-sm">
+                    <button
+                      onClick={() => {
+                        setRightTab('preview');
+                        setLeftTab('reservation');
+                        requestAnimationFrame(() => calendarScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' }));
+                      }}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-black transition-all duration-200 ${rightTab === 'preview' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}
+                    >
+                      <ListTodo size={12} /> 予約プレビュー
+                    </button>
+                    <button
+                      onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); }}
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}
+                    >
+                      <Calendar size={12} /> 予約カレンダー
+                    </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => { setRightTab('kenshin'); setLeftTab('result'); }}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-[11px] font-black shadow-sm transition-all duration-200 ${rightTab === 'kenshin' ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                >
+                  <ClipboardCheck size={12} /> 診断書プレビュー
+                </button>
               </div>
               <div className="flex items-center gap-2 print-hide">
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
