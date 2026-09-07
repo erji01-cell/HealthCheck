@@ -1,6 +1,21 @@
 import React from 'react';
 import { getBloodArrow, toWareki, toWareikiWithWestern, getBirthEra } from '../lib/kenshinUtils.js';
 
+const parseLabNumber = (value) => {
+  const normalized = String(value ?? '').normalize('NFKC').replace(/,/g, '').trim();
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return null;
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+};
+
+const calculateNonHdlCholesterol = (totalCholesterol, hdlCholesterol) => {
+  const total = parseLabNumber(totalCholesterol);
+  const hdl = parseLabNumber(hdlCholesterol);
+  if (total == null || hdl == null) return '';
+  const result = Math.round((total - hdl) * 10) / 10;
+  return Number.isInteger(result) ? String(result) : result.toFixed(1);
+};
+
 // 健康診断書プレビュー（rightTab === kenshin で表示・印刷対象）
 export default function KenshinCertificate({ kenshinData, setHighlightedField, blankForm = false }) {
   // 値が未入力のセルを薄いグレーで網掛け（入力済み/未入力を明確化）
@@ -288,10 +303,12 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
 
               {/* ===== 別紙（健康診断書に記載されていない追加検査項目） ===== */}
               {(() => {
+                const nonHdlCholesterol = calculateNonHdlCholesterol(kenshinData.tCho, kenshinData.hdl);
                 const hasBessiData = [
+                  kenshinData.platelet,
                   kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil,
                   kenshinData.alp, kenshinData.ldh, kenshinData.ck, kenshinData.amy,
-                  kenshinData.tCho, kenshinData.lhRatio,
+                  kenshinData.tCho, kenshinData.lhRatio, nonHdlCholesterol,
                   kenshinData.un,
                   kenshinData.na, kenshinData.k, kenshinData.cl, kenshinData.ca, kenshinData.ip, kenshinData.mgElec, kenshinData.fe,
                   kenshinData.crp, kenshinData.rf, kenshinData.aso,
@@ -334,6 +351,19 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                     </div>
                   ) : null)}
 
+                  {/* 血算（白血球・赤血球・血色素・Htは1ページ目に掲載のため除外） */}
+                  {kenshinData.platelet && (
+                    <div className="flex" style={{borderBottom: '1px solid black'}}>
+                      <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>血算</div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        <span>
+                          <b>血小板</b>: {kenshinData.platelet}
+                          {(() => { const a = getBloodArrow('platelet', kenshinData.platelet, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} ×10⁴/μL
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 総蛋白・ビリルビン */}
                   {[kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
@@ -355,11 +385,11 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   )}
 
                   {/* 脂質（HDL/LDL/TGは1ページ目に掲載のため除外） */}
-                  {[kenshinData.tCho, kenshinData.lhRatio].some(Boolean) && (
+                  {[kenshinData.tCho, kenshinData.lhRatio, nonHdlCholesterol].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>脂質</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['T-Cho', kenshinData.tCho, 'mg/dL', 'tCho'], ['L/H比', kenshinData.lhRatio, '', 'lhRatio']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ' '+u : ''}</span> : null)}
+                        {[['T-Cho', kenshinData.tCho, 'mg/dL', 'tCho'], ['non-HDLコレステロール', nonHdlCholesterol, 'mg/dL', ''], ['L/H比', kenshinData.lhRatio, '', 'lhRatio']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
                   )}
