@@ -16,6 +16,15 @@ const calculateNonHdlCholesterol = (totalCholesterol, hdlCholesterol) => {
   return Number.isInteger(result) ? String(result) : result.toFixed(1);
 };
 
+const calculateAgRatio = (totalProtein, albumin) => {
+  const total = parseLabNumber(totalProtein);
+  const alb = parseLabNumber(albumin);
+  if (total == null || alb == null) return '';
+  const globulin = total - alb;
+  if (globulin <= 0) return '';
+  return (alb / globulin).toFixed(1);
+};
+
 // 健康診断書プレビュー（rightTab === kenshin で表示・印刷対象）
 export default function KenshinCertificate({ kenshinData, setHighlightedField, blankForm = false }) {
   // 値が未入力のセルを薄いグレーで網掛け（入力済み/未入力を明確化）
@@ -306,9 +315,11 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
               {/* ===== 別紙（健康診断書に記載されていない追加検査項目） ===== */}
               {(() => {
                 const nonHdlCholesterol = calculateNonHdlCholesterol(kenshinData.tCho, kenshinData.hdl);
+                const calculatedAgRatio = calculateAgRatio(kenshinData.tp, kenshinData.alb);
+                const displayedAgRatio = calculatedAgRatio || kenshinData.agRatio;
                 const hasBessiData = [
                   kenshinData.platelet,
-                  kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil,
+                  kenshinData.tp, kenshinData.alb, displayedAgRatio, kenshinData.tBil, kenshinData.dBil,
                   kenshinData.alp, kenshinData.ldh, kenshinData.ck, kenshinData.amy,
                   kenshinData.tCho, kenshinData.lhRatio, nonHdlCholesterol,
                   kenshinData.un,
@@ -367,11 +378,11 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   )}
 
                   {/* 総蛋白・ビリルビン */}
-                  {[kenshinData.tp, kenshinData.alb, kenshinData.agRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
+                  {[kenshinData.tp, kenshinData.alb, displayedAgRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>総蛋白・Bil</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['TP', kenshinData.tp, 'g/dL'], ['Alb', kenshinData.alb, 'g/dL'], ['A/G比', kenshinData.agRatio, ''], ['T-Bil', kenshinData.tBil, 'mg/dL'], ['D-Bil', kenshinData.dBil, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
+                        {[['TP', kenshinData.tp, 'g/dL'], ['Alb', kenshinData.alb, 'g/dL'], ['A/G比', displayedAgRatio, ''], ['T-Bil', kenshinData.tBil, 'mg/dL'], ['D-Bil', kenshinData.dBil, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
                   )}
