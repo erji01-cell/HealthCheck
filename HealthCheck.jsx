@@ -2691,11 +2691,28 @@ export default function App() {
 
   // 診断結果入力用：予約から選択
   const handleSelectKenshinReservation = async (r) => {
+    let resolvedAddress = String(r.address || '').trim();
+    if (!resolvedAddress && r.patient_id) {
+      const { data: patientRows, error: patientAddressError } = await supabase
+        .from('patients')
+        .select('address')
+        .eq('patient_id', r.patient_id)
+        .limit(1);
+      if (patientAddressError) {
+        console.error('patient address lookup error:', patientAddressError);
+      } else {
+        resolvedAddress = String(patientRows?.[0]?.address || '').trim();
+      }
+    }
+
     // 既にこの予約の診断書がある場合は新規作成せず既存を読み込む
     const { data: existing } = await supabase
       .from('health_data').select('*').eq('reserv_id', r.id).limit(1);
     if (existing && existing.length > 0) {
-      handleSelectKenshinRecord(existing[0]);
+      handleSelectKenshinRecord({
+        ...existing[0],
+        address: String(existing[0].address || '').trim() || resolvedAddress,
+      });
       setSelectedKenshinReservation({
         id: r.id,
         date: r.date || '',
@@ -2720,7 +2737,7 @@ export default function App() {
       kBirthDate: iso,
       kGender: r.patient_gender || '',
       kContact: r.contact || '',
-      address: r.address || '',
+      address: resolvedAddress,
       kCompanyName: loadedCompany.name || '',
       kCompanyId: loadedCompany.id || '',
       pulse: r.pulse || prev.pulse,
