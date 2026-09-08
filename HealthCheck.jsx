@@ -3054,7 +3054,7 @@ export default function App() {
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
-        <div className="flex-1 space-y-1 print-hide relative lg:flex lg:flex-col lg:min-h-0">
+        <div className="flex-1 space-y-1 print-hide relative lg:flex lg:flex-col lg:min-h-0 [&_label.text-slate-400]:text-slate-600 [&_label.text-slate-500]:text-slate-600 [&_div.text-slate-400]:text-slate-600 [&_div.text-slate-500]:text-slate-600">
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
