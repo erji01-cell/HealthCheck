@@ -3069,13 +3069,13 @@ export default function App() {
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex flex-col items-stretch border-b bg-white px-6 pt-6 pb-4 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
+                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex flex-col items-stretch border-b bg-white px-6 pt-2 pb-2 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
                   <div className="flex justify-end">
                     <button onClick={handleReset} className="flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-red-400 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500">
                       <RotateCcw size={13} /> リセット
                     </button>
                   </div>
-                  <div className="mt-1.5 flex w-full items-center gap-2 overflow-x-auto pb-1">
+                  <div className="mt-1 flex w-full items-center gap-2 overflow-x-auto">
                     <button
                       onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
                       className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-black shadow-sm transition-all duration-200 ${leftTab === 'reservation' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-100 text-slate-400 hover:text-slate-600'}`}
