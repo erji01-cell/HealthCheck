@@ -3075,7 +3075,7 @@ export default function App() {
                       <RotateCcw size={13} /> リセット
                     </button>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2 overflow-x-auto pb-1">
+                  <div className="mt-1.5 flex w-full items-center gap-2 overflow-x-auto pb-1">
                     <button
                       onClick={() => { setLeftTab('reservation'); setRightTab('calendar'); }}
                       className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs font-black shadow-sm transition-all duration-200 ${leftTab === 'reservation' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-slate-100 text-slate-400 hover:text-slate-600'}`}
@@ -3089,7 +3089,7 @@ export default function App() {
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
-                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
+                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
                       <Search size={13} /> 予約患者検索
                     </button>
                     <button
