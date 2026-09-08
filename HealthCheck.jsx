@@ -4329,28 +4329,6 @@ export default function App() {
               <div className="flex items-center gap-2 print-hide">
                 {(rightTab === 'preview' || rightTab === 'kenshin') && (
                   <>
-                    {rightTab === 'preview' && (
-                      <>
-                        <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={printAttachmentSheet}
-                            onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
-                            className="h-3.5 w-3.5 accent-blue-600"
-                          />
-                          貼付台紙も印刷
-                        </label>
-                        <label className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={printDoctorFindingsSheet}
-                            onChange={(e) => setPrintDoctorFindingsSheet(e.target.checked)}
-                            className="h-3.5 w-3.5 accent-blue-600"
-                          />
-                          医師所見記入用紙も印刷
-                        </label>
-                      </>
-                    )}
                     <button onClick={() => rightTab === 'kenshin' ? setShowKenshinPrintMenu(true) : setShowReservationPrintMenu(true)} className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition-all whitespace-nowrap">
                       <Printer size={14} /> 用紙印刷
                     </button>
@@ -5201,8 +5179,31 @@ export default function App() {
                     </button>
                   </div>
                   <div className="space-y-2.5 p-5">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-2 text-xs font-black text-slate-700">現在の予約用紙に追加する用紙</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
+                          <input
+                            type="checkbox"
+                            checked={printAttachmentSheet}
+                            onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
+                            className="h-4 w-4 accent-blue-600"
+                          />
+                          貼付台紙も印刷
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
+                          <input
+                            type="checkbox"
+                            checked={printDoctorFindingsSheet}
+                            onChange={(e) => setPrintDoctorFindingsSheet(e.target.checked)}
+                            className="h-4 w-4 accent-blue-600"
+                          />
+                          医師所見記入用紙も印刷
+                        </label>
+                      </div>
+                    </div>
                     {[
-                      { variant: 'filled', title: '現在の予約用紙を印刷', description: '画面の内容と選択中の付属用紙を印刷します', accent: 'blue' },
+                      { variant: 'filled', title: '現在の予約用紙を印刷', description: '画面の内容と上で選択した付属用紙を印刷します', accent: 'blue' },
                       { variant: 'blank-record', title: '白紙の健康診断の記録用紙', description: '記録用紙だけを白紙で印刷します', accent: 'emerald' },
                       { variant: 'blank-attachment', title: '白紙の貼付台紙', description: '貼付台紙だけを白紙で印刷します', accent: 'amber' },
                       { variant: 'blank-doctor', title: '白紙の医師所見記入用紙', description: '医師所見記入用紙だけを白紙で印刷します', accent: 'violet' },
