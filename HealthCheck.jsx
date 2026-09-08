@@ -3054,7 +3054,7 @@ export default function App() {
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
 
         {/* 左セクション: 操作エリア */}
-        <div className="flex-1 space-y-4 print-hide relative lg:flex lg:flex-col lg:min-h-0">
+        <div className="flex-1 space-y-1 print-hide relative lg:flex lg:flex-col lg:min-h-0">
 
           {/* ヘッダー */}
           <div className="flex items-center justify-between">
@@ -3069,7 +3069,7 @@ export default function App() {
 
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 overflow-hidden min-h-[750px] lg:flex-1 lg:overflow-y-auto lg:min-h-0">
             <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex flex-col items-stretch border-b bg-white px-6 pt-2 pb-2 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
+                <div className="sticky top-0 z-40 -mx-6 -mt-6 flex flex-col items-stretch border-b bg-white px-6 pt-0 pb-2 shadow-sm before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-white before:content-['']">
                   <div className="flex justify-end">
                     <button onClick={handleReset} className="flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-red-400 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500">
                       <RotateCcw size={13} /> リセット
