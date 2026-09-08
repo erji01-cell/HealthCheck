@@ -5179,31 +5179,52 @@ export default function App() {
                     </button>
                   </div>
                   <div className="space-y-2.5 p-5">
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <p className="mb-2 text-xs font-black text-slate-700">現在の予約用紙に追加する用紙</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
-                          <input
-                            type="checkbox"
-                            checked={printAttachmentSheet}
-                            onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
-                            className="h-4 w-4 accent-blue-600"
-                          />
-                          貼付台紙も印刷
-                        </label>
-                        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
-                          <input
-                            type="checkbox"
-                            checked={printDoctorFindingsSheet}
-                            onChange={(e) => setPrintDoctorFindingsSheet(e.target.checked)}
-                            className="h-4 w-4 accent-blue-600"
-                          />
-                          医師所見記入用紙も印刷
-                        </label>
+                    <fieldset className="rounded-lg border-2 border-blue-200 bg-blue-50/40 p-3">
+                      <legend className="px-2 text-xs font-black text-blue-700">現在の予約用紙</legend>
+                      <div className="space-y-2.5">
+                        <div>
+                          <p className="mb-2 text-xs font-bold text-slate-600">追加する用紙</p>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
+                              <input
+                                type="checkbox"
+                                checked={printAttachmentSheet}
+                                onChange={(e) => setPrintAttachmentSheet(e.target.checked)}
+                                className="h-4 w-4 accent-blue-600"
+                              />
+                              貼付台紙も印刷
+                            </label>
+                            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300">
+                              <input
+                                type="checkbox"
+                                checked={printDoctorFindingsSheet}
+                                onChange={(e) => setPrintDoctorFindingsSheet(e.target.checked)}
+                                className="h-4 w-4 accent-blue-600"
+                              />
+                              医師所見記入用紙も印刷
+                            </label>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => startReservationPrint('filled')}
+                          className="flex w-full items-center gap-3 rounded-lg border border-blue-300 bg-blue-50 px-4 py-3 text-left text-blue-700 hover:bg-blue-100"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/80"><Printer size={18} /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-black text-slate-800">現在の予約用紙を印刷</span>
+                            <span className="block text-xs font-bold opacity-80">画面の内容と上で選択した付属用紙を印刷します</span>
+                          </span>
+                          <Printer size={17} className="shrink-0" />
+                        </button>
                       </div>
+                    </fieldset>
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-[11px] font-black text-slate-500">白紙用紙</span>
+                      <div className="h-px flex-1 bg-slate-200" />
                     </div>
                     {[
-                      { variant: 'filled', title: '現在の予約用紙を印刷', description: '画面の内容と上で選択した付属用紙を印刷します', accent: 'blue' },
                       { variant: 'blank-record', title: '白紙の健康診断の記録用紙', description: '記録用紙だけを白紙で印刷します', accent: 'emerald' },
                       { variant: 'blank-attachment', title: '白紙の貼付台紙', description: '貼付台紙だけを白紙で印刷します', accent: 'amber' },
                       { variant: 'blank-doctor', title: '白紙の医師所見記入用紙', description: '医師所見記入用紙だけを白紙で印刷します', accent: 'violet' },
