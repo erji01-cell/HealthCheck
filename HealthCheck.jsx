@@ -3515,7 +3515,7 @@ export default function App() {
 
                 {/* ===== 診断結果入力タブ（健康診断書と連動） ===== */}
                 {leftTab === 'result' && (
-                  <div className="space-y-5">
+                  <div className="space-y-5 [&_.text-slate-400]:text-slate-600 [&_.text-slate-500]:text-slate-600">
                     <div ref={kenshinTopRef} />
 
                     {/* 対象者検索 */}
