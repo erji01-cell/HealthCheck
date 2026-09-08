@@ -59,6 +59,7 @@ import {
   getBirthEra,
   formatDobDisplay,
   normalizeRbcToMillions,
+  calculateAgRatio,
 } from './lib/kenshinUtils.js';
 
 const supabase = createClient(
@@ -1928,6 +1929,12 @@ export default function App() {
       setKenshinData(prev => ({ ...prev, bmi: '' }));
     }
   }, [kenshinData.height, kenshinData.weight]);
+
+  // 総蛋白とアルブミンからA/G比を自動計算
+  useEffect(() => {
+    const agRatio = calculateAgRatio(kenshinData.tp, kenshinData.alb);
+    setKenshinData(prev => prev.agRatio === agRatio ? prev : { ...prev, agRatio });
+  }, [kenshinData.tp, kenshinData.alb]);
 
   // ひらがな・全角カタカナ・半角カタカナ の相互変換バリアント生成
   const getKanaVariants = (input) => {
@@ -3914,7 +3921,15 @@ export default function App() {
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
                                 <div className="flex items-center gap-0.5">
-                                  <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                  <input
+                                    type="text"
+                                    name={name}
+                                    value={kenshinData[name]}
+                                    onChange={handleKenshinChange}
+                                    readOnly={name === 'agRatio'}
+                                    placeholder="―"
+                                    className={`flex-1 min-w-0 p-1.5 border rounded-lg text-center text-sm outline-none ${name === 'agRatio' ? 'bg-slate-100 cursor-not-allowed' : 'bg-white focus:ring-2 focus:ring-emerald-500'}`}
+                                  />
                                   {(() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-xl font-black flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
                                 </div>
                               </div>

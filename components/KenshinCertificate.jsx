@@ -1,5 +1,5 @@
 import React from 'react';
-import { getBloodArrow, toWareki, toWareikiWithWestern, getBirthEra } from '../lib/kenshinUtils.js';
+import { calculateAgRatio, getBloodArrow, toWareki, toWareikiWithWestern, getBirthEra } from '../lib/kenshinUtils.js';
 
 const parseLabNumber = (value) => {
   const normalized = String(value ?? '').normalize('NFKC').replace(/,/g, '').trim();
@@ -14,15 +14,6 @@ const calculateNonHdlCholesterol = (totalCholesterol, hdlCholesterol) => {
   if (total == null || hdl == null) return '';
   const result = Math.round((total - hdl) * 10) / 10;
   return Number.isInteger(result) ? String(result) : result.toFixed(1);
-};
-
-const calculateAgRatio = (totalProtein, albumin) => {
-  const total = parseLabNumber(totalProtein);
-  const alb = parseLabNumber(albumin);
-  if (total == null || alb == null) return '';
-  const globulin = total - alb;
-  if (globulin <= 0) return '';
-  return (alb / globulin).toFixed(1);
 };
 
 // 健康診断書プレビュー（rightTab === kenshin で表示・印刷対象）
