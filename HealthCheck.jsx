@@ -301,7 +301,7 @@ export default function App() {
   const [insuranceNumberError, setInsuranceNumberError] = useState('');
   const [insurancePrintAfterSave, setInsurancePrintAfterSave] = useState(false);
   const [printAttachmentSheet, setPrintAttachmentSheet] = useState(true);
-  const [printDoctorFindingsSheet, setPrintDoctorFindingsSheet] = useState(true);
+  const [printDoctorFindingsSheet, setPrintDoctorFindingsSheet] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const [leftTab, setLeftTab] = useState('reservation'); // 'reservation' | 'result'
