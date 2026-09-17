@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole, LockKeyholeOpen
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -261,6 +261,8 @@ export default function App() {
   const [closedReservationDates, setClosedReservationDates] = useState(new Set());
   const [closedDatesError, setClosedDatesError] = useState('');
   const [closedDateSaving, setClosedDateSaving] = useState(false);
+  const [showClosedDateModal, setShowClosedDateModal] = useState(false);
+  const [closedDateInput, setClosedDateInput] = useState(getLocalIsoDate);
   const [calendarDetailData, setCalendarDetailData] = useState({}); // { 'YYYY-MM-DD': [detailed reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarHasLoaded, setCalendarHasLoaded] = useState(false);
@@ -4432,7 +4434,7 @@ export default function App() {
               <div className="company-calendar-card bg-white shadow-xl rounded-xl border border-slate-200 p-4">
                 <div className="company-list-print-hide sticky top-0 z-30 -mx-4 -mt-4 mb-4 flex flex-col gap-2 border-b border-slate-100 bg-white px-4 pt-4 pb-4">
                   {/* 1段目: 表示切替・件数・リセット/印刷 */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                       <button
                         type="button"
@@ -4455,6 +4457,16 @@ export default function App() {
                         : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarFilters).length, 0)}件
                     </div>
                     <div className="ml-auto flex shrink-0 items-center gap-2">
+                      {calendarViewMode === 'calendar' && (
+                        <button
+                          type="button"
+                          onClick={() => { setClosedDateInput(getLocalIsoDate()); setShowClosedDateModal(true); }}
+                          disabled={closedDateSaving || !!closedDatesError}
+                          className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
+                        >
+                          <LockKeyhole size={13} /> 受付停止日を設定
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={openTodayReservationsModal}
@@ -4634,16 +4646,16 @@ export default function App() {
                                         ) : (
                                           <span className={`font-bold ${isDisabled ? 'text-rose-300' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
                                         )}
-                                        {!isPast && (
+                                        {isClosed && !isPast && (
                                           <button
                                             type="button"
-                                            title={isClosed ? '健診予約の受付を再開' : '健診予約の受付を停止'}
-                                            aria-label={`${dateStr}の健診予約受付を${isClosed ? '再開' : '停止'}`}
+                                            title="健診予約の受付を再開"
+                                            aria-label={`${dateStr}の健診予約受付を再開`}
                                             disabled={closedDateSaving || !!closedDatesError}
-                                            onClick={e => { e.stopPropagation(); toggleClosedReservationDate(dateStr, isClosed); }}
-                                            className={`p-0.5 rounded ${isClosed ? 'text-rose-700 hover:bg-rose-200' : 'text-slate-400 hover:bg-slate-200'} disabled:opacity-40`}
+                                            onClick={e => { e.stopPropagation(); toggleClosedReservationDate(dateStr, true); }}
+                                            className="rounded p-0.5 text-rose-700 hover:bg-rose-200 disabled:opacity-40"
                                           >
-                                            {isClosed ? <LockKeyhole size={13} /> : <LockKeyholeOpen size={13} />}
+                                            <LockKeyhole size={13} />
                                           </button>
                                         )}
                                       </div>
@@ -5620,6 +5632,38 @@ export default function App() {
                 </div>
               );
             })()}
+
+            {showClosedDateModal && (
+              <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4">
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    if (!closedDateInput || closedDateInput < getLocalIsoDate()) return;
+                    setShowClosedDateModal(false);
+                    toggleClosedReservationDate(closedDateInput, closedReservationDates.has(closedDateInput));
+                  }}
+                  className="w-full max-w-sm rounded-lg bg-white p-6 shadow-2xl"
+                >
+                  <h2 className="mb-4 text-base font-bold text-slate-800">健診予約の受付停止日</h2>
+                  <label htmlFor="closed-reservation-date" className="mb-1 block text-xs font-bold text-slate-600">日付</label>
+                  <input
+                    id="closed-reservation-date"
+                    type="date"
+                    required
+                    min={getLocalIsoDate()}
+                    value={closedDateInput}
+                    onChange={e => setClosedDateInput(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800"
+                  />
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowClosedDateModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50">キャンセル</button>
+                    <button type="submit" disabled={closedDateSaving || !!closedDatesError} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-40">
+                      {closedReservationDates.has(closedDateInput) ? '受付再開' : '受付停止'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* 確認ダイアログ（noticeOnly時はOKのみの通知ダイアログ） */}
             {confirmDialog.show && (
