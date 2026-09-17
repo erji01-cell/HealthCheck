@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole, LockKeyholeOpen
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -258,6 +258,9 @@ export default function App() {
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
   const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
+  const [closedReservationDates, setClosedReservationDates] = useState(new Set());
+  const [closedDatesError, setClosedDatesError] = useState('');
+  const [closedDateSaving, setClosedDateSaving] = useState(false);
   const [calendarDetailData, setCalendarDetailData] = useState({}); // { 'YYYY-MM-DD': [detailed reservations] }
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarHasLoaded, setCalendarHasLoaded] = useState(false);
@@ -465,6 +468,9 @@ export default function App() {
 
   const formatSupabaseError = (error) => {
     if (!error) return '';
+    if (String(error.message || '').includes('HEALTH_RESERVATION_DATE_CLOSED')) {
+      return 'この日は健診予約の受付を停止しています。別の日付を選択してください。';
+    }
     const missingColumn = String(error.message || '').match(/'([^']+)' column/)?.[1];
     if (missingColumn) {
       return `Supabase側に「${missingColumn}」カラムが見つかりません。DBカラム追加または保存対象の見直しが必要です。`;
@@ -697,6 +703,19 @@ export default function App() {
     if (!session) return;
     fetchCalendarData(calendarCompanyIdRef.current);
     fetchHealthCompanies();
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    const refresh = () => { if (document.visibilityState === 'visible') fetchClosedReservationDates(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    const timer = setInterval(refresh, 60 * 1000);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+      clearInterval(timer);
+    };
   }, [session]);
 
   // 30分ごとに軽いクエリを発行してSupabaseを起こし続ける
@@ -1502,6 +1521,49 @@ export default function App() {
   };
 
   // カレンダーデータ取得
+  const fetchClosedReservationDates = async () => {
+    if (!session) return;
+    const dates = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabase
+        .from('health_reservation_closed_dates')
+        .select('date')
+        .order('date')
+        .range(offset, offset + 999);
+      if (error) {
+        console.error('受付停止日の取得に失敗:', error);
+        setClosedDatesError('受付停止日を取得できません。Supabaseの設定を確認してください。');
+        return;
+      }
+      dates.push(...data.map(row => row.date));
+      if (data.length < 1000) break;
+    }
+    setClosedReservationDates(new Set(dates));
+    setClosedDatesError('');
+  };
+
+  const toggleClosedReservationDate = (date, isClosed) => {
+    setConfirmDialog({
+      show: true,
+      message: `${date} の健診予約受付を${isClosed ? '再開' : '停止'}しますか？\n既存の予約は変更されません。`,
+      onConfirm: async () => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        if (closedDateSaving) return;
+        setClosedDateSaving(true);
+        const { error } = isClosed
+          ? await supabase.from('health_reservation_closed_dates').delete().eq('date', date)
+          : await supabase.from('health_reservation_closed_dates').insert({ date });
+        setClosedDateSaving(false);
+        if (error) {
+          showNotice(`受付停止日の変更に失敗しました。${formatSupabaseError(error)}`);
+        } else {
+          await fetchClosedReservationDates();
+          markBackupDirty();
+        }
+      },
+    });
+  };
+
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
     if (!session) {
       setCalendarLoading(false);
@@ -1509,6 +1571,7 @@ export default function App() {
       return;
     }
     setCalendarLoading(true);
+    fetchClosedReservationDates();
     const { start, end } = getCalendarDataRange();
     let query = supabase
       .from('health_reserv')
@@ -1716,6 +1779,28 @@ export default function App() {
     }
     setSaveStatus('saving');
     setSaveErrorMessage('');
+    const targetId = overrideId || editingReservationId;
+    let originalDate = null;
+    if (targetId) {
+      const { data, error } = await supabase.from('health_reserv').select('date').eq('id', targetId).single();
+      if (error) {
+        setSaveStatus('error');
+        setSaveErrorMessage('元の予約日を確認できません。再読み込みしてからやり直してください。');
+        return;
+      }
+      originalDate = data.date;
+    }
+    if (formData.date && formData.date !== originalDate) {
+      const { data, error } = await supabase.from('health_reservation_closed_dates')
+        .select('date').eq('date', formData.date).maybeSingle();
+      if (error || data) {
+        setSaveStatus('error');
+        setSaveErrorMessage(error
+          ? '受付停止日を確認できません。Supabaseの設定を確認してください。'
+          : 'この日は健診予約の受付を停止しています。別の日付を選択してください。');
+        return;
+      }
+    }
     const { items } = formData;
     const fee = calculateReservationFee({ purpose: formData.purpose, items, shahoFee });
     const paymentType = getReservationPaymentType(formData.purpose, formData.paymentType);
@@ -3143,6 +3228,9 @@ export default function App() {
                   <div className="space-y-1">
                     <label className="text-[11px] font-black text-teal-700 uppercase">健診希望日</label>
                     <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full rounded-lg border-2 border-teal-400 bg-teal-50 p-2 font-black text-slate-900 shadow-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-200" />
+                    {closedReservationDates.has(formData.date) && (
+                      <p className="text-xs font-bold text-rose-700">この日は健診予約の受付を停止しています。既存予約の日付を変えずに編集する場合のみ保存できます。</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-400 uppercase">カルテID (任意)</label>
@@ -4483,6 +4571,7 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+                {closedDatesError && <p role="alert" className="text-sm font-bold text-rose-700">{closedDatesError}</p>}
                 {calendarViewMode === 'calendar' ? (calendarLoading && !calendarHasLoaded ? (
                   <div className="text-center text-slate-400 py-10">読み込み中...</div>
                 ) : (
@@ -4525,16 +4614,17 @@ export default function App() {
                               const isHoliday = dateStr ? HOLIDAYS.has(dateStr) : false;
                               const isDisabled = isSun || isHoliday;
                               const isPast = dateStr ? dateStr < todayStr : false;
+                              const isClosed = dateStr ? closedReservationDates.has(dateStr) : false;
                               return (
                                 <div
                                   key={idx}
                                   onClick={() => {
-                                    if (!day || isDisabled) return;
+                                    if (!day || isDisabled || isClosed) return;
                                     handleReset();
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                     setLeftTab('reservation');
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isClosed ? 'bg-rose-100 cursor-not-allowed' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
@@ -4544,7 +4634,20 @@ export default function App() {
                                         ) : (
                                           <span className={`font-bold ${isDisabled ? 'text-rose-300' : isSat ? 'text-sky-500' : 'text-slate-600'}`}>{day}</span>
                                         )}
+                                        {!isPast && (
+                                          <button
+                                            type="button"
+                                            title={isClosed ? '健診予約の受付を再開' : '健診予約の受付を停止'}
+                                            aria-label={`${dateStr}の健診予約受付を${isClosed ? '再開' : '停止'}`}
+                                            disabled={closedDateSaving || !!closedDatesError}
+                                            onClick={e => { e.stopPropagation(); toggleClosedReservationDate(dateStr, isClosed); }}
+                                            className={`p-0.5 rounded ${isClosed ? 'text-rose-700 hover:bg-rose-200' : 'text-slate-400 hover:bg-slate-200'} disabled:opacity-40`}
+                                          >
+                                            {isClosed ? <LockKeyhole size={13} /> : <LockKeyholeOpen size={13} />}
+                                          </button>
+                                        )}
                                       </div>
+                                      {isClosed && <div className="mb-0.5 font-bold text-rose-700">受付停止</div>}
                                       {reservations.map((r, ri) => {
                                         const gender = (r.patient_gender || '').trim();
                                         const isMale = gender === '男';
