@@ -1458,6 +1458,15 @@ export default function App() {
     [100, 300, 700].forEach(delay => setTimeout(scrollToSavedMonth, delay));
   };
 
+  const setCalendarMonthRange = (monthOffset) => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + monthOffset + 1, 0);
+    setCalendarDateFrom(getLocalIsoDate(firstDay));
+    setCalendarDateTo(getLocalIsoDate(lastDay));
+    if (calendarViewMode === 'calendar') scheduleCalendarScrollToMonth(getLocalIsoDate(firstDay).slice(0, 7));
+  };
+
   const openTodayReservationsModal = () => {
     setShowTodayReservationsModal(true);
     fetchTodayReservations();
@@ -4536,7 +4545,7 @@ export default function App() {
                     </select>
                   </div>
                   {/* 3段目: 健診日の期間フィルタ */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <label className="shrink-0 text-[11px] font-black text-slate-400">期間</label>
                     <input
                       type="date"
@@ -4551,6 +4560,20 @@ export default function App() {
                       onChange={e => setCalendarDateTo(e.target.value)}
                       className="w-[145px] border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-indigo-300"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setCalendarMonthRange(-1)}
+                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 whitespace-nowrap"
+                    >
+                      前月
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarMonthRange(0)}
+                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 whitespace-nowrap"
+                    >
+                      当月
+                    </button>
                     <button
                       type="button"
                       onClick={() => { setCalendarDateFrom(''); setCalendarDateTo(''); }}
