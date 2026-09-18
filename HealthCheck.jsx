@@ -736,7 +736,7 @@ export default function App() {
     if (startupMaintenanceRanRef.current) return;
     startupMaintenanceRanRef.current = true;
     (async () => {
-      // 起動時は毎回チェック：前回バックアップと差分があればバックアップ（同一ならスキップ）
+      // 起動時はバックアップ時刻と未保存の変更記録を確認する。
       let failMsg = '';
       if (isAutoBackupEnabled()) {
         try {
@@ -884,6 +884,7 @@ export default function App() {
       const text = await file.text();
       const payload = JSON.parse(text);
       const results = await restoreFromPayload(payload, session, { replace: restoreReplace });
+      markBackupDirty();
       const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
       setBackupMessage(`復元完了: ${summary}`);
     } catch (err) {
@@ -912,6 +913,7 @@ export default function App() {
     try {
       const payload = await downloadStorageBackup(session, fileName);
       const results = await restoreFromPayload(payload, session, { replace: restoreReplace });
+      markBackupDirty();
       const summary = Object.entries(results).map(([t, n]) => `${t}: ${n}件`).join(' / ');
       setBackupMessage(`復元完了: ${summary}`);
     } catch (err) {
@@ -1667,7 +1669,10 @@ export default function App() {
   // --- 変更後の自動バックアップ（変更フラグ＋3分ごとの定期チェック方式） ---
   // タイマーが認証イベント等で作り直されてもフラグはrefに残るため、次の周期で必ず拾われる
   const backupDirty = useRef(false);
-  const markBackupDirty = () => { backupDirty.current = true; };
+  const markBackupDirty = () => {
+    backupDirty.current = true;
+    localStorage.setItem('healthcheck_backup_dirty', `${Date.now()}-${Math.random()}`);
+  };
 
   useEffect(() => {
     if (!session) return;
@@ -5015,10 +5020,10 @@ export default function App() {
                         onChange={e => { setAutoBackupOn(e.target.checked); setAutoBackupEnabled(e.target.checked); }}
                         className="w-5 h-5"
                       />
-                      <span className="font-bold text-slate-700">自動バックアップ（起動時＋変更を3分ごとに確認して保存）</span>
+                      <span className="font-bold text-slate-700">自動バックアップ（24時間ごと＋変更を3分ごとに確認して保存）</span>
                       <span className="text-slate-400 ml-2">前回: {lastBackupAt ? new Date(lastBackupAt).toLocaleString('ja-JP') : '未実行'}</span>
                     </label>
-                    <span className="text-slate-400">同じ日の分は上書き保存 / 最大7日分保持 / 変更がない日は保存しない</span>
+                    <span className="text-slate-400">同じ日の分は上書き保存 / 最大7日分保持 / 24時間以内で変更記録がなければスキップ</span>
                   </div>
                   {backupMessage && (
                     <div className="px-8 py-3 text-sm text-slate-600 bg-amber-50 border-b border-amber-100">{backupMessage}</div>
