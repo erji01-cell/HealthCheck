@@ -20,6 +20,11 @@
 
 ---
 
+## [2026-09-18] Codex
+- **作業内容**: BNPを腫瘍マーカーからその他採血項目へ移動し、CA125・CA15-3・AFPを腫瘍マーカーの入力、保存・再読込、診断書別紙表示に追加。新項目の高低判定は基準範囲未確認のため未設定。
+- **変更ファイル**: HealthCheck.jsx、components/KenshinCertificate.jsx、lib/kenshinUtils.js、supabase_add_health_data_tumor_markers.sql、AGENT_LOG.md
+- **次の課題 / 残タスク**: Supabase SQLはユーザーが実行済み。実データで保存・再読込と印刷プレビューを確認する。
+
 ## [2026-09-17] Codex
 - **作業内容**: 健診予約の受付停止日をSupabaseで管理し、カレンダー表示・日付入力・保存時の制限を実装。停止日のみ鍵を表示するよう変更し、予約期間フィルタに前月・当月ボタンを追加（ba2f6fe、56a1b6c、44caa79）。
 - **変更ファイル**: HealthCheck.jsx、lib/backup.js、supabase_health_reservation_closed_dates.sql

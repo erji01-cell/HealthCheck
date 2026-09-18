@@ -316,7 +316,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   kenshinData.un,
                   kenshinData.na, kenshinData.k, kenshinData.cl, kenshinData.ca, kenshinData.ip, kenshinData.mgElec, kenshinData.fe,
                   kenshinData.crp, kenshinData.rf, kenshinData.aso,
-                  kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.bnp,
+                  kenshinData.cea, kenshinData.ca199, kenshinData.psaValue,
+                  kenshinData.ca125, kenshinData.ca153, kenshinData.afp, kenshinData.bnp,
                   kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph,
                   kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone,
                   kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid,
@@ -429,21 +430,21 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   )}
 
                   {/* 腫瘍マーカー */}
-                  {[kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.bnp].some(Boolean) && (
+                  {[kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.ca125, kenshinData.ca153, kenshinData.afp].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腫瘍マーカー</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['CEA', kenshinData.cea, 'ng/mL', 'cea'], ['CA19-9', kenshinData.ca199, 'U/mL', 'ca199'], ['PSA', kenshinData.psaValue, 'ng/mL', 'psaValue'], ['BNP', kenshinData.bnp, 'pg/mL', 'bnp']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
+                        {[['CEA', kenshinData.cea, 'ng/mL', 'cea'], ['CA19-9', kenshinData.ca199, 'U/mL', 'ca199'], ['PSA', kenshinData.psaValue, 'ng/mL', 'psaValue'], ['CA125', kenshinData.ca125, 'U/mL', 'ca125'], ['CA15-3', kenshinData.ca153, 'U/mL', 'ca153'], ['AFP', kenshinData.afp, 'ng/mL', 'afp']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
 
                   {/* その他採血項目 */}
-                  {[kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph].some(Boolean) && (
+                  {[kenshinData.bnp, kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>その他採血</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['HBs抗原', kenshinData.hbsAg], ['HBs抗体', kenshinData.hbsAb], ['HCV抗体', kenshinData.hcvAb], ['梅毒STS', kenshinData.syphilisSTS], ['MRSA黄色ブドウ球菌', kenshinData.mrsaStaph]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
+                        {[['BNP', kenshinData.bnp, 'pg/mL', 'bnp'], ['HBs抗原', kenshinData.hbsAg], ['HBs抗体', kenshinData.hbsAb], ['HCV抗体', kenshinData.hcvAb], ['梅毒STS', kenshinData.syphilisSTS], ['MRSA黄色ブドウ球菌', kenshinData.mrsaStaph]].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ` ${u}` : ''}</span> : null)}
                       </div>
                     </div>
                   )}

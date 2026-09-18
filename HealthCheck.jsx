@@ -2626,7 +2626,8 @@ export default function App() {
       un: r.un || '', cre: r.cre || '', egfr: r.egfr || '', uricAcid: r.uric_acid || '',
       na: r.na || '', k: r.k || '', cl: r.cl || '', ca: r.ca || '', ip: r.ip || '', mgElec: r.mg_elec || '', fe: r.fe || '',
       bloodGlucose: r.blood_glucose || '', hba1c: r.hba1c || '', crp: r.crp || '', rf: r.rf || '', aso: r.aso || '',
-      cea: r.cea || '', ca199: r.ca199 || '', psaValue: r.psa_value || '', bnp: r.bnp || '',
+      cea: r.cea || '', ca199: r.ca199 || '', psaValue: r.psa_value || '',
+      ca125: r.ca125 || '', ca153: r.ca153 || '', afp: r.afp || '', bnp: r.bnp || '',
       hbsAg: r.hbs_ag || '', hbsAb: r.hbs_ab || '', hcvAb: r.hcv_ab || '',
       syphilisSTS: r.syphilis_sts || '', mrsaStaph: r.mrsa_staph || '',
       endoscopyResult: r.endoscopy_result || '', echoResult: r.echo_result || '', manganeseResult: r.manganese_result || '',
@@ -2709,7 +2710,8 @@ export default function App() {
       un: d.un, cre: d.cre, egfr: d.egfr, uric_acid: d.uricAcid,
       na: d.na, k: d.k, cl: d.cl, ca: d.ca, ip: d.ip, mg_elec: d.mgElec, fe: d.fe,
       blood_glucose: d.bloodGlucose, hba1c: d.hba1c, crp: d.crp, rf: d.rf, aso: d.aso,
-      cea: d.cea, ca199: d.ca199, psa_value: d.psaValue, bnp: d.bnp,
+      cea: d.cea, ca199: d.ca199, psa_value: d.psaValue,
+      ca125: d.ca125, ca153: d.ca153, afp: d.afp, bnp: d.bnp,
       hbs_ag: d.hbsAg, hbs_ab: d.hbsAb, hcv_ab: d.hcvAb, syphilis_sts: d.syphilisSTS, mrsa_staph: d.mrsaStaph,
       endoscopy_result: d.endoscopyResult, echo_result: d.echoResult, manganese_result: d.manganeseResult,
       stool_occult: d.stoolOccult, norovirus: d.norovirus, bacteria3: d.bacteria3, bacteria5: d.bacteria5, paratyphoid: d.paratyphoid,
@@ -4157,7 +4159,9 @@ export default function App() {
                               { label: 'CEA(ng/mL)', name: 'cea' },
                               { label: 'CA19-9(U/mL)', name: 'ca199' },
                               { label: 'PSA(ng/mL)', name: 'psaValue' },
-                              { label: 'BNP(pg/mL)', name: 'bnp' },
+                              { label: 'CA125(U/mL)', name: 'ca125' },
+                              { label: 'CA15-3(U/mL)', name: 'ca153' },
+                              { label: 'AFP(ng/mL)', name: 'afp' },
                             ].map(({ label, name }) => (
                               <div key={name} className="space-y-0.5">
                                 <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
@@ -4179,6 +4183,7 @@ export default function App() {
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                         <div className="grid grid-cols-3 gap-2">
                           {[
+                            { label: 'BNP(pg/mL)', name: 'bnp' },
                             { label: 'HBs抗原', name: 'hbsAg' },
                             { label: 'HBs抗体', name: 'hbsAb' },
                             { label: 'HCV抗体', name: 'hcvAb' },
@@ -4187,7 +4192,10 @@ export default function App() {
                           ].map(({ label, name }) => (
                             <div key={name} className="space-y-0.5">
                               <div className="text-[10px] text-slate-500 text-center leading-tight">{label}</div>
-                              <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="w-full p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                              <div className="flex items-center gap-0.5">
+                                <input type="text" name={name} value={kenshinData[name]} onChange={handleKenshinChange} placeholder="―" className="min-w-0 flex-1 p-1.5 border rounded-lg text-center text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                                {name === 'bnp' && (() => { const a = getBloodArrow(name, kenshinData[name], kenshinData.kGender); return a ? <span className={`text-xl font-black flex-shrink-0 ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}
+                              </div>
                             </div>
                           ))}
                         </div>
