@@ -21,6 +21,11 @@
 
 ---
 
+## 2026-09-24 16:54(自宅) Codex
+- **作業内容**: 健診予約の新規登録メールに登録日時、修正登録メールに修正登録日時を日本時間（秒単位）で表示するようEdge Functionを変更。
+- **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_reservation_notification_setup.md、AGENT_LOG.md
+- **次の課題 / 残タスク**: Edge Functionを再デプロイし、新規登録・修正登録メールの日時表示を実メールで確認する。
+
 ## [2026-09-18] Codex
 - **作業内容**: BNPを腫瘍マーカーからその他採血項目へ移動し、CA125・CA15-3・AFPを腫瘍マーカーの入力、保存・再読込、診断書別紙表示に追加。新項目の高低判定は基準範囲未確認のため未設定。
 - **変更ファイル**: HealthCheck.jsx、components/KenshinCertificate.jsx、lib/kenshinUtils.js、supabase_add_health_data_tumor_markers.sql、AGENT_LOG.md
