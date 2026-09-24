@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-09-24 18:14(自宅) Codex
+- **作業内容**: 日本ニュートリション株式会社の予約データ消失について調査。現在の予約13件はSupabase Storageの確認可能な7世代（2026-09-14〜2026-09-24）のバックアップすべてで維持され、団体変更・削除の形跡はなかった。期間フィルターの「当月」選択時には9月30日以降の6件が非表示になるため、表示上の減少が主な可能性と判断。将来の原因特定策として、予約のINSERT・UPDATE・DELETEごとに操作種別、予約ID、操作日時、操作者、変更前後データ、操作元、削除理由を別テーブルへ保存するSupabase監査ログを提案した。
+- **変更ファイル**: AGENT_LOG.md
+- **次の課題 / 残タスク**: 監査ログは未実装。実装時はデータベーストリガー、監査ログを変更・削除できないRLS、バックアップ復元などの操作元記録、管理者向け履歴表示を検討する。
+
+## 2026-09-24 16:54(自宅) Codex
+- **作業内容**: 健診予約の新規登録メールに登録日時、修正登録メールに修正登録日時を日本時間（秒単位）で表示するようEdge Functionを変更。
+- **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_reservation_notification_setup.md、AGENT_LOG.md
+- **次の課題 / 残タスク**: Edge Functionを再デプロイし、新規登録・修正登録メールの日時表示を実メールで確認する。
+
 ## [2026-09-18] Codex
 - **作業内容**: BNPを腫瘍マーカーからその他採血項目へ移動し、CA125・CA15-3・AFPを腫瘍マーカーの入力、保存・再読込、診断書別紙表示に追加。新項目の高低判定は基準範囲未確認のため未設定。
 - **変更ファイル**: HealthCheck.jsx、components/KenshinCertificate.jsx、lib/kenshinUtils.js、supabase_add_health_data_tumor_markers.sql、AGENT_LOG.md

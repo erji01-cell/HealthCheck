@@ -37,6 +37,22 @@ function formatDate(value) {
   return match ? `${match[1]}/${match[2]}/${match[3]}` : String(value || '-');
 }
 
+function formatDateTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
 const reservationSummaryFields = [
   { label: '健診日', getValue: (row) => formatDate(row?.date) },
   { label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
@@ -157,6 +173,12 @@ Deno.serve(async (request) => {
 
   const eventLabel = eventType === 'INSERT' ? '新規予約' : '予約修正';
   const reservationDate = formatDate(record.date);
+  const operationDateTime = formatDateTime(
+    eventType === 'INSERT'
+      ? (record.created_at || record.updated_at)
+      : (record.updated_at || record.created_at),
+  );
+  const operationDateTimeLabel = eventType === 'INSERT' ? '登録日時' : '修正登録日時';
   const reservationSummaryTable = buildReservationSummaryTable(eventType, record, oldRecord);
   const recipients = notificationEmail
     .split(',')
@@ -192,6 +214,7 @@ Deno.serve(async (request) => {
       html: `
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.7">
           <h2 style="margin: 0 0 16px">${eventLabel}がありました</h2>
+          <p style="margin:0 0 12px"><strong>${operationDateTimeLabel}:</strong> ${escapeHtml(operationDateTime)}</p>
           ${reservationSummaryTable}
           <p style="margin-top:16px;color:#64748b;font-size:12px">検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。</p>
         </div>
