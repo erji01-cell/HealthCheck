@@ -97,7 +97,7 @@ Print layout is fine-tuned in millimeters against real A4 output; changes here a
 
 ### Reservation email notifications
 
-Never triggered from the front end. A Supabase Database Webhook on `health_reserv` INSERT/UPDATE calls `supabase/functions/send-reservation-notification`, which authenticates via the `x-health-reservation-secret` header (not JWT) and sends through Resend. It skips UPDATEs where `updated_at` is unchanged, so bulk maintenance edits don't spam. Failures are recorded only in `health_reservation_notification_log` and are invisible in the UI. Setup steps are in `supabase_reservation_notification_setup.md`.
+Never triggered from the front end. A Supabase Database Webhook on `health_reserv` INSERT/UPDATE/DELETE calls `supabase/functions/send-reservation-notification`, which authenticates via the `x-health-reservation-secret` header (not JWT) and sends through Resend. It skips UPDATEs where `updated_at` is unchanged, so bulk maintenance edits don't spam. DELETE notifications are limited to reservation-form deletes with a selected staff member; automatic pruning and maintenance deletes stay silent. Failures are recorded only in `health_reservation_notification_log` and are invisible in the UI. Setup steps are in `supabase_reservation_notification_setup.md`.
 
 ## Maintenance gotchas
 

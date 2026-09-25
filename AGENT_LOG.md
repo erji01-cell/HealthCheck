@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-09-25 19:01(自宅) Codex / GPT-6
+- **作業内容**: 健診予約の画面削除をメール通知対象へ追加。削除前の予約概要、削除日時、選択した削除担当者名を通知し、自動削除・SQL直接削除・バックアップ復元は通知対象外とした。新規・修正通知も操作担当者を独立表示する形式へ統一。追加SQLはユーザーが実行し、更新版Edge FunctionをSupabaseプロジェクトへデプロイした。
+- **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_add_reservation_delete_notification.sql、supabase_reservation_notification_setup.md、CLAUDE.md、AGENT_LOG.md
+- **検証結果**: Edge Function構文チェック、削除Webhookの模擬送信テスト、npm run build、git diff --check成功。模擬メールに予約削除の件名、削除担当者名、患者名、団体名が含まれることを確認。`send-reservation-notification` の本番デプロイ成功。
+- **次の課題 / 残タスク**: テスト予約を画面から削除し、削除メールと通知ログを実環境で確認する。
+
 ## 2026-09-25 16:24(職場) Codex / GPT-6
 - **作業内容**: ユーザーより予約監査ログSQL実行済みの報告を受領。SQL導入待ちのpush保留を解除し、監査ログ実装（17c0636）と本記録を公開対象とした。
 - **変更ファイル**: AGENT_LOG.md

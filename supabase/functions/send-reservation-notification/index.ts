@@ -58,7 +58,6 @@ const reservationSummaryFields = [
   { label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
   { label: '団体名', getValue: (row) => String(row?.company_name || '団体名なし') },
   { label: '健診目的', getValue: (row) => String(row?.purpose || '-') },
-  { label: '担当者', getValue: (row) => String(row?.staff_name || '-') },
 ];
 
 function buildReservationSummaryTable(eventType, record, oldRecord) {
@@ -138,14 +137,22 @@ Deno.serve(async (request) => {
   const eventType = String(payload?.type || '').toUpperCase();
   const record = payload?.record;
   const oldRecord = payload?.old_record;
+  const actorStaffName = String(payload?.actor_staff_name || record?.staff_name || '-');
 
   if (
     payload?.schema !== 'public'
     || payload?.table !== 'health_reserv'
-    || !['INSERT', 'UPDATE'].includes(eventType)
+    || !['INSERT', 'UPDATE', 'DELETE'].includes(eventType)
     || !record?.id
   ) {
     return jsonResponse({ error: '予約Webhookのデータ形式が正しくありません。' }, 400);
+  }
+
+  if (
+    eventType === 'DELETE'
+    && (payload?.operation_source !== 'reservation_form' || !payload?.actor_staff_name)
+  ) {
+    return jsonResponse({ ok: true, skipped: 'maintenance_delete' });
   }
 
   // 予約画面からの保存は必ず updated_at を更新する。
@@ -171,14 +178,22 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'メール送信の秘密情報が未設定です。' }, 500);
   }
 
-  const eventLabel = eventType === 'INSERT' ? '新規予約' : '予約修正';
+  const eventLabel = eventType === 'INSERT'
+    ? '新規予約'
+    : eventType === 'UPDATE' ? '予約修正' : '予約削除';
   const reservationDate = formatDate(record.date);
   const operationDateTime = formatDateTime(
-    eventType === 'INSERT'
-      ? (record.created_at || record.updated_at)
-      : (record.updated_at || record.created_at),
+    payload?.occurred_at
+      || (eventType === 'INSERT'
+        ? (record.created_at || record.updated_at)
+        : (record.updated_at || record.created_at)),
   );
-  const operationDateTimeLabel = eventType === 'INSERT' ? '登録日時' : '修正登録日時';
+  const operationDateTimeLabel = eventType === 'INSERT'
+    ? '登録日時'
+    : eventType === 'UPDATE' ? '修正登録日時' : '削除日時';
+  const actorLabel = eventType === 'INSERT'
+    ? '登録担当者'
+    : eventType === 'UPDATE' ? '修正担当者' : '削除担当者';
   const reservationSummaryTable = buildReservationSummaryTable(eventType, record, oldRecord);
   const recipients = notificationEmail
     .split(',')
@@ -193,6 +208,7 @@ Deno.serve(async (request) => {
     eventType,
     id: record.id,
     updatedAt: record.updated_at || record.created_at || '',
+    occurredAt: payload?.occurred_at || '',
     date: record.date || '',
     patientId: record.patient_id || '',
     companyId: record.company_id || '',
@@ -215,8 +231,11 @@ Deno.serve(async (request) => {
         <div style="font-family: sans-serif; color: #1e293b; line-height: 1.7">
           <h2 style="margin: 0 0 16px">${eventLabel}がありました</h2>
           <p style="margin:0 0 12px"><strong>${operationDateTimeLabel}:</strong> ${escapeHtml(operationDateTime)}</p>
+          <p style="margin:0 0 12px"><strong>${actorLabel}:</strong> ${escapeHtml(actorStaffName)}</p>
           ${reservationSummaryTable}
-          <p style="margin-top:16px;color:#64748b;font-size:12px">検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。</p>
+          <p style="margin-top:16px;color:#64748b;font-size:12px">${eventType === 'DELETE'
+            ? '削除前の予約概要です。検査内容や備考はメールに記載していません。'
+            : '検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。'}</p>
         </div>
       `,
     }),

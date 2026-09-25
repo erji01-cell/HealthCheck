@@ -1,6 +1,6 @@
 # 健診予約メール通知のSupabase設定
 
-この通知はフロント画面から起動しません。`health_reserv` の `INSERT` / `UPDATE` を
+この通知はフロント画面から起動しません。`health_reserv` の `INSERT` / `UPDATE` / `DELETE` を
 Supabase Database Webhookが検知し、Edge FunctionからResendを使って送信します。
 職員画面には送信中・送信済み・送信失敗を表示しません。
 
@@ -51,7 +51,16 @@ supabase functions deploy send-reservation-notification --no-verify-jwt
 
 秘密文字列を置き換えずに実行した場合はエラーで停止します。
 
-## 5. 動作確認
+## 5. 削除通知の追加
+
+予約監査ログ設定の導入後、SQL Editorで
+`supabase_add_reservation_delete_notification.sql` を実行します。
+このSQLは通知ログの操作種別へ `DELETE` を追加し、画面からの予約削除をWebhookの対象にします。
+3年以上前の予約の自動削除、SQL直接削除、バックアップ復元による削除は通知しません。
+
+Edge Functionは手順3のコマンドで更新版を再デプロイしてください。
+
+## 6. 動作確認
 
 1. 健診システムからテスト予約を新規登録します。
 2. 件名が「【健診予約】新規予約 健診日」のメールを確認します。
@@ -60,6 +69,8 @@ supabase functions deploy send-reservation-notification --no-verify-jwt
 4. 件名が「【健診予約】予約修正 健診日」のメールを確認します。
    本文に「修正登録日時」が日本時間で表示されることも確認します。
 5. SQL Editorで監査ログを確認します。
+6. テスト予約を削除し、件名が「【健診予約】予約削除 健診日」のメールを確認します。
+   本文に削除日時、削除担当者、削除前の予約概要が表示されることも確認します。
 
 ```sql
 select *
