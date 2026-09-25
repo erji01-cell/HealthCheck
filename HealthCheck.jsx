@@ -506,11 +506,11 @@ export default function App() {
       Object.entries(record).filter(([key]) => HEALTH_RESERV_SAVE_COLUMNS.has(key))
     );
 
-  const saveHealthReservationRecord = async (record, overrideId = null) => {
+  const saveHealthReservationRecord = async (record, overrideId = null, actorId = null) => {
     const targetId = overrideId || editingReservationId;
     const payload = sanitizeHealthReservRecord(record);
     return targetId
-      ? supabase.from('health_reserv').update(payload).eq('id', targetId)
+      ? supabase.rpc('audit_health_reservation_change', { p_id: String(targetId), p_action: 'UPDATE', p_staff_id: String(actorId), p_record: payload })
       : supabase.from('health_reserv').insert(payload);
   };
 
@@ -1774,7 +1774,14 @@ export default function App() {
   }, [session, selectedCalendarDate, calendarCompanyId]);
 
   // 実際の保存処理（overrideId 指定時はそのIDの既存レコードを更新）
-  const performSave = async (overrideId = null) => {
+  const performSave = async (overrideId = null, actorId = null) => {
+    if ((overrideId || editingReservationId) && !actorId) {
+      setConfirmDialog({ show: true, message: '予約を修正して保存します。修正担当者を選択してください。', actorLabel: '修正担当者', actorId: '', onConfirm: (staffId) => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        performSave(overrideId, staffId);
+      } });
+      return;
+    }
     if (!session) {
       setSaveStatus('error');
       setSaveErrorMessage('ログイン状態が確認できません。再ログインしてから保存してください。');
@@ -1897,7 +1904,7 @@ export default function App() {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await saveHealthReservationRecord(record, overrideId);
+    const { error } = await saveHealthReservationRecord(record, overrideId, actorId);
     if (error) {
       console.error(error);
       setSaveErrorMessage(formatSupabaseError(error));
@@ -2885,18 +2892,20 @@ export default function App() {
     setConfirmDialog({
       show: true,
       message: `「${patientName}」の予約を削除しますか？`,
-      onConfirm: () => {
+      actorLabel: '削除担当者',
+      actorId: '',
+      onConfirm: (staffId) => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        performDeleteReservation(reservationId);
+        performDeleteReservation(reservationId, staffId);
       },
     });
   };
 
-  const performDeleteReservation = async (reservationId) => {
-    const { error } = await supabase.from('health_reserv').delete().eq('id', reservationId);
+  const performDeleteReservation = async (reservationId, staffId) => {
+    const { error } = await supabase.rpc('audit_health_reservation_change', { p_id: String(reservationId), p_action: 'DELETE', p_staff_id: String(staffId), p_record: {} });
     if (error) {
       console.error('予約の削除に失敗:', error);
-      showNotice('削除に失敗しました。');
+      showNotice(`削除に失敗しました。\n${formatSupabaseError(error)}`);
     } else {
       setCalendarData(prev => {
         const updated = { ...prev };
@@ -3581,6 +3590,7 @@ export default function App() {
                     <label className="text-[11px] font-bold text-slate-400 uppercase">予約担当者 <span className="text-red-500">*</span></label>
                     <select
                       value={formData.staffId}
+                      disabled={!!editingReservationId}
                       onChange={(e) => {
                         const sid = e.target.value;
                         const member = staffMembers.find(m => String(m.id) === sid);
@@ -5706,6 +5716,15 @@ export default function App() {
               <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
                   <p className="text-slate-700 mb-6 whitespace-pre-line">{confirmDialog.message}</p>
+                  {confirmDialog.actorLabel && (
+                    <label className="block text-left text-sm font-bold text-slate-700 mb-5">
+                      {confirmDialog.actorLabel}（必須）
+                      <select value={confirmDialog.actorId || ''} onChange={e => setConfirmDialog(prev => ({ ...prev, actorId: e.target.value }))} className="mt-2 w-full border border-slate-300 rounded-lg p-2 bg-white">
+                        <option value="">担当者を選択</option>
+                        {staffMembers.map(member => <option key={member.id} value={String(member.id)}>{member.name}</option>)}
+                      </select>
+                    </label>
+                  )}
                   <div className="flex gap-3 justify-center">
                     {!confirmDialog.noticeOnly && (
                       <button
@@ -5716,7 +5735,8 @@ export default function App() {
                       </button>
                     )}
                     <button
-                      onClick={confirmDialog.onConfirm || (() => setConfirmDialog({ show: false, message: '', onConfirm: null }))}
+                      disabled={!!confirmDialog.actorLabel && !confirmDialog.actorId}
+                      onClick={() => confirmDialog.onConfirm ? confirmDialog.onConfirm(confirmDialog.actorId) : setConfirmDialog({ show: false, message: '', onConfirm: null })}
                       className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
                     >
                       OK
