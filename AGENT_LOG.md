@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-09-26 10:29(職場) Codex / GPT-5
+- **作業内容**: 予約修正・削除メールに、今回の操作担当者とは別に「新規登録時の予約担当者」を表示するよう変更。修正時は変更前レコード、削除時は削除前レコードの予約担当者を使用する。
+- **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_reservation_notification_setup.md、AGENT_LOG.md
+- **検証結果**: `npm run build`、`git diff --check`成功。`send-reservation-notification` Edge FunctionをSupabaseプロジェクトへ再デプロイした。
+- **次の課題 / 残タスク**: 実際の予約修正・削除通知で「新規登録時の予約担当者」が正しく表示されることを確認する。
+
 ## 2026-09-25 19:01(自宅) Codex / GPT-6
 - **作業内容**: 健診予約の画面削除をメール通知対象へ追加。削除前の予約概要、削除日時、選択した削除担当者名を通知し、自動削除・SQL直接削除・バックアップ復元は通知対象外とした。新規・修正通知も操作担当者を独立表示する形式へ統一。追加SQLはユーザーが実行し、更新版Edge FunctionをSupabaseプロジェクトへデプロイした。
 - **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_add_reservation_delete_notification.sql、supabase_reservation_notification_setup.md、CLAUDE.md、AGENT_LOG.md

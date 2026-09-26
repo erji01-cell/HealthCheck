@@ -138,6 +138,7 @@ Deno.serve(async (request) => {
   const record = payload?.record;
   const oldRecord = payload?.old_record;
   const actorStaffName = String(payload?.actor_staff_name || record?.staff_name || '-');
+  const originalReservationStaffName = String(oldRecord?.staff_name || record?.staff_name || '-');
 
   if (
     payload?.schema !== 'public'
@@ -232,6 +233,9 @@ Deno.serve(async (request) => {
           <h2 style="margin: 0 0 16px">${eventLabel}がありました</h2>
           <p style="margin:0 0 12px"><strong>${operationDateTimeLabel}:</strong> ${escapeHtml(operationDateTime)}</p>
           <p style="margin:0 0 12px"><strong>${actorLabel}:</strong> ${escapeHtml(actorStaffName)}</p>
+          ${eventType !== 'INSERT'
+            ? `<p style="margin:0 0 12px"><strong>新規登録時の予約担当者:</strong> ${escapeHtml(originalReservationStaffName)}</p>`
+            : ''}
           ${reservationSummaryTable}
           <p style="margin-top:16px;color:#64748b;font-size:12px">${eventType === 'DELETE'
             ? '削除前の予約概要です。検査内容や備考はメールに記載していません。'
