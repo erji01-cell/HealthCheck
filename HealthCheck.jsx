@@ -71,6 +71,20 @@ const normalizeCompanyName = (value = '') =>
   value.replace(/\u3000/g, ' ').replace(/\s+/g, ' ').trim();
 
 const getCompanyNameKey = (value = '') => normalizeCompanyName(value).toLowerCase();
+
+// 追加時の重複チェック専用のゆるい比較キー（VaxCheck と同じ規則）。全角半角・半角カナ・かっこ・
+// スペースの有無・「株式会社／(株)／㈱」などの表記揺れを同じとみなす。name_key としては保存しない。
+const getCompanyLooseKey = (value = '') =>
+  String(value ?? '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/株式会社|\(株\)/g, '(株)')
+    .replace(/有限会社|\(有\)/g, '(有)')
+    .replace(/合同会社|\(同\)/g, '(同)');
+
+// 団体管理を開くときのパスワード（VaxCheck の団体管理と共通）
+const COMPANY_MANAGEMENT_PASSWORD = '0125';
 const CALENDAR_COMPANY_STORAGE_KEY = 'health_check_calendar_company_id';
 
 const fromSnakeCaseRow = (row) => {
@@ -339,6 +353,11 @@ export default function App() {
   const [newCompanyNo, setNewCompanyNo] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [companySaveStatus, setCompanySaveStatus] = useState('');
+  const [companySaveMessage, setCompanySaveMessage] = useState('');
+  const [showCompanyPassword, setShowCompanyPassword] = useState(false);
+  const [pendingCompanyTarget, setPendingCompanyTarget] = useState(null);
+  const [companyPassword, setCompanyPassword] = useState('');
+  const [companyPasswordError, setCompanyPasswordError] = useState('');
   const [showReservationCompanyOptions, setShowReservationCompanyOptions] = useState(false);
   const [showKenshinCompanyOptions, setShowKenshinCompanyOptions] = useState(false);
 
@@ -558,12 +577,31 @@ export default function App() {
     return inserted;
   };
 
+  const requestCompanyModal = (target = null) => {
+    setPendingCompanyTarget(target);
+    setCompanyPassword('');
+    setCompanyPasswordError('');
+    setShowCompanyPassword(true);
+  };
+
+  const handleCompanyPasswordSubmit = (e) => {
+    e.preventDefault();
+    if (companyPassword !== COMPANY_MANAGEMENT_PASSWORD) {
+      setCompanyPasswordError('パスワードが間違っています');
+      return;
+    }
+    setShowCompanyPassword(false);
+    setCompanyPassword('');
+    openCompanyModal(pendingCompanyTarget);
+  };
+
   const openCompanyModal = async (target = null) => {
     const companies = await fetchHealthCompanies();
     setCompanyEditValues(Object.fromEntries(companies.map(c => [c.id, c.name])));
     setCompanyNoEditValues(Object.fromEntries(companies.map(c => [c.id, c.display_no ?? ''])));
     setCompanyPickerTarget(target);
     setCompanySaveStatus('');
+    setCompanySaveMessage('');
     setShowCompanyModal(true);
   };
 
@@ -630,8 +668,42 @@ export default function App() {
     const normalizedName = normalizeCompanyName(newCompanyName);
     if (!normalizedName) return;
     setCompanySaveStatus('saving');
+    setCompanySaveMessage('');
     try {
-      const company = await ensureHealthCompany(normalizedName);
+      // 全角半角・スペース・(株)/株式会社などの表記揺れで同じ団体が二重登録されないようにする
+      const latest = await fetchHealthCompanies();
+      const looseKey = getCompanyLooseKey(normalizedName);
+      const similar = latest.filter(c => getCompanyLooseKey(c.name) === looseKey);
+      const activeSimilar = similar.find(c => c.is_active !== false);
+      if (activeSimilar) {
+        setCompanySaveStatus('error');
+        setCompanySaveMessage(`同じ団体とみられる「${activeSimilar.name}」がすでに登録されています`);
+        setTimeout(() => { setCompanySaveStatus(''); setCompanySaveMessage(''); }, 4000);
+        return;
+      }
+      const deletedSimilar = similar[0];
+      if (deletedSimilar && !window.confirm([
+        `削除済みの団体「${deletedSimilar.name}」があります。`,
+        '',
+        'この団体を復活させますか？（過去の記録とつながったまま戻ります）',
+        '',
+        'キャンセルすると追加しません。',
+      ].join('\n'))) {
+        setCompanySaveStatus('');
+        return;
+      }
+      let company;
+      if (deletedSimilar) {
+        // 削除済み（is_active=false）の団体は元の行を戻して参照を保つ（名前は元のまま）
+        const { error } = await supabase
+          .from('health_companies')
+          .update({ is_active: true, updated_at: new Date().toISOString() })
+          .eq('id', deletedSimilar.id);
+        if (error) throw error;
+        company = { ...deletedSimilar, is_active: true };
+      } else {
+        company = await ensureHealthCompany(normalizedName);
+      }
       const displayNo = parseInt(String(newCompanyNo).trim(), 10);
       if (Number.isInteger(displayNo) && displayNo > 0 && company.display_no !== displayNo) {
         const { error } = await supabase
@@ -644,11 +716,12 @@ export default function App() {
       setNewCompanyNo('');
       await refreshCompanyEditValues();
       setCompanySaveStatus('saved');
+      if (deletedSimilar) setCompanySaveMessage(`「${deletedSimilar.name}」を復活させました`);
     } catch (e) {
       console.error('health company add error:', e);
       setCompanySaveStatus('error');
     }
-    setTimeout(() => setCompanySaveStatus(''), 2500);
+    setTimeout(() => { setCompanySaveStatus(''); setCompanySaveMessage(''); }, 2500);
   };
 
   const handleUpdateHealthCompany = async (company) => {
@@ -3338,7 +3411,7 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="h-[16px] flex items-start justify-between">
                       <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                      <button type="button" onClick={() => openCompanyModal('reservation')} className="h-[16px] px-2 rounded bg-blue-50 border border-blue-100 text-[11px] leading-none font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-700">団体管理</button>
+                      <button type="button" onClick={() => requestCompanyModal('reservation')} className="h-[16px] px-2 rounded bg-blue-50 border border-blue-100 text-[11px] leading-none font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-700">団体管理</button>
                     </div>
                     {renderCompanyCombobox({
                       value: formData.companyName,
@@ -3779,7 +3852,7 @@ export default function App() {
                       <div className="space-y-1">
                         <div className="h-[16px] flex items-start justify-between">
                           <label className="text-[11px] font-bold text-slate-400 uppercase">団体名</label>
-                          <button type="button" onClick={() => openCompanyModal('kenshin')} className="h-[16px] px-2 rounded bg-blue-50 border border-blue-100 text-[11px] leading-none font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-700">団体管理</button>
+                          <button type="button" onClick={() => requestCompanyModal('kenshin')} className="h-[16px] px-2 rounded bg-blue-50 border border-blue-100 text-[11px] leading-none font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-700">団体管理</button>
                         </div>
                         {renderCompanyCombobox({
                           value: kenshinData.kCompanyName,
@@ -5554,6 +5627,33 @@ export default function App() {
               </div>
             )}
 
+            {showCompanyPassword && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCompanyPassword(false)}>
+                <form
+                  onSubmit={handleCompanyPasswordSubmit}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full max-w-sm rounded-lg bg-white p-6 shadow-2xl"
+                >
+                  <h2 className="mb-4 text-base font-bold text-slate-800">団体管理</h2>
+                  <label htmlFor="company-management-password" className="mb-1 block text-xs font-bold text-slate-600">団体管理にはパスワードが必要です</label>
+                  <input
+                    id="company-management-password"
+                    type="password"
+                    autoComplete="off"
+                    autoFocus
+                    value={companyPassword}
+                    onChange={e => { setCompanyPassword(e.target.value); setCompanyPasswordError(''); }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {companyPasswordError && <p className="mt-2 text-xs font-bold text-red-600">{companyPasswordError}</p>}
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowCompanyPassword(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50">キャンセル</button>
+                    <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700">開く</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {/* 団体マスタ管理モーダル */}
             {showCompanyModal && (() => {
               const q = getCompanyNameKey(companySearchQuery);
@@ -5613,7 +5713,7 @@ export default function App() {
 
                     {companySaveStatus && (
                       <div className={`mb-3 text-xs font-bold ${companySaveStatus === 'saved' ? 'text-emerald-300' : companySaveStatus === 'error' ? 'text-red-300' : 'text-slate-300'}`}>
-                        {companySaveStatus === 'saving' ? '保存中...' : companySaveStatus === 'saved' ? '保存しました' : '保存に失敗しました。同じ番号または団体名がないか確認してください。'}
+                        {companySaveMessage || (companySaveStatus === 'saving' ? '保存中...' : companySaveStatus === 'saved' ? '保存しました' : '保存に失敗しました。同じ番号または団体名がないか確認してください。')}
                       </div>
                     )}
 
