@@ -4626,7 +4626,7 @@ export default function App() {
                         fetchCalendarData(companyId);
                       }}
                       className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
-                      style={{ flexBasis: '2cm' }}
+                      style={{ flexBasis: '3cm' }}
                     >
                       <option value="">すべての団体</option>
                       {getActiveHealthCompanies().map(company => (
