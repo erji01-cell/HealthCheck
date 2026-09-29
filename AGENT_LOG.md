@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-09-29 11:53(職場) Claude Code / Claude Opus 5.5
+- **作業内容**: 特定企業に健診目的「東振協」を追加。選択時は身長体重・腹囲・血圧・尿検査・採血「東振協基本ｾｯﾄ」をロック付きで設定し、血圧は1回に設定（固定はしない）。新フラグ `bloodToshinkyoBasic`（列 `item_blood_toshinkyo_basic`）を保存・読込・カレンダー詳細・予約用紙・医師所見記入用紙・料金計算の採血判定に反映。
+- **変更ファイル**: HealthCheck.jsx、lib/healthCheckConfig.js、components/RecordSheetPreview.jsx、components/DoctorFindingsSheet.jsx、supabase_add_health_reserv_toshinkyo_blood.sql、AGENT_LOG.md
+- **検証結果**: `npm run build` 成功（既存のチャンクサイズ警告のみ）。SQLはユーザーが実行済み。ログインが必要なため画面での動作は未確認。
+- **次の課題 / 残タスク**: 本番で東振協の予約登録・保存・再読込・印刷を確認する。東振協の専用料金・請求区分（現在は通常料金表で採血あり ¥7,900）、東振協基本ｾｯﾄの検査項目内訳（備考への自動記載）は未設定。
+
 ## 2026-09-29 11:33(職場) Claude Code / Claude Sonnet 5
 - **作業内容**: `git pull origin main` でリポジトリを最新化（複数回）。コード変更・調査作業はなし。
 - **変更ファイル**: AGENT_LOG.md のみ

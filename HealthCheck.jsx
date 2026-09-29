@@ -24,6 +24,8 @@ import {
   SUMITOMO_BLOOD_NOTE,
   EDUCATION_BOARD_PURPOSE,
   EDUCATION_BOARD_BLOOD_NOTE,
+  TOSHINKYO_PURPOSE,
+  TOSHINKYO_BLOOD_LABEL,
   INFO_PROVISION_ELDERLY_PURPOSE,
   INFO_PROVISION_PURPOSES,
   BLOOD_NOTE_REFERENCE_PURPOSES,
@@ -115,7 +117,7 @@ const GENERAL_PURPOSES = [
 const SPECIAL_PURPOSES = [
   'クリタス定期健診', 'クリタス特定業務',
   'ハピルスA', 'ハピルスB', 'ハピルスC', 'ハピルス雇入時', 'ハピルス深夜業',
-  '第一生命', '第一生命 採血も', EDUCATION_BOARD_PURPOSE,
+  '第一生命', '第一生命 採血も', EDUCATION_BOARD_PURPOSE, TOSHINKYO_PURPOSE,
 ];
 
 // 健診目的フィルタの選択肢（健診目的モーダルと同じ並び）
@@ -212,6 +214,7 @@ export default function App() {
       bloodHapilusC: false,
       bloodHapilusHire: false,
       bloodHapilusNight: false,
+      bloodToshinkyoBasic: false,
       bloodInsuranceReview: false,
       hba1c: false,
       endoscopy: false,
@@ -508,7 +511,7 @@ export default function App() {
     'item_color_vision', 'item_pulse', 'item_hearing', 'item_urine', 'item_x_ray', 'item_ecg',
     'item_blood', 'item_blood_kuritas_regular', 'item_blood_kuritas_specific',
     'item_blood_hapilus_b', 'item_blood_hapilus_c', 'item_blood_hapilus_hire',
-    'item_blood_hapilus_night', 'item_blood_insurance_review', 'item_hba1c', 'item_endoscopy',
+    'item_blood_hapilus_night', 'item_blood_toshinkyo_basic', 'item_blood_insurance_review', 'item_hba1c', 'item_endoscopy',
     'item_echo', 'item_manganese', 'item_cotinine',
     'item_stool', 'item_norovirus', 'item_bacteria3', 'item_bacteria5', 'item_paratyphoid',
     'item_methanol', 'item_hexane', 'item_methyl_hippuric', 'item_psa', 'item_hbs_ag',
@@ -1064,6 +1067,7 @@ export default function App() {
     r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c,
     r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire,
     r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night,
+    r.item_blood_toshinkyo_basic && TOSHINKYO_BLOOD_LABEL,
     r.item_blood_insurance_review && '採血 保険診査',
     r.item_hba1c && 'HbA1c',
     r.item_endoscopy && '胃内視鏡',
@@ -1454,7 +1458,7 @@ export default function App() {
     setSingleReservationLoading(true);
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+      .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_toshinkyo_basic, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
       .eq('id', reservationId)
       .single();
     if (error || !data) {
@@ -1595,7 +1599,7 @@ export default function App() {
     }
     const { data, error } = await supabase
       .from('health_reserv')
-      .select('purpose, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa')
+      .select('purpose, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_toshinkyo_basic, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa')
       .eq('id', reservId)
       .maybeSingle();
     if (error || !data) {
@@ -1698,7 +1702,7 @@ export default function App() {
     fetchKenshinDoneKeys({ start, end });
     let query = supabase
       .from('health_reserv')
-      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, address, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
+      .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, address, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_toshinkyo_basic, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
       .gte('date', start)
       .lte('date', end);
     // 団体未選択（すべての団体）の場合はフィルタなし
@@ -1827,7 +1831,7 @@ export default function App() {
       setCalendarDetailError('');
       let detailQuery = supabase
         .from('health_reserv')
-        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
+        .select('id, date, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_toshinkyo_basic, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, deadline_type, deadline_date, has_dedicated_form, others')
         .eq('date', selectedCalendarDate);
       if (calendarCompanyId) detailQuery = detailQuery.eq('company_id', calendarCompanyId);
       const { data, error } = await detailQuery.order('patient_name', { ascending: true });
@@ -1934,6 +1938,7 @@ export default function App() {
       item_blood_hapilus_c: items.bloodHapilusC,
       item_blood_hapilus_hire: items.bloodHapilusHire,
       item_blood_hapilus_night: items.bloodHapilusNight,
+      item_blood_toshinkyo_basic: items.bloodToshinkyoBasic,
       item_blood_insurance_review: items.bloodInsuranceReview,
       item_hba1c: items.hba1c,
       item_endoscopy: items.endoscopy,
@@ -2560,7 +2565,7 @@ export default function App() {
       purpose,
       items: getItemsForPurpose(purpose, prev.items),
       hasDedicatedForm: INSURANCE_REVIEW_PURPOSES.includes(purpose),
-      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || INFO_PROVISION_PURPOSES.includes(purpose) ? { bpMeasureCount: '2' } : {}),
+      ...(BP_TWO_MEASURE_LOCKED_PURPOSES.includes(purpose) || INFO_PROVISION_PURPOSES.includes(purpose) ? { bpMeasureCount: '2' } : purpose === TOSHINKYO_PURPOSE ? { bpMeasureCount: '1' } : {}),
     }));
   };
 
@@ -3051,6 +3056,7 @@ export default function App() {
         bloodHapilusC: !!data.item_blood_hapilus_c,
         bloodHapilusHire: !!data.item_blood_hapilus_hire,
         bloodHapilusNight: !!data.item_blood_hapilus_night,
+        bloodToshinkyoBasic: !!data.item_blood_toshinkyo_basic,
         bloodInsuranceReview: !!data.item_blood_insurance_review,
         hba1c: !!data.item_hba1c, endoscopy: !!data.item_endoscopy,
         echo: !!data.item_echo, manganese: !!data.item_manganese, cotinine: !!data.item_cotinine, stool: !!data.item_stool,
@@ -3445,7 +3451,7 @@ export default function App() {
                 {(() => {
                   const isSpecialPurpose = [
                     '特定健診(国保)', '長寿健診', '特定健診(社保)', '入園児',
-                    ...SPECIAL_COMPANY_PURPOSES, EDUCATION_BOARD_PURPOSE,
+                    ...SPECIAL_COMPANY_PURPOSES, EDUCATION_BOARD_PURPOSE, TOSHINKYO_PURPOSE,
                   ].includes(formData.purpose);
                   const bloodLabel = ['特定健診(国保)', '長寿健診', ...INFO_PROVISION_PURPOSES].includes(formData.purpose)
                     ? '採血 セット3'
@@ -3548,7 +3554,7 @@ export default function App() {
                         <div className="border-t border-slate-200 pt-3">
                           <div className="text-[11px] font-bold text-emerald-600 uppercase mb-2">特定企業（採血）</div>
                           <div className="grid grid-cols-4 gap-2">
-                            {Object.entries({ bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, bloodHapilusB: HAPILUS_BLOOD_LABELS.b, bloodHapilusC: HAPILUS_BLOOD_LABELS.c, bloodHapilusHire: HAPILUS_BLOOD_LABELS.hire, bloodHapilusNight: HAPILUS_BLOOD_LABELS.night, bloodInsuranceReview: '採血 保険診査' }).map(([key, label]) => {
+                            {Object.entries({ bloodKuritasRegular: KURITAS_BLOOD_LABELS.regular, bloodKuritasSpecific: KURITAS_BLOOD_LABELS.specific, bloodHapilusB: HAPILUS_BLOOD_LABELS.b, bloodHapilusC: HAPILUS_BLOOD_LABELS.c, bloodHapilusHire: HAPILUS_BLOOD_LABELS.hire, bloodHapilusNight: HAPILUS_BLOOD_LABELS.night, bloodToshinkyoBasic: TOSHINKYO_BLOOD_LABEL, bloodInsuranceReview: '採血 保険診査' }).map(([key, label]) => {
                               const editable = key === 'bloodInsuranceReview' && isInsuranceReview;
                               const lockedChecked = !editable && formData.items[key];
                               return (
@@ -5929,7 +5935,7 @@ export default function App() {
                     {!calendarDetailLoading && !calendarDetailError && (calendarDetailData[selectedCalendarDate] || []).map((r, i) => {
                       const checkedItems = [
                         r.item_height_weight && '身長/体重', r.item_abdominal_girth && '腹囲', r.item_blood_pressure && `血圧${Number(r.bp_measure_count) === 2 ? '2回' : '1回'}`, r.item_vision && '視力', r.item_hearing && '聴力', r.item_urine && '尿検査',
-                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', (r.item_blood || BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose)) && (BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose) ? '採血 備考参照' : '採血'), r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
+                        r.item_x_ray && 'X-P', r.item_ecg && '心電図', (r.item_blood || BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose)) && (BLOOD_NOTE_REFERENCE_PURPOSES.includes(r.purpose) ? '採血 備考参照' : '採血'), r.item_blood_kuritas_regular && KURITAS_BLOOD_LABELS.regular, r.item_blood_kuritas_specific && KURITAS_BLOOD_LABELS.specific, r.item_blood_hapilus_b && HAPILUS_BLOOD_LABELS.b, r.item_blood_hapilus_c && HAPILUS_BLOOD_LABELS.c, r.item_blood_hapilus_hire && HAPILUS_BLOOD_LABELS.hire, r.item_blood_hapilus_night && HAPILUS_BLOOD_LABELS.night, r.item_blood_toshinkyo_basic && TOSHINKYO_BLOOD_LABEL, r.item_blood_insurance_review && '採血 保険診査', r.item_pulse && '脈拍', r.item_color_vision && '色神',
                         r.item_hba1c && 'HbA1c', r.item_endoscopy && '胃内視鏡', r.item_echo && '腹部エコー', r.item_manganese && 'マンガン', r.item_cotinine && 'コチニン',
                         r.item_stool && '便潜血', r.item_norovirus && 'ノロウイルス', r.item_bacteria3 && '3菌種', r.item_bacteria5 && '5菌種', r.item_paratyphoid && 'パラチフス',
                         r.item_methanol && 'メタノール', r.item_hexane && 'ノルマルヘキサン', r.item_methyl_hippuric && 'メチル馬尿酸',

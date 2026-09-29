@@ -9,7 +9,7 @@ const FINDING_ITEMS = [
     label: '採血',
     itemKeys: [
       'blood', 'bloodKuritasRegular', 'bloodKuritasSpecific', 'bloodHapilusB',
-      'bloodHapilusC', 'bloodHapilusHire', 'bloodHapilusNight', 'bloodInsuranceReview',
+      'bloodHapilusC', 'bloodHapilusHire', 'bloodHapilusNight', 'bloodToshinkyoBasic', 'bloodInsuranceReview',
       'hba1c', 'psa', 'hbsAg', 'hbsAb', 'hcvAb', 'syphilis',
     ],
   },
