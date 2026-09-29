@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-09-29 12:00(職場) Claude Code / Claude Opus 5.5
+- **作業内容**: 東振協の料金・請求と採血内訳を設定。料金は受診者ごとに異なるため自動計算せず空欄とし、支払い区分を「東振協（自動入金）」に固定（請求不要・自動入金のため）。東振協基本ｾｯﾄの内訳（GOT、GPT、γ-GTP、LDL-Cho、HDL-Cho、TG、血糖、HbA1c）を備考へ自動記載するようにした。前回入れた料金計算の採血判定への追加は不要になったため削除。
+- **変更ファイル**: lib/healthCheckConfig.js、HealthCheck.jsx、AGENT_LOG.md
+- **検証結果**: `npm run build` 成功。Nodeで料金（null）・請求ラベル・備考の自動記載と、手入力備考が消えないことを確認。画面での動作は未確認。
+- **次の課題 / 残タスク**: 本番で東振協の予約を登録し、料金欄・支払い区分・備考・予約用紙の表示を確認する。
+
 ## 2026-09-29 11:53(職場) Claude Code / Claude Opus 5.5
 - **作業内容**: 特定企業に健診目的「東振協」を追加。選択時は身長体重・腹囲・血圧・尿検査・採血「東振協基本ｾｯﾄ」をロック付きで設定し、血圧は1回に設定（固定はしない）。新フラグ `bloodToshinkyoBasic`（列 `item_blood_toshinkyo_basic`）を保存・読込・カレンダー詳細・予約用紙・医師所見記入用紙・料金計算の採血判定に反映。
 - **変更ファイル**: HealthCheck.jsx、lib/healthCheckConfig.js、components/RecordSheetPreview.jsx、components/DoctorFindingsSheet.jsx、supabase_add_health_reserv_toshinkyo_blood.sql、AGENT_LOG.md

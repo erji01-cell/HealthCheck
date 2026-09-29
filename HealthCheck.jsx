@@ -2092,7 +2092,7 @@ export default function App() {
       const nextOthers = [...(manual ? [manual] : []), ...notes, ...purposeNotes].join('\n');
       return prev.others === nextOthers ? prev : { ...prev, others: nextOthers };
     });
-  }, [formData.purpose, formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific, formData.items.bloodHapilusB, formData.items.bloodHapilusC, formData.items.bloodHapilusHire, formData.items.bloodHapilusNight]);
+  }, [formData.purpose, formData.items.bloodKuritasRegular, formData.items.bloodKuritasSpecific, formData.items.bloodHapilusB, formData.items.bloodHapilusC, formData.items.bloodHapilusHire, formData.items.bloodHapilusNight, formData.items.bloodToshinkyoBasic]);
 
   // BMI自動計算（予約詳細入力）
   useEffect(() => {
