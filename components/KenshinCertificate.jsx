@@ -360,10 +360,10 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {kenshinData.platelet && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>血算</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         <span>
                           <b>血小板</b>: {kenshinData.platelet}
-                          {(() => { const a = getBloodArrow('platelet', kenshinData.platelet, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} ×10³/μL
+                          {(() => { const a = getBloodArrow('platelet', kenshinData.platelet, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} ×10³/μL
                         </span>
                       </div>
                     </div>
@@ -373,7 +373,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.tp, kenshinData.alb, displayedAgRatio, kenshinData.tBil, kenshinData.dBil].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>総蛋白・Bil</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['TP', kenshinData.tp, 'g/dL'], ['Alb', kenshinData.alb, 'g/dL'], ['A/G比', displayedAgRatio, ''], ['T-Bil', kenshinData.tBil, 'mg/dL'], ['D-Bil', kenshinData.dBil, 'mg/dL']].map(([k, v, u]) => v ? <span key={k}><b>{k}</b>: {v}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
@@ -383,8 +383,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.alp, kenshinData.ldh, kenshinData.ck, kenshinData.amy].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>肝機能・酵素</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['ALP', kenshinData.alp, 'alp'], ['LDH', kenshinData.ldh, 'ldh'], ['CK', kenshinData.ck, 'ck'], ['Amy', kenshinData.amy, 'amy']].map(([k, v, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} IU/L</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['ALP', kenshinData.alp, 'alp'], ['LDH', kenshinData.ldh, 'ldh'], ['CK', kenshinData.ck, 'ck'], ['Amy', kenshinData.amy, 'amy']].map(([k, v, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} IU/L</span> : null)}
                       </div>
                     </div>
                   )}
@@ -393,8 +393,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.tCho, kenshinData.lhRatio, nonHdlCholesterol].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>脂質</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['T-Cho', kenshinData.tCho, 'mg/dL', 'tCho'], ['non-HDLコレステロール', nonHdlCholesterol, 'mg/dL', ''], ['L/H比', kenshinData.lhRatio, '', 'lhRatio']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ' '+u : ''}</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['T-Cho', kenshinData.tCho, 'mg/dL', 'tCho'], ['non-HDLコレステロール', nonHdlCholesterol, 'mg/dL', ''], ['L/H比', kenshinData.lhRatio, '', 'lhRatio']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ' '+u : ''}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -403,8 +403,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {kenshinData.un && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腎機能</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        <span><b>UN</b>: {kenshinData.un}{(() => { const a = getBloodArrow('un', kenshinData.un, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} mg/dL</span>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        <span><b>UN</b>: {kenshinData.un}{(() => { const a = getBloodArrow('un', kenshinData.un, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} mg/dL</span>
                       </div>
                     </div>
                   )}
@@ -413,8 +413,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.na, kenshinData.k, kenshinData.cl, kenshinData.ca, kenshinData.ip, kenshinData.mgElec, kenshinData.fe].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>電解質</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['Na', kenshinData.na, 'mEq/L', 'na'], ['K', kenshinData.k, 'mEq/L', 'k'], ['Cl', kenshinData.cl, 'mEq/L', 'cl'], ['Ca', kenshinData.ca, 'mg/dL', 'ca'], ['IP', kenshinData.ip, 'mg/dL', 'ip'], ['Mg', kenshinData.mgElec, 'mg/dL', 'mgElec'], ['Fe', kenshinData.fe, 'μg/dL', 'fe']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['Na', kenshinData.na, 'mEq/L', 'na'], ['K', kenshinData.k, 'mEq/L', 'k'], ['Cl', kenshinData.cl, 'mEq/L', 'cl'], ['Ca', kenshinData.ca, 'mg/dL', 'ca'], ['IP', kenshinData.ip, 'mg/dL', 'ip'], ['Mg', kenshinData.mgElec, 'mg/dL', 'mgElec'], ['Fe', kenshinData.fe, 'μg/dL', 'fe']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -423,8 +423,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.crp, kenshinData.rf, kenshinData.aso].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>免疫</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['CRP', kenshinData.crp, 'mg/dL', 'crp'], ['RF', kenshinData.rf, 'IU/mL', 'rf'], ['ASO', kenshinData.aso, 'IU/mL', 'aso']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['CRP', kenshinData.crp, 'mg/dL', 'crp'], ['RF', kenshinData.rf, 'IU/mL', 'rf'], ['ASO', kenshinData.aso, 'IU/mL', 'aso']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -433,8 +433,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.cea, kenshinData.ca199, kenshinData.psaValue, kenshinData.ca125, kenshinData.ca153, kenshinData.afp].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>腫瘍マーカー</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['CEA', kenshinData.cea, 'ng/mL', 'cea'], ['CA19-9', kenshinData.ca199, 'U/mL', 'ca199'], ['PSA', kenshinData.psaValue, 'ng/mL', 'psaValue'], ['CA125', kenshinData.ca125, 'U/mL', 'ca125'], ['CA15-3', kenshinData.ca153, 'U/mL', 'ca153'], ['AFP', kenshinData.afp, 'ng/mL', 'afp']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['CEA', kenshinData.cea, 'ng/mL', 'cea'], ['CA19-9', kenshinData.ca199, 'U/mL', 'ca199'], ['PSA', kenshinData.psaValue, 'ng/mL', 'psaValue'], ['CA125', kenshinData.ca125, 'U/mL', 'ca125'], ['CA15-3', kenshinData.ca153, 'U/mL', 'ca153'], ['AFP', kenshinData.afp, 'ng/mL', 'afp']].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{(() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()} {u}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -443,8 +443,8 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.bnp, kenshinData.hbsAg, kenshinData.hbsAb, kenshinData.hcvAb, kenshinData.syphilisSTS, kenshinData.mrsaStaph].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>その他採血</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
-                        {[['BNP', kenshinData.bnp, 'pg/mL', 'bnp'], ['HBs抗原', kenshinData.hbsAg], ['HBs抗体', kenshinData.hbsAb], ['HCV抗体', kenshinData.hcvAb], ['梅毒STS', kenshinData.syphilisSTS], ['MRSA黄色ブドウ球菌', kenshinData.mrsaStaph]].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ` ${u}` : ''}</span> : null)}
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                        {[['BNP', kenshinData.bnp, 'pg/mL', 'bnp'], ['HBs抗原', kenshinData.hbsAg], ['HBs抗体', kenshinData.hbsAb], ['HCV抗体', kenshinData.hcvAb], ['梅毒STS', kenshinData.syphilisSTS], ['MRSA黄色ブドウ球菌', kenshinData.mrsaStaph]].map(([k, v, u, f]) => v ? <span key={k}><b>{k}</b>: {v}{f && (() => { const a = getBloodArrow(f, v, kenshinData.kGender); return a ? <span className={`text-base font-black leading-none ${a === '↑' ? 'text-red-500' : 'text-blue-500'}`}>{a}</span> : null; })()}{u ? ` ${u}` : ''}</span> : null)}
                       </div>
                     </div>
                   )}
@@ -453,7 +453,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.urineBilirubin, kenshinData.urineSpecificGravity, kenshinData.urinePh, kenshinData.urineKetone].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>尿検査（追加）</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['ビリルビン', kenshinData.urineBilirubin], ['比重', kenshinData.urineSpecificGravity], ['pH', kenshinData.urinePh], ['ケトン体', kenshinData.urineKetone]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -464,7 +464,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.stoolOccult, kenshinData.norovirus, kenshinData.bacteria3, kenshinData.bacteria5, kenshinData.paratyphoid].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>検便</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['便潜血2日法', kenshinData.stoolOccult], ['ノロウイルス', kenshinData.norovirus], ['3菌種', kenshinData.bacteria3], ['5菌種', kenshinData.bacteria5], ['パラチフス・腸チフス', kenshinData.paratyphoid]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
@@ -474,7 +474,7 @@ export default function KenshinCertificate({ kenshinData, setHighlightedField, b
                   {[kenshinData.methanol, kenshinData.normalHexane, kenshinData.methylHippuric].some(Boolean) && (
                     <div className="flex" style={{borderBottom: '1px solid black'}}>
                       <div className="font-bold bg-slate-100 flex items-center justify-center" style={{width: '90px', borderRight: '1px solid black', padding: '3px 6px', fontSize: '10px'}}>有機溶剤</div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
+                      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2 flex-1" style={{fontSize: '12px'}}>
                         {[['メタノール', kenshinData.methanol], ['ノルマルヘキサン', kenshinData.normalHexane], ['メチル馬尿酸', kenshinData.methylHippuric]].map(([k, v]) => v ? <span key={k}><b>{k}</b>: {v}</span> : null)}
                       </div>
                     </div>
