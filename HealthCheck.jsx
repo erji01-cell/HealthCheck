@@ -3273,7 +3273,7 @@ export default function App() {
           <Loader2 size={22} className="animate-spin text-purple-600" /> バックアップ中...
         </div>
       )}
-      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0">
+      <div className={`w-full ${rightTab === 'calendar' ? 'max-w-[calc(1400px+1cm)]' : 'max-w-[1400px]'} flex flex-col lg:flex-row gap-6 lg:h-full lg:min-h-0`}>
 
         {/* 左セクション: 操作エリア */}
         <div className="flex-1 space-y-1 print-hide relative lg:flex lg:flex-col lg:min-h-0 [&_label.text-slate-400]:text-slate-600 [&_label.text-slate-500]:text-slate-600 [&_div.text-slate-400]:text-slate-600 [&_div.text-slate-500]:text-slate-600">
@@ -4490,7 +4490,7 @@ export default function App() {
           )}
 
         {/* 右セクション: PDF風プレビュー / カレンダー */}
-        <div className="w-full lg:w-[690px] shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative">
+        <div className={`w-full ${rightTab === 'calendar' ? 'lg:w-[calc(690px+1cm)]' : 'lg:w-[690px]'} shrink-0 print-right lg:flex lg:flex-col lg:h-full lg:min-h-0 relative`}>
           {/* 団体一覧表示時のみ：スクロールバー右外側の先頭/末尾ジャンプボタン */}
           {rightTab === 'calendar' && calendarViewMode === 'list' && (
             <div className="hidden lg:flex flex-col gap-2 absolute z-40 print-hide" style={{ left: 'calc(100% + 12px)', top: '50%', transform: 'translateY(-50%)' }}>
