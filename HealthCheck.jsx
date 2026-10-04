@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole, History
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -48,6 +48,7 @@ import AttachmentSheet from './components/AttachmentSheet.jsx';
 import DoctorFindingsSheet from './components/DoctorFindingsSheet.jsx';
 import SpecificHealthRoster from './components/SpecificHealthRoster.jsx';
 import InsuranceNumberModal from './components/InsuranceNumberModal.jsx';
+import ReservationAuditLogPanel from './components/ReservationAuditLogPanel.jsx';
 import {
   getReservationMunicipality,
   inferMunicipalityFromAddress,
@@ -346,6 +347,12 @@ export default function App() {
   const [lastBackupAt, setLastBackupAt] = useState(getLastBackupTime());
   const [restoreReplace, setRestoreReplace] = useState(true); // 復元方式：true=完全置換 / false=追加・上書き
   const [backupWarning, setBackupWarning] = useState(''); // バックアップ関連の警告バナー
+  const [patientManagementTab, setPatientManagementTab] = useState('backup');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false);
+  const [auditLogsError, setAuditLogsError] = useState('');
+  const [auditQuery, setAuditQuery] = useState('');
+  const [auditOperation, setAuditOperation] = useState('');
   const restoreInputRef = useRef(null);
   const [healthCompanies, setHealthCompanies] = useState([]);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -887,6 +894,30 @@ export default function App() {
     } finally {
       setBackupListLoading(false);
     }
+  };
+
+  const refreshAuditLogs = async (query = auditQuery, operation = auditOperation) => {
+    if (!session) return;
+    setAuditLogsLoading(true);
+    setAuditLogsError('');
+    const { data, error } = await supabase.rpc('get_health_reservation_audit_logs', {
+      p_query: query.trim() || null,
+      p_operation: operation || null,
+      p_limit: 300,
+    });
+    if (error) {
+      console.error('監査ログの読み込みに失敗しました:', error);
+      setAuditLogsError(`監査ログを読み込めませんでした。${formatSupabaseError(error)}`);
+      setAuditLogs([]);
+    } else {
+      setAuditLogs(data || []);
+    }
+    setAuditLogsLoading(false);
+  };
+
+  const changeAuditOperation = (operation) => {
+    setAuditOperation(operation);
+    refreshAuditLogs(auditQuery, operation);
   };
 
   // ワンクリック即バックアップ（Storage保存＋ローカルDL）
@@ -4486,10 +4517,13 @@ export default function App() {
             </button>
             <button
               onClick={async () => {
-                const pw = window.prompt('バックアップ管理のパスワードを入力してください');
+                const pw = window.prompt('患者管理のパスワードを入力してください');
                 if (pw === null) return;
                 if (pw !== '0125') { showNotice('パスワードが違います'); return; }
-                setShowBackupModal(true); setBackupMessage(''); await refreshBackupList();
+                setPatientManagementTab('backup');
+                setShowBackupModal(true);
+                setBackupMessage('');
+                await refreshBackupList();
               }}
               className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-700 shadow-sm transition-all hover:bg-purple-100"
               title="患者管理"
@@ -5043,39 +5077,43 @@ export default function App() {
               </div>
             )}
 
-            {/* バックアップ管理モーダル */}
+            {/* 患者管理モーダル */}
             {showBackupModal && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBackupModal(false)}>
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto" style={{minHeight: '80vh'}} onClick={e => e.stopPropagation()}>
+                <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{height: 'min(92vh, 900px)', minHeight: '80vh'}} onClick={e => e.stopPropagation()}>
                   <div className="px-8 pt-8 pb-5 border-b border-slate-100">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-xs tracking-widest text-purple-500 font-bold">BACKUP &amp; RESTORE</div>
-                        <h2 className="text-3xl font-black text-slate-800 mt-1">バックアップ管理</h2>
-                        <p className="text-sm text-slate-500 mt-1.5">データを JSON 形式で保存・復元します</p>
+                        <div className="text-xs tracking-widest text-purple-500 font-bold">PATIENT MANAGEMENT</div>
+                        <h2 className="text-3xl font-black text-slate-800 mt-1">患者管理</h2>
+                        <p className="text-sm text-slate-500 mt-1.5">バックアップと予約の操作履歴を管理します</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          disabled={backupBusy}
-                          onClick={handleManualBackup}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                        >
-                          <Save size={16} /> 今すぐバックアップ
-                        </button>
-                        <button
-                          disabled={backupBusy}
-                          onClick={() => restoreInputRef.current?.click()}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
-                        >
-                          <Upload size={16} /> ファイルから復元
-                        </button>
-                        <button
-                          disabled={backupListLoading}
-                          onClick={refreshBackupList}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                        >
-                          <RefreshCw size={16} /> 一覧を更新
-                        </button>
+                        {patientManagementTab === 'backup' && (
+                          <>
+                            <button
+                              disabled={backupBusy}
+                              onClick={handleManualBackup}
+                              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                              <Save size={16} /> 今すぐバックアップ
+                            </button>
+                            <button
+                              disabled={backupBusy}
+                              onClick={() => restoreInputRef.current?.click()}
+                              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                            >
+                              <Upload size={16} /> ファイルから復元
+                            </button>
+                            <button
+                              disabled={backupListLoading}
+                              onClick={refreshBackupList}
+                              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                            >
+                              <RefreshCw size={16} /> 一覧を更新
+                            </button>
+                          </>
+                        )}
                         <button onClick={() => setShowBackupModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold ml-2">✕</button>
                       </div>
                     </div>
@@ -5087,6 +5125,27 @@ export default function App() {
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleRestoreFromFile(f); e.target.value = ''; }}
                     />
                   </div>
+                  <div className="flex shrink-0 gap-1 border-b border-slate-200 bg-slate-50 px-8 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setPatientManagementTab('backup')}
+                      className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-black transition-colors ${patientManagementTab === 'backup' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    >
+                      <Database size={16} /> バックアップ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPatientManagementTab('audit');
+                        refreshAuditLogs();
+                      }}
+                      className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-black transition-colors ${patientManagementTab === 'audit' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    >
+                      <History size={16} /> 予約監査ログ
+                    </button>
+                  </div>
+                  {patientManagementTab === 'backup' ? (
+                    <div className="min-h-0 flex-1 overflow-y-auto">
                   <div className="px-8 py-3 bg-white border-b border-slate-100 flex items-center gap-4 flex-wrap text-sm">
                     <span className="font-black text-slate-600">復元方式:</span>
                     <label className="flex items-center gap-1.5 cursor-pointer select-none font-bold text-slate-600">
@@ -5163,6 +5222,20 @@ export default function App() {
                       </table>
                     )}
                   </div>
+                    </div>
+                  ) : (
+                    <ReservationAuditLogPanel
+                      logs={auditLogs}
+                      loading={auditLogsLoading}
+                      error={auditLogsError}
+                      query={auditQuery}
+                      operation={auditOperation}
+                      onQueryChange={setAuditQuery}
+                      onOperationChange={changeAuditOperation}
+                      onSearch={() => refreshAuditLogs()}
+                      onRefresh={() => refreshAuditLogs()}
+                    />
+                  )}
                 </div>
               </div>
             )}

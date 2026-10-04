@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-04 19:33(自宅) Codex / GPT-6
+- **作業内容**: 患者管理モーダルを「バックアップ」「予約監査ログ」の2タブ構成に変更。監査ログの最新300件表示、患者名・患者ID・予約ID検索、操作種別絞り込み、操作担当者表示、変更前後の展開表示を追加。監査テーブルの直接権限は開放せず、ログイン必須の読み取り専用RPCを追加。
+- **変更ファイル**: HealthCheck.jsx、components/ReservationAuditLogPanel.jsx、supabase_add_health_reservation_audit_view.sql、supabase_health_reservation_audit_setup.md、CLAUDE.md、AGENT_LOG.md
+- **検証結果**: npm run build、git diff --check成功。サンプル監査ログを用いた1200×840スクリーンショットで一覧・検索欄・絞り込みのレイアウトを確認。
+- **次の課題 / 残タスク**: Supabase SQL Editorで `supabase_add_health_reservation_audit_view.sql` を実行し、実データの一覧・検索・詳細展開を確認する。
+
 ## 2026-10-01 16:21(職場) Claude Code / Claude Opus 5.5
 - **作業内容**: 診断書の別紙（追加検査項目）で、↑↓矢印付きの値がある行だけ項目の高さがずれる不具合を修正。矢印が大きい文字で行の高さを広げ、上揃えのため文字位置がずれていた。別紙の全12行をベースライン揃え（`items-baseline`）にし、矢印8か所に `leading-none` を付けた。1ページ目は変更なし。
 - **変更ファイル**: components/KenshinCertificate.jsx、AGENT_LOG.md

@@ -57,6 +57,7 @@ The DB is **shared with a separate inventory system** — don't assume every tab
 | `health_data` | exam results / health certificate data (`k_*` prefixed columns; upserted on `k_id,k_date`) |
 | `patients` | patient master, auto-synced on reservation save when a patient ID is present |
 | `health_companies` | company/organization master (`name_key` = normalized lowercase name, unique) |
+| `health_reservation_audit_logs` | immutable reservation INSERT/UPDATE/DELETE history; read in Patient Management only through a security-definer RPC |
 | `invent_staff` | staff list — **owned by the inventory system**, read-only here |
 | `reservations` | endoscopy bookings — **owned by the inventory system**, read-only, shown in the today's-reservations modal |
 
@@ -98,6 +99,10 @@ Print layout is fine-tuned in millimeters against real A4 output; changes here a
 ### Reservation email notifications
 
 Never triggered from the front end. A Supabase Database Webhook on `health_reserv` INSERT/UPDATE/DELETE calls `supabase/functions/send-reservation-notification`, which authenticates via the `x-health-reservation-secret` header (not JWT) and sends through Resend. It skips UPDATEs where `updated_at` is unchanged, so bulk maintenance edits don't spam. DELETE notifications are limited to reservation-form deletes with a selected staff member; automatic pruning and maintenance deletes stay silent. Failures are recorded only in `health_reservation_notification_log` and are invisible in the UI. Setup steps are in `supabase_reservation_notification_setup.md`.
+
+### Reservation audit log viewer
+
+Patient Management contains Backup and Reservation Audit Log tabs. The client never selects `health_reservation_audit_logs` directly; `get_health_reservation_audit_logs` is a read-only security-definer RPC that requires an authenticated session. Keep the table grants revoked and apply `supabase_add_health_reservation_audit_view.sql` when setting up a new environment.
 
 ## Maintenance gotchas
 
