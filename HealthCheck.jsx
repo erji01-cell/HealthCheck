@@ -301,6 +301,13 @@ export default function App() {
   const calendarCompanyIdRef = useRef(calendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
+  // 表示条件ごとの再利用と、遅れて返る古い通信結果の上書き防止に使う。
+  const calendarDataCompanyIdRef = useRef(null);
+  const calendarDataStaleRef = useRef(true);
+  const calendarRequestIdRef = useRef(0);
+  const calendarListCacheRef = useRef(new Map());
+  const calendarListActiveKeyRef = useRef('');
+  const calendarListRequestIdRef = useRef(0);
   const [calendarListSortField, setCalendarListSortField] = useState('date'); // 'date' | 'fee' | 'kana' | 'registered'
   const [calendarListSortDir, setCalendarListSortDir] = useState('asc'); // 'asc' | 'desc'
   // 診断書が作成済みの予約を判定するためのキー集合（予約ID／患者ID＋健診日）
@@ -1406,6 +1413,8 @@ export default function App() {
           ? { ...reservation, insured_number: savedNumbers.get(patientId) }
           : reservation;
       }));
+      calendarListCacheRef.current.clear();
+      calendarListRequestIdRef.current += 1;
 
       const shouldPrint = insurancePrintAfterSave;
       setShowInsuranceNumberModal(false);
@@ -1421,6 +1430,8 @@ export default function App() {
             ? { ...reservation, insured_number: savedNumbers.get(patientId) }
             : reservation;
         }));
+        calendarListCacheRef.current.clear();
+        calendarListRequestIdRef.current += 1;
       }
       setInsuranceNumberError(
         error?.code === '42501'
@@ -1686,9 +1697,11 @@ export default function App() {
   };
 
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
+    const requestId = ++calendarRequestIdRef.current;
     if (!session) {
       setCalendarLoading(false);
       setCalendarHasLoaded(false);
+      calendarDataStaleRef.current = true;
       return;
     }
     setCalendarLoading(true);
@@ -1702,6 +1715,7 @@ export default function App() {
       .order('date', { ascending: true });
     if (companyId) query = query.eq('company_id', companyId);
     const { data, error } = await query;
+    if (requestId !== calendarRequestIdRef.current) return;
     if (error) {
       console.error('カレンダーデータの取得に失敗:', error);
     } else if (data) {
@@ -1712,25 +1726,65 @@ export default function App() {
       });
       setCalendarData(grouped);
       setCalendarDetailData({});
+      calendarDataCompanyIdRef.current = String(companyId || '');
+      calendarDataStaleRef.current = false;
     }
     setCalendarLoading(false);
     setCalendarHasLoaded(true);
     fetchKenshinDoneKeys();
   };
 
-  const fetchCalendarListData = async (companyId = calendarCompanyId) => {
+  // 一覧本体を先に表示し、保険証番号は取得後に同じ一覧へ反映する。
+  const enrichCalendarListInsuranceNumbers = async (reservations, cacheKey, requestId) => {
+    try {
+      const enrichedReservations = await addLatestInsuranceNumbers(reservations);
+      if (
+        requestId !== calendarListRequestIdRef.current
+        || cacheKey !== calendarListActiveKeyRef.current
+      ) return;
+      calendarListCacheRef.current.set(cacheKey, {
+        rows: enrichedReservations,
+        insuranceLoaded: true,
+      });
+      setCalendarListData(enrichedReservations);
+    } catch (insuranceError) {
+      console.error('patient insurance fetch error:', insuranceError);
+      const cached = calendarListCacheRef.current.get(cacheKey);
+      if (cached) {
+        calendarListCacheRef.current.set(cacheKey, { ...cached, insuranceLoaded: true });
+      }
+    }
+  };
+
+  const fetchCalendarListData = async (companyId = calendarCompanyId, { force = false } = {}) => {
+    const requestId = ++calendarListRequestIdRef.current;
     if (!session) {
       setCalendarListLoading(false);
       setCalendarListData([]);
+      calendarListCacheRef.current.clear();
+      calendarListActiveKeyRef.current = '';
       return;
     }
-    setCalendarListError('');
-    setCalendarListLoading(true);
     const defaultRange = getCalendarDataRange();
     const hasDateRange = calendarDateFrom || calendarDateTo;
     const start = hasDateRange ? (calendarDateFrom || '1900-01-01') : defaultRange.start;
     const end = hasDateRange ? (calendarDateTo || '2999-12-31') : defaultRange.end;
+    const cacheKey = `${String(companyId || '')}|${start}|${end}`;
+    calendarListActiveKeyRef.current = cacheKey;
+    setCalendarListError('');
     fetchKenshinDoneKeys({ start, end });
+
+    const cached = force ? null : calendarListCacheRef.current.get(cacheKey);
+    if (cached) {
+      setCalendarListData(cached.rows);
+      setCalendarListLoading(false);
+      if (!cached.insuranceLoaded) {
+        enrichCalendarListInsuranceNumbers(cached.rows, cacheKey, requestId);
+      }
+      return;
+    }
+
+    setCalendarListLoading(true);
     let query = supabase
       .from('health_reserv')
       .select('id, created_at, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, age, address, company_id, company_name, purpose, payment_type, fee, bp_measure_count, item_height_weight, item_abdominal_girth, item_blood_pressure, item_vision, item_color_vision, item_pulse, item_hearing, item_urine, item_x_ray, item_ecg, item_blood, item_blood_kuritas_regular, item_blood_kuritas_specific, item_blood_hapilus_b, item_blood_hapilus_c, item_blood_hapilus_hire, item_blood_hapilus_night, item_blood_toshinkyo_basic, item_blood_insurance_review, item_hba1c, item_endoscopy, item_echo, item_manganese, item_cotinine, item_stool, item_norovirus, item_bacteria3, item_bacteria5, item_paratyphoid, item_methanol, item_hexane, item_methyl_hippuric, item_psa, item_hbs_ag, item_hbs_ab, item_hcv_ab, item_syphilis, item_mrsa, others')
@@ -1742,20 +1796,29 @@ export default function App() {
       .order('date', { ascending: true })
       .order('patient_name', { ascending: true });
 
+    if (
+      requestId !== calendarListRequestIdRef.current
+      || cacheKey !== calendarListActiveKeyRef.current
+    ) return;
     if (error) {
       console.error('calendar list fetch error:', error);
       setCalendarListError('団体別一覧の取得に失敗しました。');
       setCalendarListData([]);
+      setCalendarListLoading(false);
     } else {
       const reservations = data || [];
-      try {
-        setCalendarListData(await addLatestInsuranceNumbers(reservations));
-      } catch (insuranceError) {
-        console.error('patient insurance fetch error:', insuranceError);
-        setCalendarListData(reservations);
+      calendarListCacheRef.current.set(cacheKey, {
+        rows: reservations,
+        insuranceLoaded: false,
+      });
+      if (calendarListCacheRef.current.size > 8) {
+        const oldestKey = calendarListCacheRef.current.keys().next().value;
+        calendarListCacheRef.current.delete(oldestKey);
       }
+      setCalendarListData(reservations);
+      setCalendarListLoading(false);
+      enrichCalendarListInsuranceNumbers(reservations, cacheKey, requestId);
     }
-    setCalendarListLoading(false);
   };
 
   useEffect(() => {
@@ -1788,10 +1851,17 @@ export default function App() {
     const scheduleRefresh = () => {
       // 連続イベントをまとめて500ms後に1回だけ再取得
       clearTimeout(refreshTimer);
+      calendarDataStaleRef.current = true;
+      calendarRequestIdRef.current += 1;
+      calendarListCacheRef.current.clear();
+      calendarListRequestIdRef.current += 1;
       refreshTimer = setTimeout(() => {
         const h = realtimeHandlersRef.current;
-        h.fetchCalendarData(h.calendarCompanyId);
-        if (h.calendarViewMode === 'list') h.fetchCalendarListData(h.calendarCompanyId);
+        if (h.calendarViewMode === 'list') {
+          h.fetchCalendarListData(h.calendarCompanyId, { force: true });
+        } else {
+          h.fetchCalendarData(h.calendarCompanyId);
+        }
         if (h.showTodayReservationsModal) h.fetchTodayReservations();
       }, 500);
       markBackupDirty();
@@ -4583,7 +4653,15 @@ export default function App() {
                     <div className="flex shrink-0 gap-1.5 bg-slate-100 p-1 rounded-xl shadow-sm border border-slate-200">
                       <button
                         type="button"
-                        onClick={() => { setCalendarViewMode('calendar'); fetchCalendarData(calendarCompanyId); }}
+                        onClick={() => {
+                          setCalendarViewMode('calendar');
+                          if (
+                            calendarDataStaleRef.current
+                            || calendarDataCompanyIdRef.current !== String(calendarCompanyId || '')
+                          ) {
+                            fetchCalendarData(calendarCompanyId);
+                          }
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                       >
                         <Calendar size={12} /> カレンダー
@@ -4657,7 +4735,7 @@ export default function App() {
                         setCalendarListData([]);
                         setCalendarListError('');
                         pendingCalendarScrollRef.current = true;
-                        fetchCalendarData(companyId);
+                        if (calendarViewMode === 'calendar') fetchCalendarData(companyId);
                       }}
                       className="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-400"
                       style={{ flexBasis: '3cm' }}
@@ -4731,10 +4809,9 @@ export default function App() {
                         setCalendarDateTo('');
                         setSelectedCalendarDate(null);
                         setCalendarDetailData({});
-                        setCalendarListData([]);
                         setCalendarListError('');
                         pendingCalendarScrollRef.current = true;
-                        fetchCalendarData('');
+                        if (calendarViewMode === 'calendar') fetchCalendarData('');
                       }}
                       disabled={!calendarCompanyId && !calendarPurpose && !calendarDateFrom && !calendarDateTo}
                       className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
