@@ -354,6 +354,7 @@ export default function App() {
   const [lastBackupAt, setLastBackupAt] = useState(getLastBackupTime());
   const [restoreReplace, setRestoreReplace] = useState(true); // 復元方式：true=完全置換 / false=追加・上書き
   const [backupWarning, setBackupWarning] = useState(''); // バックアップ関連の警告バナー
+  const [realtimePaused, setRealtimePaused] = useState(false); // 無操作によりRealtimeを切断中
   const [patientManagementTab, setPatientManagementTab] = useState('backup');
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
@@ -1848,7 +1849,7 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     let refreshTimer = null;
-    const scheduleRefresh = () => {
+    const refreshViews = () => {
       // 連続イベントをまとめて500ms後に1回だけ再取得
       clearTimeout(refreshTimer);
       calendarDataStaleRef.current = true;
@@ -1864,12 +1865,39 @@ export default function App() {
         }
         if (h.showTodayReservationsModal) h.fetchTodayReservations();
       }, 500);
+    };
+    const scheduleRefresh = () => {
+      refreshViews();
       markBackupDirty();
     };
-    const channel = supabase
+    const createChannel = () => supabase
       .channel('health-reserv-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'health_reserv' }, scheduleRefresh)
       .subscribe();
+
+    // 一定時間操作のないPCはRealtimeを切断する。購読者が1人でもいると、Supabase側が
+    // 変更履歴（WAL）を常時読み続けてDisk IOを消費するため（夜間・休日に開いたままのPCなど）。
+    // 操作が戻ったら再接続し、切断中の変更を取りこぼさないよう表示中のデータを読み直す
+    const REALTIME_IDLE_DISCONNECT_MS = 30 * 60 * 1000;
+    let channel = createChannel();
+    let lastActivityAt = Date.now();
+    const handleActivity = () => {
+      if (document.visibilityState !== 'visible') return;
+      lastActivityAt = Date.now();
+      if (channel) return;
+      channel = createChannel();
+      setRealtimePaused(false);
+      refreshViews();
+    };
+    const idleCheckTimer = setInterval(() => {
+      if (!channel || Date.now() - lastActivityAt < REALTIME_IDLE_DISCONNECT_MS) return;
+      supabase.removeChannel(channel);
+      channel = null;
+      setRealtimePaused(true);
+    }, 60 * 1000);
+    const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'focus'];
+    ACTIVITY_EVENTS.forEach(ev => window.addEventListener(ev, handleActivity, { passive: true }));
+    document.addEventListener('visibilitychange', handleActivity);
 
     // 変更後の自動バックアップ：3分ごとに変更フラグを確認して実行
     const changeBackupTimer = setInterval(async () => {
@@ -1892,7 +1920,11 @@ export default function App() {
     return () => {
       clearTimeout(refreshTimer);
       clearInterval(changeBackupTimer);
-      supabase.removeChannel(channel);
+      clearInterval(idleCheckTimer);
+      ACTIVITY_EVENTS.forEach(ev => window.removeEventListener(ev, handleActivity));
+      document.removeEventListener('visibilitychange', handleActivity);
+      setRealtimePaused(false);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [session]);
 
@@ -3332,6 +3364,11 @@ export default function App() {
   return (
     <div className={`min-h-screen bg-slate-100 p-4 lg:p-6 text-slate-800 flex flex-col items-center lg:h-screen lg:overflow-hidden ${printMode === 'companyList' ? 'print-company-list-active' : printMode === 'specificHealthRoster' ? 'print-specific-health-roster-active' : ''}`}>
       {/* バックアップ警告バナー */}
+      {realtimePaused && (
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 bg-slate-700 text-white text-sm font-bold rounded-full shadow-lg pointer-events-none print-hide">
+          しばらく操作がないため自動更新を停止中です。マウスを動かすと最新の状態に更新されます
+        </div>
+      )}
       {backupWarning && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[300] max-w-2xl w-[calc(100%-2rem)] px-4 py-3 bg-amber-50 border border-amber-300 rounded-2xl shadow-lg flex items-center gap-3 print-hide">
           <Info size={20} className="text-amber-500 shrink-0" />
