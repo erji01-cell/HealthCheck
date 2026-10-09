@@ -94,7 +94,7 @@ Print layout is fine-tuned in millimeters against real A4 output; changes here a
 
 ### Backup
 
-`lib/backup.js` snapshots `patients`, `health_reserv`, `health_data` (in FK-safe order) to the `backups/healthcheck/` Storage bucket. A `backupDirty` ref is set on any mutation and on Realtime `health_reserv` changes; a 3-minute interval in `HealthCheck.jsx` runs a backup when dirty, with `skipIfUnchanged` comparing against the latest stored payload. One file per day is kept, 30 files total. Restore supports full-replace or upsert-merge.
+`lib/backup.js` snapshots `patients`, `health_reserv`, `health_data` (in FK-safe order) to the `backups/healthcheck/` Storage bucket. A `backupDirty` ref is set on any mutation and on Realtime `health_reserv` changes; a 3-minute interval in `HealthCheck.jsx` runs a backup when dirty. With `skipIfUnchanged` (auto backups only), it skips without reading any table if any PC's latest Storage backup is newer than 6 hours (dirty) or 24 hours (not dirty); the dirty record is kept so the change is backed up once the interval passes. This limits full reads of the shared `patients` table, which is the main Disk IO load on the shared Supabase project. One file per day is kept, 7 files total. Restore supports full-replace or upsert-merge.
 
 ### Reservation email notifications
 

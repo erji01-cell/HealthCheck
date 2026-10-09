@@ -1878,8 +1878,9 @@ export default function App() {
       backupDirty.current = false;
       try {
         const { data: { session: s } } = await supabase.auth.getSession();
-        // 変更がなければスキップ／同じ日の分は上書き（backup.js側で処理）
-        await performBackup(s, { downloadLocal: false, skipIfUnchanged: true });
+        // 他のPCが直近にバックアップ済みなら見送り／同じ日の分は上書き（backup.js側で処理）
+        const result = await performBackup(s, { downloadLocal: false, skipIfUnchanged: true });
+        if (result?.skipped) backupDirty.current = true; // 間隔経過後に再試行する
         setLastBackupAt(getLastBackupTime());
       } catch (err) {
         backupDirty.current = true; // 失敗した分は次の周期で再試行する
