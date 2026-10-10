@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-10 11:16(職場) Codex / GPT-6
+- **作業内容**: 健診予約の修正メールで、従来の4項目以外にも実際に変更された予約項目を修正前後で表示するよう変更。住所・連絡先・備考の本文は非表示とし、更新日時だけが変わった再保存は「予約内容の変更はありません」と明示した。Edge Functionを再デプロイした。
+- **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_reservation_notification_setup.md、AGENT_LOG.md
+- **検証結果**: 模擬Webhookで検査項目・料金・備考・再保存・新規登録・削除通知を確認。`npm run build`、`git diff --check`成功。SupabaseへのEdge Functionデプロイ成功。
+- **次の課題 / 残タスク**: 実際の予約修正メールで変更項目の表示を確認する。
+
 ## 2026-10-09 10:37(職場) Claude Code / Opus 5.5
 - **作業内容**: 共用Supabaseプロジェクトの「Disk IO Budget」警告対策の続き。Query Performance 2位（35%）はRealtimeが変更履歴（WAL）を読み続ける処理で、購読者が1人でもいると止まらない。30分間操作のないPCは `health_reserv` のRealtime購読を切断し、マウス操作などで再接続して表示中のデータを読み直すよう変更。切断中は画面下部に「自動更新を停止中」と表示する。夜間・休日に開いたままのPCがあっても、全PCが切断されれば処理が止まる見込み。SQL変更なし。
 - **変更ファイル**: HealthCheck.jsx、AGENT_LOG.md

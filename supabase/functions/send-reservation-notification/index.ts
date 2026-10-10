@@ -54,11 +54,75 @@ function formatDateTime(value) {
 }
 
 const reservationSummaryFields = [
-  { label: '健診日', getValue: (row) => formatDate(row?.date) },
-  { label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
-  { label: '団体名', getValue: (row) => String(row?.company_name || '団体名なし') },
-  { label: '健診目的', getValue: (row) => String(row?.purpose || '-') },
+  { key: 'date', label: '健診日', getValue: (row) => formatDate(row?.date) },
+  { key: 'patient_name', label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
+  { key: 'company_name', label: '団体名', getValue: (row) => String(row?.company_name || '団体名なし') },
+  { key: 'purpose', label: '健診目的', getValue: (row) => String(row?.purpose || '-') },
 ];
+
+const reservationChangeLabels = {
+  day_of_week: '曜日', patient_id: '患者ID', patient_name_kana: 'ヨミガナ',
+  patient_gender: '性別', birth_date: '生年月日', age: '年齢',
+  contact: '連絡先', address: '住所', company_id: '団体の紐付け',
+  payment_type: '支払い区分', fee: '料金', others: '備考',
+  deadline_type: '提出期限の有無', deadline_date: '提出期限',
+  has_dedicated_form: '専用診断用紙', bp_measure_count: '血圧測定回数',
+  bp1_sys: '血圧1回目（収縮期）', bp1_dia: '血圧1回目（拡張期）',
+  bp2_sys: '血圧2回目（収縮期）', bp2_dia: '血圧2回目（拡張期）',
+  pulse: '脈拍', height: '身長', weight: '体重', bmi: 'BMI', waist: '腹囲',
+  vision_r: '右裸眼視力', vision_l: '左裸眼視力',
+  vision_r2: '右矯正視力', vision_l2: '左矯正視力',
+  hearing_r: '右聴力', hearing_l: '左聴力',
+  hearing_r2: '右聴力（4000Hz）', hearing_l2: '左聴力（4000Hz）',
+  color_vision: '色神', staff_id: '予約担当者ID', staff_name: '予約担当者',
+  item_height_weight: '身長・体重', item_abdominal_girth: '腹囲測定',
+  item_blood_pressure: '血圧測定', item_vision: '視力検査',
+  item_color_vision: '色神検査', item_pulse: '脈拍測定',
+  item_hearing: '聴力検査', item_urine: '尿検査',
+  item_x_ray: '胸部X-P', item_ecg: '心電図', item_blood: '採血',
+  item_blood_kuritas_regular: 'クリタス定期採血',
+  item_blood_kuritas_specific: 'クリタス特定採血',
+  item_blood_hapilus_b: 'ハピラスB採血',
+  item_blood_hapilus_c: 'ハピラスC採血',
+  item_blood_hapilus_hire: 'ハピラス入職時採血',
+  item_blood_hapilus_night: 'ハピラス深夜採血',
+  item_blood_toshinkyo_basic: '東振協基本採血',
+  item_blood_insurance_review: '保険診査採血',
+  item_hba1c: 'HbA1c', item_endoscopy: '胃内視鏡',
+  item_echo: '腹部エコー', item_manganese: 'マンガン',
+  item_cotinine: 'コチニン', item_stool: '便潜血・検便',
+  item_norovirus: 'ノロウイルス', item_bacteria3: '3菌種',
+  item_bacteria5: '5菌種', item_paratyphoid: 'パラチフス・腸チフス',
+  item_methanol: 'メタノール', item_hexane: 'ノルマルヘキサン',
+  item_methyl_hippuric: 'メチル馬尿酸', item_psa: 'PSA',
+  item_hbs_ag: 'HBs抗原', item_hbs_ab: 'HBs抗体',
+  item_hcv_ab: 'HCV抗体', item_syphilis: '梅毒STS',
+  item_mrsa: 'MRSA・黄色ブドウ球菌',
+};
+const privateChangeFields = new Set(['contact', 'address', 'others']);
+const excludedChangeFields = new Set(['id', 'created_at', 'updated_at', 'user_id']);
+const summaryChangeFields = new Set(reservationSummaryFields.map((field) => field.key));
+
+function formatChangedValue(key, value) {
+  if (privateChangeFields.has(key) || !Object.hasOwn(reservationChangeLabels, key)) return '内容非表示';
+  if (value === null || value === undefined || value === '') return '-';
+  if (typeof value === 'boolean') return value ? 'あり' : 'なし';
+  if (key === 'fee' && Number.isFinite(Number(value))) return `¥${Number(value).toLocaleString('ja-JP')}`;
+  if (key === 'birth_date' && /^\d{8}$/.test(String(value))) {
+    return `${String(value).slice(0, 4)}/${String(value).slice(4, 6)}/${String(value).slice(6)}`;
+  }
+  if (key === 'deadline_date') return formatDate(value);
+  return String(value);
+}
+
+function getChangedFields(record, oldRecord) {
+  return [...new Set([...Object.keys(oldRecord), ...Object.keys(record)])].filter((key) => {
+    if (excludedChangeFields.has(key)) return false;
+    const before = oldRecord[key] === '' ? null : oldRecord[key] ?? null;
+    const after = record[key] === '' ? null : record[key] ?? null;
+    return JSON.stringify(before) !== JSON.stringify(after);
+  });
+}
 
 function buildReservationSummaryTable(eventType, record, oldRecord) {
   const tableStyle = 'border-collapse:collapse;width:100%;max-width:720px';
@@ -66,6 +130,7 @@ function buildReservationSummaryTable(eventType, record, oldRecord) {
   const cellStyle = 'border:1px solid #cbd5e1;padding:8px 12px';
 
   if (eventType === 'UPDATE' && oldRecord) {
+    const changedFields = getChangedFields(record, oldRecord);
     const rows = reservationSummaryFields.map((field) => {
       const before = field.getValue(oldRecord);
       const after = field.getValue(record);
@@ -78,6 +143,13 @@ function buildReservationSummaryTable(eventType, record, oldRecord) {
         </tr>
       `;
     }).join('');
+    const extraRows = changedFields.filter((key) => !summaryChangeFields.has(key)).map((key) => `
+      <tr>
+        <th style="${headerStyle}">${escapeHtml(reservationChangeLabels[key] || `その他の予約項目 (${key})`)}</th>
+        <td style="${cellStyle};background:#fef3c7;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(formatChangedValue(key, oldRecord[key]))}</td>
+        <td style="${cellStyle};background:#fef3c7;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(formatChangedValue(key, record[key]))}</td>
+      </tr>
+    `).join('');
 
     return `
       <table style="${tableStyle}">
@@ -90,7 +162,16 @@ function buildReservationSummaryTable(eventType, record, oldRecord) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p style="margin:8px 0 0;color:#92400e;font-size:12px">変更された項目を薄い黄色で表示しています。</p>
+      ${extraRows ? `
+        <h3 style="margin:16px 0 8px;font-size:14px">その他の変更項目</h3>
+        <table style="${tableStyle}">
+          <thead><tr><th style="${headerStyle}">項目</th><th style="${headerStyle}">修正前</th><th style="${headerStyle}">修正後</th></tr></thead>
+          <tbody>${extraRows}</tbody>
+        </table>
+      ` : ''}
+      ${changedFields.length === 0
+        ? '<p style="margin:12px 0 0;color:#64748b;font-size:13px">予約内容の変更はありません（再保存）。</p>'
+        : '<p style="margin:8px 0 0;color:#92400e;font-size:12px">変更された項目を薄い黄色で表示しています。</p>'}
     `;
   }
 
@@ -239,7 +320,9 @@ Deno.serve(async (request) => {
           ${reservationSummaryTable}
           <p style="margin-top:16px;color:#64748b;font-size:12px">${eventType === 'DELETE'
             ? '削除前の予約概要です。検査内容や備考はメールに記載していません。'
-            : '検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。'}</p>
+            : eventType === 'UPDATE'
+              ? '住所・連絡先・備考の内容はメールに記載していません。詳細は健診システムで確認してください。'
+              : '検査内容や備考はメールに記載していません。詳細は健診システムで確認してください。'}</p>
         </div>
       `,
     }),
