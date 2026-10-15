@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-15 14:18(職場) Codex / GPT-6
+- **作業内容**: 健診希望日の受付停止・満員時の案内を「この日は新規予約を受け付けていません。登録済みの予約内容は修正できます。」へ変更。予約の保存条件や人数上限の判定は変更なし。
+- **変更ファイル**: HealthCheck.jsx、AGENT_LOG.md
+- **検証結果**: npm run build、git diff --check成功。
+- **次の課題 / 残タスク**: なし。追加SQL・Edge Function再デプロイは不要。
+
 ## 2026-10-15 12:57(職場) Codex / GPT-6
 - **作業内容**: ユーザーより日別人数上限の追加SQL（supabase_health_reservation_capacity.sql）実行済みの報告を受領し、適用完了を記録。機能実装のコミット207dff9は前回push済み。
 - **変更ファイル**: AGENT_LOG.md

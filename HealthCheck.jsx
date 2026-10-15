@@ -3519,11 +3519,11 @@ export default function App() {
                     <label className="text-[11px] font-black text-teal-700 uppercase">健診希望日</label>
                     <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full rounded-lg border-2 border-teal-400 bg-teal-50 p-2 font-black text-slate-900 shadow-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-200" />
                     {closedReservationDates.has(formData.date) && (
-                      <p className="text-xs font-bold text-rose-700">この日は健診予約の受付を停止しています。既存予約の日付を変えずに編集する場合のみ保存できます。</p>
+                      <p className="text-xs font-bold text-rose-700">この日は新規予約を受け付けていません。登録済みの予約内容は修正できます。</p>
                     )}
                     {reservationDateSettings[formData.date]?.maxReservations != null && (() => {
                       const state = getReservationDateState(reservationDateSettings[formData.date]);
-                      return <p className={`text-xs font-bold ${state.isFull ? 'text-rose-700' : 'text-teal-700'}`}>予約{state.reservationCount}人／上限{state.maxReservations}人{state.isFull ? '（満員）。既存予約の日付を変えずに編集する場合のみ保存できます。' : ''}</p>;
+                      return <p className={`text-xs font-bold ${state.isFull ? 'text-rose-700' : 'text-teal-700'}`}>予約{state.reservationCount}人／上限{state.maxReservations}人{state.isFull ? '（満員）。この日は新規予約を受け付けていません。登録済みの予約内容は修正できます。' : ''}</p>;
                     })()}
                   </div>
                   <div className="space-y-1">
