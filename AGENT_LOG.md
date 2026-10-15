@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-15 12:54(職場) Codex / GPT-6
+- **作業内容**: 日付ごとの健診人数上限を実装。「受付・人数上限設定」で制限なし・人数上限・受付停止を設定でき、カレンダーと予約詳細入力に全団体合計の予約人数／上限を表示する。満員時の新規登録・日付移動を画面とDBトリガーで拒否し、既存予約の同日編集は許可。削除・日付変更による空き枠復帰に対応。追加SQL前は従来の受付停止機能を維持し、人数上限だけ無効化する。
+- **変更ファイル**: HealthCheck.jsx、components/ReservationDateSettingsModal.jsx、lib/reservationCapacity.js、supabase_health_reservation_capacity.sql、supabase_health_reservation_capacity_setup.md、tests/reservationCapacity.test.mjs、package.json、package-lock.json、CLAUDE.md、AGENT_LOG.md
+- **検証結果**: PGliteによるSQL回帰テスト9件成功（SQL再実行・既存停止日保持・上限超過・同日編集・日付移動・削除後再登録・上限増減解除・複数件挿入・認証権限）。Playwrightの模擬APIで画面10項目を確認（団体絞込時の全体人数、満員日選択防止、上限変更、不正値、人数未満警告、直接入力保存拒否、解除後保存、DB最終判定エラー、モバイル配置、SQL前互換性）。本番ビルド・git diff --check成功。開発サーバー http://localhost:5201/ を起動。
+- **次の課題 / 残タスク**: Supabase SQL Editorで supabase_health_reservation_capacity.sql を実行し、アプリを再読み込みする。本番SQLは未適用。複数端末の同時登録は実環境で未検証のため、手順書のテスト予約で確認する。Edge Function再デプロイは不要。
+
 ## 2026-10-10 11:16(職場) Codex / GPT-6
 - **作業内容**: 健診予約の修正メールで、従来の4項目以外にも実際に変更された予約項目を修正前後で表示するよう変更。住所・連絡先・備考の本文は非表示とし、更新日時だけが変わった再保存は「予約内容の変更はありません」と明示した。Edge Functionを再デプロイした。
 - **変更ファイル**: supabase/functions/send-reservation-notification/index.ts、supabase_reservation_notification_setup.md、AGENT_LOG.md

@@ -14,7 +14,7 @@ Dev server on port 5200 (also registered in `.claude/launch.json` as `HealthChec
 npm run build
 ```
 
-There is no test suite and no linter. Verification is done by running the app.
+There is no linter. Run `npm run test:reservation-capacity` for the focused reservation-capacity SQL regression tests (PGlite, no production connection), and verify UI changes by running the app.
 
 Deployment is Vercel (`.vercel/project.json` → project `health-check`). The Supabase Edge Function deploys separately:
 
@@ -54,6 +54,7 @@ The DB is **shared with a separate inventory system** — don't assume every tab
 | Table | Role |
 |---|---|
 | `health_reserv` | reservations (this app's main table; one wide row per booking, `item_*` boolean columns per exam item) |
+| `health_reservation_closed_dates` | date-specific booking settings: null `max_reservations` = closed, positive integer = capacity; no row = unlimited |
 | `health_data` | exam results / health certificate data (`k_*` prefixed columns; upserted on `k_id,k_date`) |
 | `patients` | patient master, auto-synced on reservation save when a patient ID is present |
 | `health_companies` | company/organization master (`name_key` = normalized lowercase name, unique) |
@@ -103,6 +104,10 @@ Never triggered from the front end. A Supabase Database Webhook on `health_reser
 ### Reservation audit log viewer
 
 Patient Management contains Backup and Reservation Audit Log tabs. The client never selects `health_reservation_audit_logs` directly; `get_health_reservation_audit_logs` is a read-only security-definer RPC that requires an authenticated session. Keep the table grants revoked and apply `supabase_add_health_reservation_audit_view.sql` when setting up a new environment.
+
+### Reservation daily capacity
+
+`supabase_health_reservation_capacity.sql` extends the existing closure table and trigger. Do not treat every row in `health_reservation_closed_dates` as a closure: a positive `max_reservations` allows bookings up to that count. The authenticated `get_health_reservation_date_limits` RPC returns only dates, limits, and all-company counts. Calendar/company filters never change the capacity count. The database serializes new bookings, date moves, and settings changes using the existing date advisory-lock key; same-date edits remain allowed even when full or closed. Before this SQL is installed, the client falls back to the original closure query and disables capacity selection. Settings remain in the existing backup table. See `supabase_health_reservation_capacity_setup.md` for setup and real-environment checks.
 
 ## Maintenance gotchas
 
