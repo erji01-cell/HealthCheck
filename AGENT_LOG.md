@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-15 12:57(職場) Codex / GPT-6
+- **作業内容**: ユーザーより日別人数上限の追加SQL（supabase_health_reservation_capacity.sql）実行済みの報告を受領し、適用完了を記録。機能実装のコミット207dff9は前回push済み。
+- **変更ファイル**: AGENT_LOG.md
+- **検証結果**: 実装コミットがorigin/mainと同期済みで、作業ツリーがクリーンであることを確認。SQL適用完了はユーザー報告に基づき、本番DBの実動作はこちらでは未検証。
+- **次の課題 / 残タスク**: アプリを再読み込みし、受付・人数上限設定を確認する。複数端末での同時登録は手順書のテスト予約で確認する。
+
 ## 2026-10-15 12:54(職場) Codex / GPT-6
 - **作業内容**: 日付ごとの健診人数上限を実装。「受付・人数上限設定」で制限なし・人数上限・受付停止を設定でき、カレンダーと予約詳細入力に全団体合計の予約人数／上限を表示する。満員時の新規登録・日付移動を画面とDBトリガーで拒否し、既存予約の同日編集は許可。削除・日付変更による空き枠復帰に対応。追加SQL前は従来の受付停止機能を維持し、人数上限だけ無効化する。
 - **変更ファイル**: HealthCheck.jsx、components/ReservationDateSettingsModal.jsx、lib/reservationCapacity.js、supabase_health_reservation_capacity.sql、supabase_health_reservation_capacity_setup.md、tests/reservationCapacity.test.mjs、package.json、package-lock.json、CLAUDE.md、AGENT_LOG.md
