@@ -4960,7 +4960,7 @@ export default function App() {
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                     setLeftTab('reservation');
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isClosed || isFull ? 'bg-rose-100 cursor-not-allowed' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isClosed || isFull ? 'bg-slate-300 cursor-not-allowed' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
@@ -4977,14 +4977,14 @@ export default function App() {
                                             aria-label={`${dateStr}の健診予約受付設定を変更`}
                                             disabled={closedDateSaving || !!closedDatesError}
                                             onClick={e => { e.stopPropagation(); setClosedDateInput(dateStr); setShowClosedDateModal(true); fetchClosedReservationDates(); }}
-                                            className="rounded p-0.5 text-rose-700 hover:bg-rose-200 disabled:opacity-40"
+                                            className="rounded p-0.5 text-slate-800 hover:bg-slate-400 disabled:opacity-40"
                                           >
                                             {isClosed || isFull ? <LockKeyhole size={13} /> : <Calendar size={13} />}
                                           </button>
                                         )}
                                       </div>
-                                      {isClosed && <div className="mb-0.5 font-bold text-rose-700">受付停止</div>}
-                                      {maxReservations !== null && <div className={`mb-0.5 font-bold ${isFull ? 'text-rose-700' : 'text-teal-700'}`}>予約{reservationCount}人／上限{maxReservations}人{isFull && ' 満員'}</div>}
+                                      {isClosed && <div className="mb-0.5 font-bold text-slate-800">受付停止</div>}
+                                      {maxReservations !== null && <div className={`mb-0.5 font-bold ${isFull ? 'text-slate-800' : 'text-teal-700'}`}>予約{reservationCount}人／上限{maxReservations}人{isFull && ' 満員'}</div>}
                                       {reservations.map((r, ri) => {
                                         const gender = (r.patient_gender || '').trim();
                                         const isMale = gender === '男';
