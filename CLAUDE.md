@@ -4,11 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+Use Node.js 24.22.1 or a newer 24.x patch/minor release (`package.json` engines: `^24.22.1`). Vercel also selects the 24.x line from this declaration; verify its actual patch version in build logs after deployment. On another PC, update Node.js before running `npm ci`.
+
 ```bash
 npm run dev
 ```
 
 Dev server on port 5200 (also registered in `.claude/launch.json` as `HealthCheck`, so `preview_start {name: "HealthCheck"}` works).
+
+Vite 7.3.7 is pinned with a committed lockfile. Dev and preview servers bind to `127.0.0.1`; keep them local. Check dependency advisories with `npm audit` before dependency updates, then run the build, reservation-capacity tests, and browser/print smoke checks.
 
 ```bash
 npm run build

@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "^24.22.1"
+  },
   "scripts": {
     "test:reservation-capacity": "node --test tests/reservationCapacity.test.mjs",
     "dev": "vite --port 5200",
@@ -20,6 +23,6 @@
     "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "tailwindcss": "^4.0.0",
-    "vite": "^5.4.8"
+    "vite": "7.3.7"
   }
 }
