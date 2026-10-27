@@ -29,6 +29,12 @@
 
 ---
 
+## 2026-10-27 12:05(職場) Claude Code / Opus 5.5
+- **作業内容**: Supabase「Disk IO Budget」警告への対策。3アプリ（GFCFApp・HealthCheck・VaxCheck）で同じ処理を入れた。自動・手動バックアップの対象から共用の患者マスタ `patients`（35,919件・18MB、1回あたり約36ページ全件読み込み）を外した。このマスタは電子カルテCSVから取り込み直せる。旧バックアップに含まれる patients は復元時に読み飛ばし、完全置換でも他アプリと共用のマスタを消さない。あわせて Query Performance の集計を2026-10-27 11:59頃にリセットした。
+- **変更ファイル**: lib/backup.js、AGENT_LOG.md
+- **検証結果**: fetchを模擬した検証で、バックアップ時に patients を読まないこと、旧形式バックアップの通常／完全置換の復元で patients に一切触れないことを確認。本番ビルド成功。
+- **次の課題 / 残タスク**: 2〜3日後に Query Performance の上位を確認する（Realtime の WAL 監視が残るか）。患者マスタの復旧は電子カルテCSVの「全削除後読込」で行う。
+
 ## 2026-10-24 17:08(自宅) Codex / GPT-6
 - **作業内容**: PHP/Node.jsの脆弱性相談に伴う依存更新。Viteを5.4.21から互換性確認済みの7.3.7へ更新し固定。npm audit fix（forceなし）でws 8.22.0、esbuild 0.28.2、PostCSS 8.5.31、Babelなどを修正版へ更新。React・Supabase SDK・Tailwindの直接依存バージョンは維持。Node.jsの要件を修正済み24.22.1以上の24系（^24.22.1）とし、Vercelの次回ビルドも24系を選ぶ宣言を追加。開発・プレビューサーバーを127.0.0.1に明示限定した。
 - **変更ファイル**: package.json、package-lock.json、vite.config.js、CLAUDE.md、AGENT_LOG.md
