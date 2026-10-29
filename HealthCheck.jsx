@@ -2479,7 +2479,7 @@ export default function App() {
         ];
         const { data, error } = await supabase
           .from('health_reserv')
-          .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, company_name, purpose')
+          .select('id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, company_name, purpose, fee')
           .or(orParts.join(','))
           .order('date', { ascending: false })
           .limit(100);
@@ -5234,6 +5234,7 @@ export default function App() {
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                           {r.company_name && <span className="font-bold text-indigo-600">{r.company_name}</span>}
                           {r.purpose && <span className="rounded bg-slate-100 px-2 py-0.5 font-bold text-slate-600">{r.purpose}</span>}
+                          <span className="ml-auto whitespace-nowrap font-black text-blue-700">料金：{formatReservationFee(r.fee)}</span>
                         </div>
                       </button>
                     ))}
