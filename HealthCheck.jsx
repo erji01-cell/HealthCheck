@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Printer, Save, Calendar, User, Phone, ClipboardCheck,
   CreditCard, PlusCircle, RotateCcw, ChevronLeft, ChevronRight,
-  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole, History
+  ListTodo, Info, Search, LogIn, LogOut, Trash2, Database, Download, Upload, RefreshCw, Loader2, X, LockKeyhole, History,
+  PauseCircle, AlertTriangle
 } from 'lucide-react';
 import {
   performBackup, listStorageBackups, downloadStorageBackup, restoreFromPayload,
@@ -42,6 +43,8 @@ import {
 } from './lib/healthCheckConfig.js';
 import ReservationDetailCard from './components/ReservationDetailCard.jsx';
 import TodayReservationsModal from './components/TodayReservationsModal.jsx';
+import PendingReservationsModal from './components/PendingReservationsModal.jsx';
+import { PENDING_WARNING_DAYS, isPendingOverdue } from './lib/pendingReservations.js';
 import KenshinCertificate from './components/KenshinCertificate.jsx';
 import RecordSheetPreview from './components/RecordSheetPreview.jsx';
 import AttachmentSheet from './components/AttachmentSheet.jsx';
@@ -301,6 +304,13 @@ export default function App() {
   const [todayReservationsLoading, setTodayReservationsLoading] = useState(false);
   const [todayReservationsError, setTodayReservationsError] = useState('');
   const todayReservationsModalOpenedRef = useRef(false);
+  const [pendingReservations, setPendingReservations] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [pendingError, setPendingError] = useState('');
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [editingPendingInfo, setEditingPendingInfo] = useState(null);
+  // 1週間以上の保留の警告はログイン直後の1回だけ（作業中の確認ダイアログを上書きしないため）
+  const pendingWarnCheckedRef = useRef(false);
   const [calendarCompanyId, setCalendarCompanyId] = useState(getStoredCalendarCompanyId);
   // 認証監視など [] 依存のeffectから最新の選択団体を参照するためのref（stale closure対策）
   const calendarCompanyIdRef = useRef(calendarCompanyId);
@@ -546,6 +556,7 @@ export default function App() {
     'height', 'weight', 'bmi', 'waist', 'vision_r', 'vision_l', 'vision_r2', 'vision_l2',
     'hearing_r', 'hearing_l', 'hearing_r2', 'hearing_l2', 'color_vision',
     'staff_id', 'staff_name', 'user_id', 'updated_at',
+    'pending_original_date', 'pending_since',
   ]);
 
   const sanitizeHealthReservRecord = (record) =>
@@ -1727,6 +1738,35 @@ export default function App() {
     });
   };
 
+  const fetchPendingReservations = async () => {
+    if (!session) {
+      pendingWarnCheckedRef.current = false;
+      return;
+    }
+    setPendingLoading(true);
+    const { data, error } = await supabase
+      .from('health_reserv')
+      .select('id, patient_id, patient_name, patient_name_kana, patient_gender, company_name, purpose, pending_original_date, pending_since, updated_at')
+      .is('date', null);
+    setPendingLoading(false);
+    if (error) {
+      console.error('保留中の予約の取得に失敗:', error);
+      setPendingError('保留中の予約を取得できませんでした。');
+      return;
+    }
+    const getSinceTime = (r) => new Date(r.pending_since || r.updated_at || 0).getTime() || 0;
+    const rows = [...(data || [])].sort((a, b) => getSinceTime(a) - getSinceTime(b));
+    setPendingError('');
+    setPendingReservations(rows);
+    if (!pendingWarnCheckedRef.current) {
+      pendingWarnCheckedRef.current = true;
+      const overdueCount = rows.filter(r => isPendingOverdue(r)).length;
+      if (overdueCount > 0) {
+        showNotice(`日付未定のまま${PENDING_WARNING_DAYS}日以上たった保留中の予約が ${overdueCount}件 あります。\nカレンダー右上の「保留」から確認してください。`);
+      }
+    }
+  };
+
   const fetchCalendarData = async (companyId = calendarCompanyId) => {
     const requestId = ++calendarRequestIdRef.current;
     if (!session) {
@@ -1763,6 +1803,7 @@ export default function App() {
     setCalendarLoading(false);
     setCalendarHasLoaded(true);
     fetchKenshinDoneKeys();
+    fetchPendingReservations();
   };
 
   // 一覧本体を先に表示し、保険証番号は取得後に同じ一覧へ反映する。
@@ -1865,6 +1906,7 @@ export default function App() {
     fetchCalendarListData,
     fetchClosedReservationDates,
     fetchTodayReservations,
+    fetchPendingReservations,
     calendarViewMode,
     showTodayReservationsModal,
     calendarCompanyId,
@@ -1892,6 +1934,7 @@ export default function App() {
         if (h.calendarViewMode === 'list') {
           h.fetchCalendarListData(h.calendarCompanyId, { force: true });
           h.fetchClosedReservationDates();
+          h.fetchPendingReservations();
         } else {
           h.fetchCalendarData(h.calendarCompanyId);
         }
@@ -2017,11 +2060,11 @@ export default function App() {
   }, [session, selectedCalendarDate, calendarCompanyId]);
 
   // 実際の保存処理（overrideId 指定時はそのIDの既存レコードを更新）
-  const performSave = async (overrideId = null, actorId = null) => {
+  const performSave = async (overrideId = null, actorId = null, { hold = false } = {}) => {
     if ((overrideId || editingReservationId) && !actorId) {
-      setConfirmDialog({ show: true, message: '予約を修正して保存します。修正担当者を選択してください。', actorLabel: '修正担当者', actorId: '', onConfirm: (staffId) => {
+      setConfirmDialog({ show: true, message: hold ? '予約を日付未定の保留にします。修正担当者を選択してください。' : '予約を修正して保存します。修正担当者を選択してください。', actorLabel: '修正担当者', actorId: '', onConfirm: (staffId) => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        performSave(overrideId, staffId);
+        performSave(overrideId, staffId, { hold });
       } });
       return;
     }
@@ -2046,17 +2089,20 @@ export default function App() {
     setSaveStatus('saving');
     setSaveErrorMessage('');
     const targetId = overrideId || editingReservationId;
-    let originalDate = null;
+    let original = null;
     if (targetId) {
-      const { data, error } = await supabase.from('health_reserv').select('date').eq('id', targetId).single();
+      const { data, error } = await supabase.from('health_reserv').select('date, pending_original_date, pending_since').eq('id', targetId).single();
       if (error) {
         setSaveStatus('error');
         setSaveErrorMessage('元の予約日を確認できません。再読み込みしてからやり直してください。');
         return;
       }
-      originalDate = data.date;
+      original = data;
     }
-    if (formData.date && formData.date !== originalDate) {
+    const originalDate = original?.date || null;
+    // 予約日が空の予約は「日付未定の保留」として保存する
+    const saveDate = hold ? null : (formData.date || null);
+    if (saveDate && saveDate !== originalDate) {
       const { data, error } = await supabase.from('health_reservation_closed_dates')
         .select('*').eq('date', formData.date).maybeSingle();
       if (error || (data && data.max_reservations == null)) {
@@ -2086,8 +2132,10 @@ export default function App() {
     const company = resolveSelectedHealthCompany(formData.companyId, formData.companyName);
 
     const record = {
-      date: formData.date || null,
-      day_of_week: formData.dayOfWeek,
+      date: saveDate,
+      day_of_week: saveDate ? formData.dayOfWeek : '',
+      pending_original_date: saveDate ? null : (original?.pending_original_date || originalDate),
+      pending_since: saveDate ? null : (original?.pending_since || new Date().toISOString()),
       patient_id: formData.id,
       patient_name: formData.name,
       patient_name_kana: formData.yurigana,
@@ -2167,10 +2215,12 @@ export default function App() {
       setSaveStatus('error');
       if (String(error.message || '').includes('HEALTH_RESERVATION_DATE_')) fetchClosedReservationDates();
     } else {
-      const savedReservationMonth = (formData.date || getLocalIsoDate()).slice(0, 7);
+      const savedReservationMonth = (saveDate || getLocalIsoDate()).slice(0, 7);
       setSaveStatus('saved');
-      setFormData(prev => ({ ...prev, companyId: company.id || '', companyName: company.name || '', paymentType }));
+      setFormData(prev => ({ ...prev, ...(saveDate ? {} : { date: '', dayOfWeek: '' }), companyId: company.id || '', companyName: company.name || '', paymentType }));
       if (editingReservationId) setEditingReservationId(null);
+      setEditingPendingInfo(null);
+      if (!saveDate) setShowPendingModal(true);
       pendingCalendarScrollRef.current = true;
       pendingCalendarScrollMonthRef.current = savedReservationMonth;
       setRightTab('calendar');
@@ -2207,6 +2257,16 @@ export default function App() {
       }
     }
     setTimeout(() => setSaveStatus(''), 3000);
+  };
+
+  // 修正中の予約を日付未定の保留にする
+  const handleHoldReservation = () => {
+    if (!editingReservationId) return;
+    if (!formData.name.trim()) {
+      showNotice('氏名を入力してください。');
+      return;
+    }
+    performSave(null, null, { hold: true });
   };
 
   // 予約データ保存
@@ -3142,6 +3202,7 @@ export default function App() {
     setBirthDateInput('');
     setKenshinBirthDateInput('');
     setEditingReservationId(null);
+    setEditingPendingInfo(null);
   };
 
   // カレンダーから予約を削除
@@ -3209,8 +3270,8 @@ export default function App() {
       ? '2'
       : Number(data.bp_measure_count) === 2 || data.bp2_sys || data.bp2_dia ? '2' : '1';
     setFormData({
-      date: data.date || tomorrowStr,
-      dayOfWeek: data.day_of_week || '',
+      date: data.date || '',
+      dayOfWeek: data.date ? (data.day_of_week || '') : '',
       yurigana: data.patient_name_kana || '',
       id: data.patient_id || '',
       name: data.patient_name || '',
@@ -3269,6 +3330,7 @@ export default function App() {
     // 検索枠には患者名を入れない（サジェストのプルダウンが出るのを防ぐ。氏名はフォーム側に表示）
     setPatientQuery('');
     setEditingReservationId(editMode ? reservationId : null);
+    setEditingPendingInfo(editMode && !data.date ? { originalDate: data.pending_original_date || '', since: data.pending_since || data.updated_at || '' } : null);
     setSelectedCalendarDate(null);
     if (editMode) setLeftTab('reservation');
     setRightTab('preview');
@@ -3889,6 +3951,25 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+                {editingReservationId && editingPendingInfo && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                    <PauseCircle size={15} className="mt-0.5 shrink-0" />
+                    <span>
+                      この予約は日付未定の保留中です（元の予約日：{editingPendingInfo.originalDate ? `${editingPendingInfo.originalDate.replace(/-/g, '/')}（${getWeekdayFromIso(editingPendingInfo.originalDate)}）` : '記録なし'}）。
+                      予約日を入れて上書き保存すると保留が解除されます。
+                    </span>
+                  </div>
+                )}
+                {editingReservationId && formData.date && (
+                  <button
+                    type="button"
+                    onClick={handleHoldReservation}
+                    disabled={saveStatus === 'saving'}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-amber-300 bg-white py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <PauseCircle size={16} /> 日付未定で保留にする（保留一覧へ移動）
+                  </button>
+                )}
                 {saveStatus === 'error' && saveErrorMessage && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
                     {saveErrorMessage}
@@ -4777,6 +4858,22 @@ export default function App() {
                           <LockKeyhole size={13} /> 受付・人数上限設定
                         </button>
                       )}
+                      {(() => {
+                        const pendingOverdueCount = pendingReservations.filter(r => isPendingOverdue(r)).length;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => { setShowPendingModal(true); fetchPendingReservations(); }}
+                            title={pendingOverdueCount > 0 ? `${PENDING_WARNING_DAYS}日以上たった保留が${pendingOverdueCount}件あります` : '日付未定で保留中の予約'}
+                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold whitespace-nowrap ${pendingOverdueCount > 0 ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'}`}
+                          >
+                            {pendingOverdueCount > 0 ? <AlertTriangle size={13} /> : <PauseCircle size={13} />} 保留
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] text-white ${pendingOverdueCount > 0 ? 'bg-red-500' : pendingReservations.length > 0 ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                              {pendingReservations.length}
+                            </span>
+                          </button>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={openTodayReservationsModal}
@@ -5227,8 +5324,8 @@ export default function App() {
                             </div>
                           </div>
                           <div className="shrink-0 text-right text-xs font-black text-blue-700">
-                            <div>{r.date ? r.date.replace(/-/g, '/') : ''}</div>
-                            <div className="text-[10px] text-slate-400">{getWeekdayFromIso(r.date) || r.day_of_week || ''}</div>
+                            <div>{r.date ? r.date.replace(/-/g, '/') : <span className="text-amber-600">保留中</span>}</div>
+                            <div className="text-[10px] text-slate-400">{r.date ? (getWeekdayFromIso(r.date) || r.day_of_week || '') : '日付未定'}</div>
                           </div>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -6087,6 +6184,20 @@ export default function App() {
                 onSelect={reservation => {
                   setShowTodayReservationsModal(false);
                   fetchReservationDetailById(reservation.id);
+                }}
+              />
+            )}
+
+            {showPendingModal && (
+              <PendingReservationsModal
+                reservations={pendingReservations}
+                loading={pendingLoading}
+                error={pendingError}
+                onClose={() => setShowPendingModal(false)}
+                onRefresh={fetchPendingReservations}
+                onSelect={reservation => {
+                  setShowPendingModal(false);
+                  handleLoadReservation(reservation.id, true);
                 }}
               />
             )}

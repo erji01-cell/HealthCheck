@@ -29,8 +29,14 @@
 
 ---
 
+## 2026-11-05 18:13(職場) Claude Code / Claude Opus 5.5
+- **作業内容**: ユーザーが `supabase_add_health_reserv_pending.sql` を実行済みと報告。保留機能（直下 18:11 のエントリ）をコミット・push し、Vercel へ公開。作業は自宅で続行予定。
+- **変更ファイル**: HealthCheck.jsx、components/PendingReservationsModal.jsx、lib/pendingReservations.js、supabase_add_health_reserv_pending.sql、supabase/functions/send-reservation-notification/index.ts、AGENT_LOG.md
+- **検証結果**: SQL実行はユーザー報告に基づく（DB上の列追加はこちらでは未確認）。ビルド・テストは 18:11 時点で成功。
+- **次の課題 / 残タスク**: ①Edge Function `send-reservation-notification` を再デプロイ（`supabase functions deploy send-reservation-notification --no-verify-jwt`。未デプロイの間は保留時メールが「予約修正・健診日 -」表示）。②本番で保留化・保留一覧・解除・7日警告・通常の予約保存を確認。
+
 ## 2026-11-05 18:11(職場) Claude Code / Claude Opus 5.5
-- **作業内容**: 予約の「日付未定の保留」機能を実装（**未コミット・職場PCの作業ツリーにのみ存在**）。予約日(date)が空の予約を保留として扱い、保留前の予約日 `pending_original_date` と保留開始日時 `pending_since` を保存。予約フォームに「日付未定で保留にする」ボタン、カレンダー右上（本日の一覧の左）に「保留 件数」ボタンと保留一覧モーダルを追加。7日以上の保留はボタン・行を赤表示し、ログイン直後に1回だけ通知。保留中の予約を開くと元の予約日を表示し、予約日を入れて上書き保存すると解除（受付停止・満員チェックあり）。読み込み時に予約日が空なら「明日」を入れていた処理を空のままに変更。予約患者検索で保留中を表示。通知メールは保留時に件名「予約保留 日付未定（元 日付）」、保留用の列は変更項目に出さない。
+- **作業内容**: 予約の「日付未定の保留」機能を実装（18:13 にコミット・push済み）。予約日(date)が空の予約を保留として扱い、保留前の予約日 `pending_original_date` と保留開始日時 `pending_since` を保存。予約フォームに「日付未定で保留にする」ボタン、カレンダー右上（本日の一覧の左）に「保留 件数」ボタンと保留一覧モーダルを追加。7日以上の保留はボタン・行を赤表示し、ログイン直後に1回だけ通知。保留中の予約を開くと元の予約日を表示し、予約日を入れて上書き保存すると解除（受付停止・満員チェックあり）。読み込み時に予約日が空なら「明日」を入れていた処理を空のままに変更。予約患者検索で保留中を表示。通知メールは保留時に件名「予約保留 日付未定（元 日付）」、保留用の列は変更項目に出さない。
 - **変更ファイル**: HealthCheck.jsx、components/PendingReservationsModal.jsx（新規）、lib/pendingReservations.js（新規）、supabase_add_health_reserv_pending.sql（新規）、supabase/functions/send-reservation-notification/index.ts、AGENT_LOG.md
 - **検証結果**: `npm run build` 成功、`npm run test:reservation-capacity` 9件成功。PGliteで本番同等トリガーに今回のSQLを適用し、保留化・満員日への解除拒否・空き日への解除を確認。保留一覧モーダルを検証用データで描画確認。メール関数を模擬送信して保留・解除時の件名と本文を確認。ログインが必要なため実画面での一連操作は未確認。
 - **次の課題 / 残タスク**: ①ユーザーが `supabase_add_health_reserv_pending.sql` を実行するまでpush禁止（全保存が新列を書き込むため、未実行だと予約保存が失敗する）。実行後に上記ファイルをコミット・push。②Edge Function `send-reservation-notification` の再デプロイ（職場PCにSupabase CLIなし）。③本番で保留化・保留一覧・解除・7日警告を確認。保留中の予約は3年自動削除の対象外。

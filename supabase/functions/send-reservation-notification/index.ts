@@ -54,7 +54,7 @@ function formatDateTime(value) {
 }
 
 const reservationSummaryFields = [
-  { key: 'date', label: '健診日', getValue: (row) => formatDate(row?.date) },
+  { key: 'date', label: '健診日', getValue: (row) => (row?.date ? formatDate(row.date) : '日付未定（保留）') },
   { key: 'patient_name', label: '氏名', getValue: (row) => String(row?.patient_name || '-') },
   { key: 'company_name', label: '団体名', getValue: (row) => String(row?.company_name || '団体名なし') },
   { key: 'purpose', label: '健診目的', getValue: (row) => String(row?.purpose || '-') },
@@ -100,7 +100,7 @@ const reservationChangeLabels = {
   item_mrsa: 'MRSA・黄色ブドウ球菌',
 };
 const privateChangeFields = new Set(['contact', 'address', 'others']);
-const excludedChangeFields = new Set(['id', 'created_at', 'updated_at', 'user_id']);
+const excludedChangeFields = new Set(['id', 'created_at', 'updated_at', 'user_id', 'pending_original_date', 'pending_since']);
 const summaryChangeFields = new Set(reservationSummaryFields.map((field) => field.key));
 
 function formatChangedValue(key, value) {
@@ -260,10 +260,13 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'メール送信の秘密情報が未設定です。' }, 500);
   }
 
+  const isHold = eventType === 'UPDATE' && !record.date && !!oldRecord?.date;
   const eventLabel = eventType === 'INSERT'
     ? '新規予約'
-    : eventType === 'UPDATE' ? '予約修正' : '予約削除';
-  const reservationDate = formatDate(record.date);
+    : isHold ? '予約保留' : eventType === 'UPDATE' ? '予約修正' : '予約削除';
+  const reservationDate = record.date
+    ? formatDate(record.date)
+    : isHold ? `日付未定（元 ${formatDate(oldRecord.date)}）` : '日付未定';
   const operationDateTime = formatDateTime(
     payload?.occurred_at
       || (eventType === 'INSERT'
