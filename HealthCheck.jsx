@@ -2059,8 +2059,28 @@ export default function App() {
     return () => { cancelled = true; };
   }, [session, selectedCalendarDate, calendarCompanyId]);
 
+  const getReservationSaveError = (hold = false) => {
+    if (!formData.name.trim()) return '氏名を入力してください。';
+    if (!hold && !formData.date) {
+      return '健診希望日を入力してください。日付未定の場合は「日付未定で保留にする」を押してください。';
+    }
+    if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
+      return getUnselectedCompanyMessage();
+    }
+    if (requiresMunicipalityAddress(formData.purpose) && !hasMunicipalityAddress(formData.address)) {
+      return getMunicipalityAddressMessage();
+    }
+    if (!formData.staffId) return '予約担当者を選択してください。';
+    return '';
+  };
+
   // 実際の保存処理（overrideId 指定時はそのIDの既存レコードを更新）
   const performSave = async (overrideId = null, actorId = null, { hold = false } = {}) => {
+    const validationError = getReservationSaveError(hold);
+    if (validationError) {
+      showNotice(validationError);
+      return;
+    }
     if ((overrideId || editingReservationId) && !actorId) {
       setConfirmDialog({ show: true, message: hold ? '予約を日付未定の保留にします。修正担当者を選択してください。' : '予約を修正して保存します。修正担当者を選択してください。', actorLabel: '修正担当者', actorId: '', onConfirm: (staffId) => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
@@ -2071,19 +2091,6 @@ export default function App() {
     if (!session) {
       setSaveStatus('error');
       setSaveErrorMessage('ログイン状態が確認できません。再ログインしてから保存してください。');
-      return;
-    }
-    if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
-      setSaveStatus('error');
-      setSaveErrorMessage(getUnselectedCompanyMessage());
-      return;
-    }
-    if (
-      requiresMunicipalityAddress(formData.purpose) &&
-      !hasMunicipalityAddress(formData.address)
-    ) {
-      setSaveStatus('error');
-      setSaveErrorMessage(getMunicipalityAddressMessage());
       return;
     }
     setSaveStatus('saving');
@@ -2100,8 +2107,8 @@ export default function App() {
       original = data;
     }
     const originalDate = original?.date || null;
-    // 予約日が空の予約は「日付未定の保留」として保存する
-    const saveDate = hold ? null : (formData.date || null);
+    // 明示的な保留操作だけが予約日を空にできる。
+    const saveDate = hold ? null : formData.date;
     if (saveDate && saveDate !== originalDate) {
       const { data, error } = await supabase.from('health_reservation_closed_dates')
         .select('*').eq('date', formData.date).maybeSingle();
@@ -2259,38 +2266,14 @@ export default function App() {
     setTimeout(() => setSaveStatus(''), 3000);
   };
 
-  // 修正中の予約を日付未定の保留にする
-  const handleHoldReservation = () => {
-    if (!editingReservationId) return;
-    if (!formData.name.trim()) {
-      showNotice('氏名を入力してください。');
-      return;
-    }
-    performSave(null, null, { hold: true });
-  };
-
   // 予約データ保存
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      showNotice('氏名を入力してください。');
+  const handleSave = async ({ hold = false } = {}) => {
+    const validationError = getReservationSaveError(hold);
+    if (validationError) {
+      showNotice(validationError);
       return;
     }
-    if (hasUnselectedCompanyName(formData.companyId, formData.companyName)) {
-      showNotice(getUnselectedCompanyMessage());
-      return;
-    }
-    if (
-      requiresMunicipalityAddress(formData.purpose) &&
-      !hasMunicipalityAddress(formData.address)
-    ) {
-      showNotice(getMunicipalityAddressMessage());
-      return;
-    }
-    if (!formData.staffId) {
-      showNotice('予約担当者を選択してください。');
-      return;
-    }
-    if (!editingReservationId && formData.id && formData.date) {
+    if (!hold && !editingReservationId && formData.id && formData.date) {
       const { data: existing } = await supabase
         .from('health_reserv')
         .select('id')
@@ -2310,7 +2293,7 @@ export default function App() {
         return;
       }
     }
-    await performSave();
+    await performSave(null, null, { hold });
   };
 
   useEffect(() => {
@@ -3937,7 +3920,7 @@ export default function App() {
                   <div className="flex-1 flex flex-col">
                     <label className="text-[11px] font-bold text-transparent uppercase select-none">保存</label>
                     <button
-                      onClick={handleSave}
+                      onClick={() => handleSave()}
                       disabled={saveStatus === 'saving'}
                       className={`w-full flex-1 font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
                         saveStatus === 'saved' ? 'bg-green-600 text-white' :
@@ -3960,16 +3943,14 @@ export default function App() {
                     </span>
                   </div>
                 )}
-                {editingReservationId && formData.date && (
-                  <button
-                    type="button"
-                    onClick={handleHoldReservation}
-                    disabled={saveStatus === 'saving'}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-amber-300 bg-white py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <PauseCircle size={16} /> 日付未定で保留にする（保留一覧へ移動）
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleSave({ hold: true })}
+                  disabled={saveStatus === 'saving'}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-amber-300 bg-white py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <PauseCircle size={16} /> 日付未定で保留にする
+                </button>
                 {saveStatus === 'error' && saveErrorMessage && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
                     {saveErrorMessage}

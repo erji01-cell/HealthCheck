@@ -113,6 +113,10 @@ Patient Management contains Backup and Reservation Audit Log tabs. The client ne
 
 `supabase_health_reservation_capacity.sql` extends the existing closure table and trigger. Do not treat every row in `health_reservation_closed_dates` as a closure: a positive `max_reservations` allows bookings up to that count. The authenticated `get_health_reservation_date_limits` RPC returns only dates, limits, and all-company counts. Calendar/company filters never change the capacity count. The database serializes new bookings, date moves, and settings changes using the existing date advisory-lock key; same-date edits remain allowed even when full or closed. Before this SQL is installed, the client falls back to the original closure query and disables capacity selection. Settings remain in the existing backup table. See `supabase_health_reservation_capacity_setup.md` for setup and real-environment checks.
 
+### Undated reservations
+
+Normal reservation saves require a date. Only `handleSave({ hold: true })` may save `date = null`, including a new reservation or changes to an existing pending reservation. `getReservationSaveError` is shared by the click handler and the final save function; pending saves still require the patient name, selected staff, valid company selection, and municipality address where applicable. Existing reservations continue through the audited update RPC with a selected actor. Preserve the original saved date and pending start timestamp when editing a pending reservation; confirming a date clears pending metadata and runs the normal closure/capacity checks.
+
 ## Maintenance gotchas
 
 - `HOLIDAYS` in `lib/healthCheckConfig.js` is a hardcoded set through 2027. `HOLIDAYS_COVERAGE_END` drives a startup warning — update both together.
