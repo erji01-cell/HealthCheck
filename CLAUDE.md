@@ -117,6 +117,8 @@ Patient Management contains Backup and Reservation Audit Log tabs. The client ne
 
 Normal reservation saves require a date. Only `handleSave({ hold: true })` may save `date = null`, including a new reservation or changes to an existing pending reservation. `getReservationSaveError` is shared by the click handler and the final save function; pending saves still require the patient name, selected staff, valid company selection, and municipality address where applicable. Existing reservations continue through the audited update RPC with a selected actor. Preserve the original saved date and pending start timestamp when editing a pending reservation; confirming a date clears pending metadata and runs the normal closure/capacity checks.
 
+The pending list also offers a restore button only when `pending_original_date` is present. It requires a selected actor and a fresh read of the saved pending state, then checks the target date through the shared `getReservationDateError` helper. It sends only date, weekday, recalculated age, and cleared pending metadata through the existing audit RPC, never unrelated form contents or a full stale reservation snapshot. The database trigger remains the final capacity check. On success, refresh the pending/calendar/list views and mark backups dirty; on failure, keep the pending row and show its action error above the list.
+
 ## Maintenance gotchas
 
 - `HOLIDAYS` in `lib/healthCheckConfig.js` is a hardcoded set through 2027. `HOLIDAYS_COVERAGE_END` drives a startup warning — update both together.

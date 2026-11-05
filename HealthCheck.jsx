@@ -307,6 +307,9 @@ export default function App() {
   const [pendingReservations, setPendingReservations] = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingError, setPendingError] = useState('');
+  const [pendingActionError, setPendingActionError] = useState('');
+  const [restoringPendingId, setRestoringPendingId] = useState(null);
+  const pendingRestoreInFlightRef = useRef(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [editingPendingInfo, setEditingPendingInfo] = useState(null);
   // 1週間以上の保留の警告はログイン直後の1回だけ（作業中の確認ダイアログを上書きしないため）
@@ -2059,6 +2062,25 @@ export default function App() {
     return () => { cancelled = true; };
   }, [session, selectedCalendarDate, calendarCompanyId]);
 
+  const getReservationDateError = async (date) => {
+    const { data, error } = await supabase.from('health_reservation_closed_dates')
+      .select('*').eq('date', date).maybeSingle();
+    if (error) return '受付停止日を確認できません。Supabaseの設定を確認してください。';
+    if (data && data.max_reservations == null) {
+      return 'この日は健診予約の受付を停止しています。別の日付を選択してください。';
+    }
+    if (data?.max_reservations != null) {
+      const { count, error: countError } = await supabase.from('health_reserv')
+        .select('id', { count: 'exact', head: true }).eq('date', date);
+      if (countError || count === null) return '予約人数を確認できません。時間をおいてやり直してください。';
+      if (count >= data.max_reservations) {
+        fetchClosedReservationDates();
+        return getReservationCapacityMessage(data.max_reservations);
+      }
+    }
+    return '';
+  };
+
   const getReservationSaveError = (hold = false) => {
     if (!formData.name.trim()) return '氏名を入力してください。';
     if (!hold && !formData.date) {
@@ -2110,26 +2132,11 @@ export default function App() {
     // 明示的な保留操作だけが予約日を空にできる。
     const saveDate = hold ? null : formData.date;
     if (saveDate && saveDate !== originalDate) {
-      const { data, error } = await supabase.from('health_reservation_closed_dates')
-        .select('*').eq('date', formData.date).maybeSingle();
-      if (error || (data && data.max_reservations == null)) {
+      const dateError = await getReservationDateError(saveDate);
+      if (dateError) {
         setSaveStatus('error');
-        setSaveErrorMessage(error
-          ? '受付停止日を確認できません。Supabaseの設定を確認してください。'
-          : 'この日は健診予約の受付を停止しています。別の日付を選択してください。');
+        setSaveErrorMessage(dateError);
         return;
-      }
-      if (data?.max_reservations != null) {
-        const { count, error: countError } = await supabase.from('health_reserv')
-          .select('id', { count: 'exact', head: true }).eq('date', formData.date);
-        if (countError || count === null || count >= data.max_reservations) {
-          setSaveStatus('error');
-          setSaveErrorMessage(countError || count === null
-            ? '予約人数を確認できません。時間をおいてやり直してください。'
-            : getReservationCapacityMessage(data.max_reservations));
-          fetchClosedReservationDates();
-          return;
-        }
       }
     }
     const { items } = formData;
@@ -2294,6 +2301,81 @@ export default function App() {
       }
     }
     await performSave(null, null, { hold });
+  };
+
+  const restorePendingReservation = async (reservation, staffId) => {
+    if (pendingRestoreInFlightRef.current) return;
+    pendingRestoreInFlightRef.current = true;
+    setRestoringPendingId(reservation.id);
+    setPendingActionError('');
+    try {
+      if (!session) throw new Error('再ログインしてからやり直してください。');
+      const { data: current, error: readError } = await supabase.from('health_reserv')
+        .select('date, pending_original_date, birth_date').eq('id', reservation.id).single();
+      if (readError || !current) throw new Error('予約の最新状態を確認できません。一覧を更新してからやり直してください。');
+      if (current.date || !current.pending_original_date || current.pending_original_date !== reservation.pending_original_date) {
+        throw new Error('予約状況が変更されています。一覧を更新してからやり直してください。');
+      }
+      const date = current.pending_original_date;
+      const dateError = await getReservationDateError(date);
+      if (dateError) throw new Error(dateError);
+      const birthDate = current.birth_date ? parseDobToISO(current.birth_date) : '';
+      let age = '';
+      if (birthDate) {
+        const birth = new Date(birthDate);
+        const target = new Date(date);
+        const beforeBirthday = target.getMonth() < birth.getMonth() ||
+          (target.getMonth() === birth.getMonth() && target.getDate() < birth.getDate());
+        const years = target.getFullYear() - birth.getFullYear() - (beforeBirthday ? 1 : 0);
+        if (Number.isFinite(years) && years >= 0) age = years;
+      }
+      // フォーム内の編集中データを使わず、日付に関する項目だけを更新する。
+      const patch = {
+        date, day_of_week: getWeekdayFromIso(date), age,
+        pending_original_date: null, pending_since: null,
+      };
+      const { error } = await supabase.rpc('audit_health_reservation_change', {
+        p_id: String(reservation.id), p_action: 'UPDATE', p_staff_id: String(staffId), p_record: patch,
+      });
+      if (error) {
+        if (String(error.message || '').includes('HEALTH_RESERVATION_DATE_CLOSED')) {
+          throw new Error('この日は健診予約の受付を停止しています。別の日付を選択してください。');
+        }
+        if (String(error.message || '').includes('HEALTH_RESERVATION_DATE_FULL')) {
+          throw new Error('この日は健診予約が満員になりました。別の日付を選択してください。');
+        }
+        throw new Error(formatSupabaseError(error));
+      }
+      markBackupDirty();
+      calendarListCacheRef.current.clear();
+      setPendingReservations(previous => previous.filter(row => row.id !== reservation.id));
+      if (editingReservationId === reservation.id) {
+        setFormData(previous => ({ ...previous, date, dayOfWeek: patch.day_of_week, age }));
+        setEditingPendingInfo(null);
+      }
+      await fetchCalendarData(calendarCompanyId);
+      if (calendarViewMode === 'list') await fetchCalendarListData(calendarCompanyId, { force: true });
+    } catch (error) {
+      setPendingActionError(`元の予約日に戻せませんでした。${error.message}`);
+      await fetchPendingReservations();
+    } finally {
+      pendingRestoreInFlightRef.current = false;
+      setRestoringPendingId(null);
+    }
+  };
+
+  const requestRestorePendingReservation = (reservation) => {
+    if (!reservation.pending_original_date || pendingRestoreInFlightRef.current) return;
+    setPendingActionError('');
+    setConfirmDialog({
+      show: true,
+      message: `「${reservation.patient_name || 'この予約'}」を元の予約日（${reservation.pending_original_date.replace(/-/g, '/')}）に戻します。修正担当者を選択してください。`,
+      actorLabel: '修正担当者', actorId: '',
+      onConfirm: (staffId) => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        restorePendingReservation(reservation, staffId);
+      },
+    });
   };
 
   useEffect(() => {
@@ -4844,7 +4926,7 @@ export default function App() {
                         return (
                           <button
                             type="button"
-                            onClick={() => { setShowPendingModal(true); fetchPendingReservations(); }}
+                            onClick={() => { setPendingActionError(''); setShowPendingModal(true); fetchPendingReservations(); }}
                             title={pendingOverdueCount > 0 ? `${PENDING_WARNING_DAYS}日以上たった保留が${pendingOverdueCount}件あります` : '日付未定で保留中の予約'}
                             className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold whitespace-nowrap ${pendingOverdueCount > 0 ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'}`}
                           >
@@ -6118,7 +6200,7 @@ export default function App() {
 
             {/* 確認ダイアログ（noticeOnly時はOKのみの通知ダイアログ） */}
             {confirmDialog.show && (
-              <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/50 z-[500] flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
                   <p className="text-slate-700 mb-6 whitespace-pre-line">{confirmDialog.message}</p>
                   {confirmDialog.actorLabel && (
@@ -6174,8 +6256,11 @@ export default function App() {
                 reservations={pendingReservations}
                 loading={pendingLoading}
                 error={pendingError}
+                actionError={pendingActionError}
+                restoringId={restoringPendingId}
+                onRestore={requestRestorePendingReservation}
                 onClose={() => setShowPendingModal(false)}
-                onRefresh={fetchPendingReservations}
+                onRefresh={() => { setPendingActionError(''); fetchPendingReservations(); }}
                 onSelect={reservation => {
                   setShowPendingModal(false);
                   handleLoadReservation(reservation.id, true);
