@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Loader2, PauseCircle, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, Loader2, PauseCircle, RotateCcw, Trash2, X } from 'lucide-react';
 import { getWeekdayFromIso } from '../lib/kenshinUtils.js';
 import { PENDING_WARNING_DAYS, getPendingDays } from '../lib/pendingReservations.js';
 
@@ -23,17 +23,18 @@ const getNameColor = (gender) => {
   return 'text-slate-900';
 };
 
-function PendingRow({ reservation, onSelect, onRestore, restoringId }) {
+function PendingRow({ reservation, onSelect, onRestore, onDelete, restoringId, deletingId }) {
   const days = getPendingDays(reservation);
   const overdue = days !== null && days >= PENDING_WARNING_DAYS;
   const since = formatSinceDate(reservation.pending_since || reservation.updated_at);
+  const busy = !!restoringId || !!deletingId;
 
   return (
-    <div className={`grid items-center gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-6 ${overdue ? 'bg-red-50/60' : ''}`}>
+    <div className={`grid items-center gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_184px] sm:px-6 ${overdue ? 'bg-red-50/60' : ''}`}>
       <button
         type="button"
         onClick={() => onSelect(reservation)}
-        disabled={!!restoringId}
+        disabled={busy}
         className="grid min-w-0 gap-2 rounded-md text-left transition-colors hover:bg-slate-50 disabled:opacity-50 sm:grid-cols-[130px_minmax(0,1fr)_100px] sm:items-center sm:gap-3"
       >
         <div>
@@ -66,31 +67,44 @@ function PendingRow({ reservation, onSelect, onRestore, restoringId }) {
           {since && <div className="mt-1 text-[11px] font-bold text-slate-400">保留開始 {since}</div>}
         </div>
       </button>
-      {reservation.pending_original_date && (
+      <div className="flex items-center justify-end gap-2">
+        {reservation.pending_original_date && (
+          <button
+            type="button"
+            onClick={() => onRestore(reservation)}
+            disabled={busy}
+            aria-label={`${reservation.patient_name || 'この予約'}を元の予約日に戻す`}
+            title={`${formatDateWithWeekday(reservation.pending_original_date)}に戻す`}
+            className="flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-md border border-teal-300 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {restoringId === reservation.id ? <Loader2 size={14} className="shrink-0 animate-spin" /> : <RotateCcw size={14} className="shrink-0" />}
+            {restoringId === reservation.id ? '戻しています...' : '元の予約日に戻す'}
+          </button>
+        )}
         <button
           type="button"
-          onClick={() => onRestore(reservation)}
-          disabled={!!restoringId}
-          aria-label={`${reservation.patient_name || 'この予約'}を元の予約日に戻す`}
-          title={`${formatDateWithWeekday(reservation.pending_original_date)}に戻す`}
-          className="flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-teal-300 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => onDelete(reservation)}
+          disabled={busy}
+          aria-label={`${reservation.patient_name || 'この予約'}の保留予約を削除`}
+          title="保留予約を削除"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {restoringId === reservation.id ? <Loader2 size={14} className="shrink-0 animate-spin" /> : <RotateCcw size={14} className="shrink-0" />}
-          {restoringId === reservation.id ? '戻しています...' : '元の予約日に戻す'}
+          {deletingId === reservation.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
         </button>
-      )}
+      </div>
     </div>
   );
 }
 
-export default function PendingReservationsModal({ reservations, loading, error, actionError, restoringId, onClose, onRefresh, onSelect, onRestore }) {
+export default function PendingReservationsModal({ reservations, loading, error, actionError, restoringId, deletingId, onClose, onRefresh, onSelect, onRestore, onDelete }) {
+  const busy = !!restoringId || !!deletingId;
   const overdueCount = reservations.filter(r => {
     const days = getPendingDays(r);
     return days !== null && days >= PENDING_WARNING_DAYS;
   }).length;
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-md" onClick={restoringId ? undefined : onClose}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-md" onClick={busy ? undefined : onClose}>
       <div role="dialog" aria-modal="true" aria-labelledby="pending-reservations-title" className="flex max-h-[92vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-slate-200 px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex min-w-0 items-start gap-3">
@@ -109,7 +123,7 @@ export default function PendingReservationsModal({ reservations, loading, error,
               </div>
             </div>
           </div>
-          <button type="button" onClick={onClose} disabled={!!restoringId} className="shrink-0 rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40" aria-label="閉じる">
+          <button type="button" onClick={onClose} disabled={busy} className="shrink-0 rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40" aria-label="閉じる">
             <X size={30} />
           </button>
         </div>
@@ -125,17 +139,17 @@ export default function PendingReservationsModal({ reservations, loading, error,
           ) : (
             <div className="divide-y divide-slate-100">
               {reservations.map(reservation => (
-                <PendingRow key={reservation.id} reservation={reservation} onSelect={onSelect} onRestore={onRestore} restoringId={restoringId} />
+                <PendingRow key={reservation.id} reservation={reservation} onSelect={onSelect} onRestore={onRestore} onDelete={onDelete} restoringId={restoringId} deletingId={deletingId} />
               ))}
             </div>
           )}
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/40 px-4 py-3 sm:px-6">
-          <button type="button" onClick={onRefresh} disabled={loading || !!restoringId} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:bg-white hover:text-slate-700 disabled:opacity-40">
+          <button type="button" onClick={onRefresh} disabled={loading || busy} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:bg-white hover:text-slate-700 disabled:opacity-40">
             更新
           </button>
-          <button type="button" onClick={onClose} disabled={!!restoringId} className="rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-800 disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-black text-white hover:bg-slate-800 disabled:opacity-40">
             閉じる
           </button>
         </div>

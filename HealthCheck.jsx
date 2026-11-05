@@ -309,7 +309,8 @@ export default function App() {
   const [pendingError, setPendingError] = useState('');
   const [pendingActionError, setPendingActionError] = useState('');
   const [restoringPendingId, setRestoringPendingId] = useState(null);
-  const pendingRestoreInFlightRef = useRef(false);
+  const [deletingPendingId, setDeletingPendingId] = useState(null);
+  const pendingActionInFlightRef = useRef(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [editingPendingInfo, setEditingPendingInfo] = useState(null);
   // 1週間以上の保留の警告はログイン直後の1回だけ（作業中の確認ダイアログを上書きしないため）
@@ -2304,8 +2305,8 @@ export default function App() {
   };
 
   const restorePendingReservation = async (reservation, staffId) => {
-    if (pendingRestoreInFlightRef.current) return;
-    pendingRestoreInFlightRef.current = true;
+    if (pendingActionInFlightRef.current) return;
+    pendingActionInFlightRef.current = true;
     setRestoringPendingId(reservation.id);
     setPendingActionError('');
     try {
@@ -2359,13 +2360,13 @@ export default function App() {
       setPendingActionError(`元の予約日に戻せませんでした。${error.message}`);
       await fetchPendingReservations();
     } finally {
-      pendingRestoreInFlightRef.current = false;
+      pendingActionInFlightRef.current = false;
       setRestoringPendingId(null);
     }
   };
 
   const requestRestorePendingReservation = (reservation) => {
-    if (!reservation.pending_original_date || pendingRestoreInFlightRef.current) return;
+    if (!reservation.pending_original_date || pendingActionInFlightRef.current) return;
     setPendingActionError('');
     setConfirmDialog({
       show: true,
@@ -2374,6 +2375,65 @@ export default function App() {
       onConfirm: (staffId) => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         restorePendingReservation(reservation, staffId);
+      },
+    });
+  };
+
+  const deletePendingReservation = async (reservation, staffId) => {
+    if (pendingActionInFlightRef.current) return;
+    pendingActionInFlightRef.current = true;
+    setDeletingPendingId(reservation.id);
+    setPendingActionError('');
+    let deleted = false;
+    try {
+      if (!session) throw new Error('再ログインしてからやり直してください。');
+      const { data: current, error: readError } = await supabase.from('health_reserv')
+        .select('date, patient_name').eq('id', reservation.id).single();
+      if (readError || !current) throw new Error('予約の最新状態を確認できません。一覧を更新してからやり直してください。');
+      if (current.date || current.patient_name !== reservation.patient_name) {
+        throw new Error('予約内容が変更されています。一覧を更新してからやり直してください。');
+      }
+      const { error } = await supabase.rpc('audit_health_reservation_change', {
+        p_id: String(reservation.id), p_action: 'DELETE', p_staff_id: String(staffId), p_record: {},
+      });
+      if (error) throw new Error(formatSupabaseError(error));
+      deleted = true;
+      markBackupDirty();
+      calendarListCacheRef.current.clear();
+      setPendingReservations(previous => previous.filter(row => row.id !== reservation.id));
+      setCalendarListData(previous => previous.filter(row => row.id !== reservation.id));
+      if (editingReservationId === reservation.id) {
+        setEditingReservationId(null);
+        setEditingPendingInfo(null);
+        setFormData(initialState);
+        setBirthDateInput('');
+        setPatientQuery('');
+        setSaveStatus('');
+        setSaveErrorMessage('');
+      }
+      await fetchCalendarData(calendarCompanyId);
+      if (calendarViewMode === 'list') await fetchCalendarListData(calendarCompanyId, { force: true });
+    } catch (error) {
+      setPendingActionError(deleted
+        ? '予約は削除されましたが、一覧の更新に失敗しました。「更新」を押してください。'
+        : `保留予約を削除できませんでした。${error.message}`);
+      await fetchPendingReservations();
+    } finally {
+      pendingActionInFlightRef.current = false;
+      setDeletingPendingId(null);
+    }
+  };
+
+  const requestDeletePendingReservation = (reservation) => {
+    if (pendingActionInFlightRef.current) return;
+    setPendingActionError('');
+    setConfirmDialog({
+      show: true,
+      message: `「${reservation.patient_name || 'この予約'}」の保留中の予約を削除します。削除担当者を選択してください。`,
+      actorLabel: '削除担当者', actorId: '',
+      onConfirm: (staffId) => {
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+        deletePendingReservation(reservation, staffId);
       },
     });
   };
@@ -6258,7 +6318,9 @@ export default function App() {
                 error={pendingError}
                 actionError={pendingActionError}
                 restoringId={restoringPendingId}
+                deletingId={deletingPendingId}
                 onRestore={requestRestorePendingReservation}
+                onDelete={requestDeletePendingReservation}
                 onClose={() => setShowPendingModal(false)}
                 onRefresh={() => { setPendingActionError(''); fetchPendingReservations(); }}
                 onSelect={reservation => {

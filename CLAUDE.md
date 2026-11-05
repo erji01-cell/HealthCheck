@@ -119,6 +119,8 @@ Normal reservation saves require a date. Only `handleSave({ hold: true })` may s
 
 The pending list also offers a restore button only when `pending_original_date` is present. It requires a selected actor and a fresh read of the saved pending state, then checks the target date through the shared `getReservationDateError` helper. It sends only date, weekday, recalculated age, and cleared pending metadata through the existing audit RPC, never unrelated form contents or a full stale reservation snapshot. The database trigger remains the final capacity check. On success, refresh the pending/calendar/list views and mark backups dirty; on failure, keep the pending row and show its action error above the list.
 
+Every pending row also has a delete icon. Require patient-name confirmation and a selected deletion actor, re-read the saved pending state before deletion, and use the existing audit RPC with `DELETE`. Pending restore and delete share an in-flight guard and disable each other's controls. On successful deletion, remove the row, invalidate list caches, mark backups dirty, and clear the reservation form only if it was editing that exact reservation. Never reset another patient's unsaved input or delete the patient master/health certificate from this action. Failures stay in the pending list as action errors.
+
 ## Maintenance gotchas
 
 - `HOLIDAYS` in `lib/healthCheckConfig.js` is a hardcoded set through 2027. `HOLIDAYS_COVERAGE_END` drives a startup warning — update both together.
