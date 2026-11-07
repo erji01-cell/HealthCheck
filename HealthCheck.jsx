@@ -54,6 +54,7 @@ import InsuranceNumberModal from './components/InsuranceNumberModal.jsx';
 import ReservationAuditLogPanel from './components/ReservationAuditLogPanel.jsx';
 import ReservationDateSettingsModal from './components/ReservationDateSettingsModal.jsx';
 import { getReservationDateState, getReservationCapacityMessage } from './lib/reservationCapacity.js';
+import usePagedRecords from './lib/usePagedRecords.js';
 import {
   getReservationMunicipality,
   inferMunicipalityFromAddress,
@@ -169,6 +170,21 @@ export default function App() {
   const [modalQuery, setModalQuery] = useState('');
   const [modalSuggestions, setModalSuggestions] = useState([]);
   const [modalSearching, setModalSearching] = useState(false);
+  const [showAllReservations, setShowAllReservations] = useState(false);
+  const allReservations = usePagedRecords({
+    client: supabase,
+    enabled: !!session && showPatientModal && showAllReservations && !modalQuery.trim(),
+    table: 'health_reserv',
+    columns: 'id, date, day_of_week, patient_id, patient_name, patient_name_kana, patient_gender, birth_date, company_name, purpose, fee',
+    dateColumn: 'date',
+  });
+  const reservationModalRows = modalQuery.trim() ? modalSuggestions : allReservations.rows;
+  const reservationModalSearching = modalQuery.trim() ? modalSearching : allReservations.loading && !allReservations.rows.length;
+  const showAllReservationRecords = () => {
+    setModalQuery('');
+    setShowAllReservations(true);
+    if (showAllReservations && !modalQuery.trim()) allReservations.reload();
+  };
   const searchRef = useRef(null);
   const resultSearchRef = useRef(null);
   const reservationCompanyRef = useRef(null);
@@ -360,8 +376,20 @@ export default function App() {
   const [showKenshinModal, setShowKenshinModal] = useState(false);
   const [kenshinModalQuery, setKenshinModalQuery] = useState('');
   const [kenshinModalResults, setKenshinModalResults] = useState([]);
-  const [kenshinModalAllResults, setKenshinModalAllResults] = useState([]);
   const [kenshinModalSearching, setKenshinModalSearching] = useState(false);
+  const [showAllCertificates, setShowAllCertificates] = useState(false);
+  const allCertificates = usePagedRecords({
+    client: supabase,
+    enabled: !!session && showKenshinModal && showAllCertificates && !kenshinModalQuery.trim(),
+    table: 'health_data', columns: '*', dateColumn: 'k_date',
+  });
+  const certificateModalRows = kenshinModalQuery.trim() ? kenshinModalResults : allCertificates.rows;
+  const certificateModalSearching = kenshinModalQuery.trim() ? kenshinModalSearching : allCertificates.loading && !allCertificates.rows.length;
+  const showAllCertificateRecords = () => {
+    setKenshinModalQuery('');
+    setShowAllCertificates(true);
+    if (showAllCertificates && !kenshinModalQuery.trim()) allCertificates.reload();
+  };
   const [highlightedField, setHighlightedField] = useState(null);
   // バックアップ管理
   const [showBackupModal, setShowBackupModal] = useState(false);
@@ -2643,7 +2671,8 @@ export default function App() {
 
   // モーダル専用予約検索
   useEffect(() => {
-    if (!session || modalQuery.length < 1) { setModalSuggestions([]); setModalSearching(false); return; }
+    if (!session || !showPatientModal || !modalQuery.trim()) { setModalSuggestions([]); setModalSearching(false); return; }
+    let cancelled = false;
     setModalSearching(true);
     const timer = setTimeout(async () => {
       try {
@@ -2669,11 +2698,11 @@ export default function App() {
           .order('date', { ascending: false })
           .limit(100);
         if (error) console.error('reservation modal search error:', error);
-        setModalSuggestions(!error && data ? data : []);
-      } catch (e) { console.error(e); } finally { setModalSearching(false); }
+        if (!cancelled) setModalSuggestions(!error && data ? data : []);
+      } catch (e) { console.error(e); } finally { if (!cancelled) setModalSearching(false); }
     }, 200);
-    return () => clearTimeout(timer);
-  }, [modalQuery, session]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [modalQuery, session, showPatientModal]);
 
   // 診断結果入力タブ専用：予約者 / 患者マスタ検索
   useEffect(() => {
@@ -2975,7 +3004,8 @@ export default function App() {
 
   // 診断書検索
   useEffect(() => {
-    if (!session || kenshinModalQuery.length < 1) { setKenshinModalResults([]); setKenshinModalSearching(false); return; }
+    if (!session || !showKenshinModal || !kenshinModalQuery.trim()) { setKenshinModalResults([]); setKenshinModalSearching(false); return; }
+    let cancelled = false;
     setKenshinModalSearching(true);
     const timer = setTimeout(async () => {
       const q = kenshinModalQuery.trim();
@@ -3016,13 +3046,14 @@ export default function App() {
       }
 
       const results = await Promise.all(promises);
+      if (cancelled) return;
       const merged = [...(results[0].data || []), ...(results[1]?.data || []), ...(results[2]?.data || [])];
       const deduped = [...new Map(merged.map(r => [r.id, r])).values()];
       setKenshinModalResults(deduped.slice(0, 20));
       setKenshinModalSearching(false);
     }, 300);
-    return () => clearTimeout(timer);
-  }, [kenshinModalQuery, session]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [kenshinModalQuery, session, showKenshinModal]);
 
   // 診断書削除
   const handleDeleteKenshinRecord = (r, e) => {
@@ -3034,7 +3065,7 @@ export default function App() {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         const { error } = await supabase.from('health_data').delete().eq('id', r.id);
         if (error) { console.error(error); showNotice('削除に失敗しました'); return; }
-        setKenshinModalAllResults(prev => prev.filter(x => x.id !== r.id));
+        allCertificates.removeRecord(r.id);
         setKenshinModalResults(prev => prev.filter(x => x.id !== r.id));
         // 編集中の診断書を削除した場合は、次回保存が新規作成になるようIDを外す
         if (kenshinRecordId === r.id) setKenshinRecordId(null);
@@ -3651,12 +3682,12 @@ export default function App() {
                     >
                       <ClipboardCheck size={13} /> 診断結果入力
                     </button>
-                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setShowPatientModal(true); }} className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
+                    <button onClick={() => { setPatientQuery(''); setPatientSuggestions([]); setModalQuery(''); setShowAllReservations(false); setShowPatientModal(true); }} className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
                       <Search size={13} /> 予約患者検索
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setKenshinModalQuery(''); setShowKenshinModal(true); }}
+                      onClick={() => { setKenshinModalQuery(''); setShowAllCertificates(false); setShowKenshinModal(true); }}
                       className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
                     >
                       <Search size={13} /> 登録済み診断書検索
@@ -5393,38 +5424,43 @@ export default function App() {
 
             {/* 予約検索モーダル */}
             {showPatientModal && (
-              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowPatientModal(false)}>
-                <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-xl" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-5">
+              <div className="fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-4" onClick={() => setShowPatientModal(false)}>
+                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-[#1e2a3a] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex shrink-0 items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
                       <div className="bg-teal-500 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
                       <h2 className="text-white font-bold text-lg">予約患者検索</h2>
                     </div>
                     <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
                   </div>
-                  <div className="relative">
-                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      autoFocus
-                      type="text"
-                      value={modalQuery}
-                      onChange={e => setModalQuery(e.target.value)}
-                      placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日・健診目的で検索..."
-                      className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
-                    />
-                  </div>
-                  <div className="mt-4 max-h-[420px] overflow-y-auto space-y-2 pr-1">
-                    {modalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
-                    {!modalSearching && modalQuery.length > 0 && modalSuggestions.length === 0 && (
+                  <form className="flex shrink-0 gap-2" onSubmit={e => { e.preventDefault(); if (!modalQuery.trim() && !e.nativeEvent.isComposing) showAllReservationRecords(); }}>
+                    <div className="relative min-w-0 flex-1">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={modalQuery}
+                        onChange={e => { setModalQuery(e.target.value); setShowAllReservations(false); }}
+                        onKeyDown={e => { if (e.key === 'Enter' && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault(); }}
+                        placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日・健診目的で検索..."
+                        className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-teal-400 bg-slate-50 outline-none focus:border-teal-500 text-sm"
+                      />
+                    </div>
+                    <button type="button" onClick={showAllReservationRecords} disabled={allReservations.loading} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-teal-500 px-3 text-xs font-bold text-white hover:bg-teal-600 disabled:opacity-50"><ListTodo size={15} />すべて表示</button>
+                    <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
+                  </form>
+                  <div className="mt-4 min-h-0 max-h-[420px] overflow-y-auto space-y-2 pr-1">
+                    {reservationModalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                    {!reservationModalSearching && (modalQuery.trim() || showAllReservations) && !allReservations.error && reservationModalRows.length === 0 && (
                       <div className="text-center text-slate-400 py-6 text-sm">該当する予約が見つかりません</div>
                     )}
-                    {!modalSearching && modalQuery.length === 0 && (
+                    {!reservationModalSearching && !modalQuery.trim() && !showAllReservations && (
                       <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
                         <Search size={28} className="text-slate-600" />
                         <span className="text-sm">患者情報・団体名・健診日・健診目的を入力してください</span>
                       </div>
                     )}
-                    {!modalSearching && modalSuggestions.map(r => (
+                    {!reservationModalSearching && reservationModalRows.map(r => (
                       <button
                         type="button"
                         key={r.id}
@@ -5459,6 +5495,13 @@ export default function App() {
                       </button>
                     ))}
                   </div>
+                  {showAllReservations && !modalQuery.trim() && (
+                    <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+                      <span>{allReservations.rows.length}件表示</span>
+                      {allReservations.error && <span role="alert" className="w-full text-rose-300">{allReservations.error}</span>}
+                      {(allReservations.hasMore || allReservations.error) && <button type="button" onClick={allReservations.loadMore} disabled={allReservations.loading} className="flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-2 font-bold text-white hover:bg-teal-600 disabled:opacity-50"><PlusCircle size={14} />{allReservations.loading ? '読み込み中...' : allReservations.error ? '再試行' : 'さらに表示'}</button>}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -5628,56 +5671,37 @@ export default function App() {
 
             {/* 診断書検索モーダル */}
             {showKenshinModal && (
-              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowKenshinModal(false)}>
-                <div className="bg-[#1e2a3a] rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-5">
+              <div className="fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-4" onClick={() => setShowKenshinModal(false)}>
+                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[#1e2a3a] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex shrink-0 items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
                       <div className="bg-emerald-600 p-2 rounded-lg"><Search size={18} className="text-white" /></div>
                       <h2 className="text-white font-bold text-lg">診断書検索</h2>
                     </div>
                     <button onClick={() => setShowKenshinModal(false)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
                   </div>
-                  <div className="relative">
-                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      autoFocus
-                      type="text"
-                      value={kenshinModalQuery}
-                      onChange={e => setKenshinModalQuery(e.target.value)}
-                      placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日で検索..."
-                      className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-emerald-400 bg-slate-50 outline-none focus:border-emerald-500 text-sm"
-                    />
-                  </div>
-                  <div className="mt-4 max-h-72 overflow-y-auto">
-                    {kenshinModalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
-                    {!kenshinModalSearching && kenshinModalQuery.length > 0 && kenshinModalResults.length === 0 && (
+                  <form className="flex shrink-0 gap-2" onSubmit={e => { e.preventDefault(); if (!kenshinModalQuery.trim() && !e.nativeEvent.isComposing) showAllCertificateRecords(); }}>
+                    <div className="relative min-w-0 flex-1">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={kenshinModalQuery}
+                        onChange={e => { setKenshinModalQuery(e.target.value); setShowAllCertificates(false); }}
+                        onKeyDown={e => { if (e.key === 'Enter' && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault(); }}
+                        placeholder="ID・氏名・ヨミガナ・生年月日・団体名・健診日で検索..."
+                        className="w-full pl-9 pr-3 py-3 rounded-xl border-2 border-emerald-400 bg-slate-50 outline-none focus:border-emerald-500 text-sm"
+                      />
+                    </div>
+                    <button type="button" onClick={showAllCertificateRecords} disabled={allCertificates.loading} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"><ListTodo size={15} />すべて表示</button>
+                    <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
+                  </form>
+                  <div className="mt-4 min-h-0 max-h-72 overflow-y-auto">
+                    {certificateModalSearching && <div className="text-center text-slate-400 py-6 text-sm">検索中...</div>}
+                    {!certificateModalSearching && (kenshinModalQuery.trim() || showAllCertificates) && !allCertificates.error && certificateModalRows.length === 0 && (
                       <div className="text-center text-slate-400 py-6 text-sm">該当する診断書が見つかりません</div>
                     )}
-                    {!kenshinModalSearching && kenshinModalQuery.length === 0 && kenshinModalAllResults.map(r => (
-                      <div
-                        key={r.id}
-                        onClick={() => handleSelectKenshinRecord(r)}
-                        className="relative px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-200 last:border-b-0 rounded-lg mb-1 bg-white"
-                      >
-                        <button
-                          onClick={(e) => handleDeleteKenshinRecord(r, e)}
-                          title="削除"
-                          className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <div className="font-bold text-sm pr-6">{r.k_name}</div>
-                        <div className="text-xs text-slate-500 flex gap-3 mt-0.5 flex-wrap pr-6">
-                          {r.k_yurigana && <span>{r.k_yurigana}</span>}
-                          {r.k_id && <span>ID: {r.k_id}</span>}
-                          {r.k_birth_date && <span>{formatDobDisplay(r.k_birth_date)}</span>}
-                          {r.k_gender && <span>{r.k_gender}</span>}
-                          {r.k_date && <span>健診日: {r.k_date}</span>}
-                          {r.k_company_name && <span>{r.k_company_name}</span>}
-                        </div>
-                      </div>
-                    ))}
-                    {!kenshinModalSearching && kenshinModalResults.map(r => (
+                    {!certificateModalSearching && certificateModalRows.map(r => (
                       <div
                         key={r.id}
                         onClick={() => handleSelectKenshinRecord(r)}
@@ -5702,6 +5726,13 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                  {showAllCertificates && !kenshinModalQuery.trim() && (
+                    <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+                      <span>{allCertificates.rows.length}件表示</span>
+                      {allCertificates.error && <span role="alert" className="w-full text-rose-300">{allCertificates.error}</span>}
+                      {(allCertificates.hasMore || allCertificates.error) && <button type="button" onClick={allCertificates.loadMore} disabled={allCertificates.loading} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 font-bold text-white hover:bg-emerald-700 disabled:opacity-50"><PlusCircle size={14} />{allCertificates.loading ? '読み込み中...' : allCertificates.error ? '再試行' : 'さらに表示'}</button>}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
