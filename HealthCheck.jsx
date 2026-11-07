@@ -6615,7 +6615,8 @@ export default function App() {
             border-top: none !important;
             margin-top: 0 !important;
             width: 210mm !important;
-            min-height: 297mm !important;
+            /* 上余白を含むA4全高の指定で、末尾に空白ページができるのを防ぐ。 */
+            min-height: 0 !important;
             padding: 8mm 12mm !important;
             box-shadow: none !important;
             background: white !important;
