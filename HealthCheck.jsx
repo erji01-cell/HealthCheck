@@ -147,9 +147,6 @@ export default function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(() => !!localStorage.getItem('rememberedEmail'));
 
-  // カレンダーの表示月管理（右側カレンダー用）
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-
   // 患者検索
   const [patientQuery, setPatientQuery] = useState('');
   const [patientSuggestions, setPatientSuggestions] = useState([]);
@@ -296,7 +293,12 @@ export default function App() {
   const [saveErrorMessage, setSaveErrorMessage] = useState('');
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [rightTab, setRightTab] = useState('calendar'); // 'preview' | 'calendar'
-  const [calendarData, setCalendarData] = useState({}); // { 'YYYY-MM-DD': [reservations] }
+  const sessionUserId = session?.user?.id || null;
+  const [calendarMonthState, setCalendarMonthState] = useState({ userId: null, companyId: '', months: {} });
+  const calendarMonthStateRef = useRef(calendarMonthState);
+  const calendarMonthRequestsRef = useRef(new Map());
+  const visibleCalendarMonthsRef = useRef(new Set());
+  const [calendarReadyUserId, setCalendarReadyUserId] = useState(null);
   const [closedReservationDates, setClosedReservationDates] = useState(new Set());
   const [reservationDateSettings, setReservationDateSettings] = useState({});
   const [reservationCapacityAvailable, setReservationCapacityAvailable] = useState(null);
@@ -306,8 +308,6 @@ export default function App() {
   const [showClosedDateModal, setShowClosedDateModal] = useState(false);
   const [closedDateInput, setClosedDateInput] = useState(getLocalIsoDate);
   const [calendarDetailData, setCalendarDetailData] = useState({}); // { 'YYYY-MM-DD': [detailed reservations] }
-  const [calendarLoading, setCalendarLoading] = useState(false);
-  const [calendarHasLoaded, setCalendarHasLoaded] = useState(false);
   const [calendarDetailLoading, setCalendarDetailLoading] = useState(false);
   const [calendarDetailError, setCalendarDetailError] = useState('');
   const [singleReservationDetail, setSingleReservationDetail] = useState(null);
@@ -322,6 +322,7 @@ export default function App() {
   const todayReservationsModalOpenedRef = useRef(false);
   const [pendingReservations, setPendingReservations] = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const pendingRequestIdRef = useRef(0);
   const [pendingError, setPendingError] = useState('');
   const [pendingActionError, setPendingActionError] = useState('');
   const [restoringPendingId, setRestoringPendingId] = useState(null);
@@ -336,10 +337,9 @@ export default function App() {
   const calendarCompanyIdRef = useRef(calendarCompanyId);
   const [calendarViewMode, setCalendarViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [calendarListData, setCalendarListData] = useState([]);
+  const calendarMonths = calendarMonthState.userId === sessionUserId
+    && calendarMonthState.companyId === String(calendarCompanyId || '') ? calendarMonthState.months : {};
   // 表示条件ごとの再利用と、遅れて返る古い通信結果の上書き防止に使う。
-  const calendarDataCompanyIdRef = useRef(null);
-  const calendarDataStaleRef = useRef(true);
-  const calendarRequestIdRef = useRef(0);
   const calendarListCacheRef = useRef(new Map());
   const calendarListActiveKeyRef = useRef('');
   const calendarListRequestIdRef = useRef(0);
@@ -846,10 +846,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!sessionUserId) {
+      calendarMonthRequestsRef.current.clear();
+      updateCalendarMonthState({ userId: null, companyId: '', months: {} });
+      setCalendarReadyUserId(null);
+      pendingRequestIdRef.current += 1;
+      setPendingReservations([]);
+      setPendingLoading(false);
+      setPendingError('');
+      pendingWarnCheckedRef.current = false;
+      return;
+    }
     fetchCalendarData(calendarCompanyIdRef.current);
     fetchHealthCompanies();
-  }, [session]);
+    fetchClosedReservationDates();
+    fetchPendingReservations();
+  }, [sessionUserId]);
 
   useEffect(() => {
     if (!session) return;
@@ -873,13 +885,18 @@ export default function App() {
     return () => clearInterval(keepAlive);
   }, [session]);
 
-  // 自動バックアップ（ログイン後・1日1回）＋バックアップ確認後の古い予約自動削除
-  const startupMaintenanceRanRef = useRef(false);
+  // 当月カレンダーの初回表示後に、バックアップ確認と古い予約の整理を行う。
+  const startupMaintenanceRanRef = useRef(null);
   useEffect(() => {
-    if (!session) return;
-    if (startupMaintenanceRanRef.current) return;
-    startupMaintenanceRanRef.current = true;
-    (async () => {
+    if (!sessionUserId) {
+      startupMaintenanceRanRef.current = null;
+      return;
+    }
+    if (calendarReadyUserId !== sessionUserId) return;
+    if (startupMaintenanceRanRef.current === sessionUserId) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      startupMaintenanceRanRef.current = sessionUserId;
       // 起動時はバックアップ時刻と未保存の変更記録を確認する。
       let failMsg = '';
       if (isAutoBackupEnabled()) {
@@ -889,6 +906,7 @@ export default function App() {
           failMsg = `自動バックアップに失敗しました（${err?.message || '不明なエラー'}）。バックアップ管理から手動バックアップを実行してください。`;
         }
       }
+      if (cancelled) return;
       setLastBackupAt(getLastBackupTime());
 
       // バックアップ健全性チェック（最終バックアップが古すぎないか確認して警告）
@@ -899,6 +917,7 @@ export default function App() {
       } catch {
         /* 一覧取得失敗時は下の警告分岐で処理 */
       }
+      if (cancelled) return;
       if (!latestBackup) {
         setBackupWarning(failMsg || 'バックアップがまだ一度も作成されていません。バックアップ管理からバックアップを実行してください。');
       } else {
@@ -924,8 +943,9 @@ export default function App() {
       if (new Date() >= warnFrom) {
         showNotice(`祝日リストは ${HOLIDAYS_COVERAGE_END.slice(0, 4)}年末までしか登録されていません。\n来年の祝日判定が効かなくなるため、祝日リストの更新（healthCheckConfig.js の HOLIDAYS）が必要です。`);
       }
-    })();
-  }, [session]);
+    }, 500);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [sessionUserId, calendarReadyUserId]);
 
   // 担当者一覧取得（invent_staff）
   useEffect(() => {
@@ -1572,7 +1592,6 @@ export default function App() {
     setTodayEndoscopyReservations([]);
     setTodayReservationsError('');
     setTodayReservationsLoading(true);
-    fetchKenshinDoneKeys();
 
     const healthQuery = supabase
       .from('health_reserv')
@@ -1588,7 +1607,7 @@ export default function App() {
       .order('slot_index', { ascending: true })
       .order('time', { ascending: true });
 
-    const [healthResult, endoscopyResult] = await Promise.all([healthQuery, endoscopyQuery]);
+    const [healthResult, endoscopyResult] = await Promise.all([healthQuery, endoscopyQuery, fetchKenshinDoneKeys()]);
 
     if (healthResult.error) {
       console.error('today health reservations fetch error:', healthResult.error);
@@ -1616,6 +1635,7 @@ export default function App() {
     const headerH = stickyBar ? stickyBar.offsetHeight : 0;
     const delta = monthEl.getBoundingClientRect().top - wrapper.getBoundingClientRect().top - headerH;
     wrapper.scrollTop += delta;
+    realtimeHandlersRef.current.fetchCalendarMonth(monthEl.dataset.calendarMonth, calendarCompanyId);
     return true;
   };
 
@@ -1775,11 +1795,13 @@ export default function App() {
       pendingWarnCheckedRef.current = false;
       return;
     }
+    const requestId = ++pendingRequestIdRef.current;
     setPendingLoading(true);
     const { data, error } = await supabase
       .from('health_reserv')
       .select('id, patient_id, patient_name, patient_name_kana, patient_gender, company_name, purpose, pending_original_date, pending_since, updated_at')
       .is('date', null);
+    if (requestId !== pendingRequestIdRef.current) return;
     setPendingLoading(false);
     if (error) {
       console.error('保留中の予約の取得に失敗:', error);
@@ -1799,43 +1821,88 @@ export default function App() {
     }
   };
 
-  const fetchCalendarData = async (companyId = calendarCompanyId) => {
-    const requestId = ++calendarRequestIdRef.current;
-    if (!session) {
-      setCalendarLoading(false);
-      setCalendarHasLoaded(false);
-      calendarDataStaleRef.current = true;
-      return;
+  const updateCalendarMonthState = (next) => {
+    calendarMonthStateRef.current = next;
+    setCalendarMonthState(next);
+  };
+
+  const updateCalendarMonth = (monthKey, entry) => {
+    const current = calendarMonthStateRef.current;
+    updateCalendarMonthState({ ...current, months: { ...current.months, [monthKey]: entry } });
+  };
+
+  const invalidateCalendarMonths = () => {
+    calendarMonthRequestsRef.current.clear();
+    const current = calendarMonthStateRef.current;
+    const months = Object.fromEntries(Object.entries(current.months).map(([key, entry]) => [key, { ...entry, status: 'stale' }]));
+    updateCalendarMonthState({ ...current, months });
+  };
+
+  const fetchCalendarMonth = (monthKey, companyId, { retry = false } = {}) => {
+    const context = calendarMonthStateRef.current;
+    if (!sessionUserId || context.userId !== sessionUserId || context.companyId !== String(companyId || '')) return;
+    const existing = context.months[monthKey];
+    if (existing?.status === 'ready' || (existing?.status === 'error' && !retry)) return;
+    const requests = calendarMonthRequestsRef.current;
+    if (requests.has(monthKey)) return requests.get(monthKey).promise;
+
+    const [year, month] = monthKey.split('-').map(Number);
+    const start = `${monthKey}-01`;
+    const end = getLocalIsoDate(new Date(year, month, 0));
+    const request = {};
+    requests.set(monthKey, request);
+    updateCalendarMonth(monthKey, { ...existing, status: 'loading' });
+    request.promise = (async () => {
+      const days = {};
+      try {
+        const pageSize = 1000;
+        for (let offset = 0; ; offset += pageSize) {
+          let query = supabase.from('health_reserv')
+            .select('id, date, patient_name, patient_gender, purpose')
+            .gte('date', start).lte('date', end)
+            .order('date', { ascending: true }).order('id', { ascending: true });
+          if (companyId) query = query.eq('company_id', companyId);
+          const { data, error } = await query.range(offset, offset + pageSize - 1);
+          if (requests.get(monthKey) !== request) return;
+          if (error) throw error;
+          for (const row of data || []) (days[row.date] ||= []).push(row);
+          if ((data?.length || 0) < pageSize) break;
+        }
+        updateCalendarMonth(monthKey, { status: 'ready', days });
+      } catch (error) {
+        if (requests.get(monthKey) !== request) return;
+        console.error('カレンダーデータの取得に失敗:', error);
+        updateCalendarMonth(monthKey, { ...existing, status: 'error' });
+      } finally {
+        if (requests.get(monthKey) === request) {
+          requests.delete(monthKey);
+          setCalendarReadyUserId(sessionUserId);
+        }
+      }
+    })();
+    return request.promise;
+  };
+
+  const fetchCalendarData = (companyId = calendarCompanyId, { refresh = false, visible = false, monthKey } = {}) => {
+    if (!sessionUserId) return;
+    const companyKey = String(companyId || '');
+    const context = calendarMonthStateRef.current;
+    if (context.userId !== sessionUserId || context.companyId !== companyKey) {
+      calendarMonthRequestsRef.current.clear();
+      updateCalendarMonthState({ userId: sessionUserId, companyId: companyKey, months: {} });
     }
-    setCalendarLoading(true);
-    fetchClosedReservationDates();
+    if (refresh) {
+      invalidateCalendarMonths();
+      fetchClosedReservationDates();
+      fetchPendingReservations();
+    }
+    if (visible && (rightTab !== 'calendar' || calendarViewMode !== 'calendar')) return;
+    const todayMonth = getLocalIsoDate().slice(0, 7);
     const { start, end } = getCalendarDataRange();
-    let query = supabase
-      .from('health_reserv')
-      .select('id, date, patient_name, patient_gender, purpose')
-      .gte('date', start)
-      .lte('date', end)
-      .order('date', { ascending: true });
-    if (companyId) query = query.eq('company_id', companyId);
-    const { data, error } = await query;
-    if (requestId !== calendarRequestIdRef.current) return;
-    if (error) {
-      console.error('カレンダーデータの取得に失敗:', error);
-    } else if (data) {
-      const grouped = {};
-      data.forEach(r => {
-        if (!grouped[r.date]) grouped[r.date] = [];
-        grouped[r.date].push(r);
-      });
-      setCalendarData(grouped);
-      setCalendarDetailData({});
-      calendarDataCompanyIdRef.current = String(companyId || '');
-      calendarDataStaleRef.current = false;
-    }
-    setCalendarLoading(false);
-    setCalendarHasLoaded(true);
-    fetchKenshinDoneKeys();
-    fetchPendingReservations();
+    const target = monthKey || pendingCalendarScrollMonthRef.current || todayMonth;
+    const fallback = target >= start.slice(0, 7) && target <= end.slice(0, 7) ? target : todayMonth;
+    const months = visible && visibleCalendarMonthsRef.current.size ? [...visibleCalendarMonthsRef.current] : [fallback];
+    return Promise.all(months.map(key => fetchCalendarMonth(key, companyId, { retry: true })));
   };
 
   // 一覧本体を先に表示し、保険証番号は取得後に同じ一覧へ反映する。
@@ -1935,11 +2002,14 @@ export default function App() {
   const realtimeHandlersRef = useRef({});
   realtimeHandlersRef.current = {
     fetchCalendarData,
+    fetchCalendarMonth,
+    invalidateCalendarMonths,
     fetchCalendarListData,
     fetchClosedReservationDates,
     fetchTodayReservations,
     fetchPendingReservations,
     calendarViewMode,
+    rightTab,
     showTodayReservationsModal,
     calendarCompanyId,
   };
@@ -1957,19 +2027,18 @@ export default function App() {
     const refreshViews = () => {
       // 連続イベントをまとめて500ms後に1回だけ再取得
       clearTimeout(refreshTimer);
-      calendarDataStaleRef.current = true;
-      calendarRequestIdRef.current += 1;
       calendarListCacheRef.current.clear();
       calendarListRequestIdRef.current += 1;
       refreshTimer = setTimeout(() => {
         const h = realtimeHandlersRef.current;
-        if (h.calendarViewMode === 'list') {
+        h.invalidateCalendarMonths();
+        if (h.rightTab === 'calendar' && h.calendarViewMode === 'list') {
           h.fetchCalendarListData(h.calendarCompanyId, { force: true });
-          h.fetchClosedReservationDates();
-          h.fetchPendingReservations();
-        } else {
-          h.fetchCalendarData(h.calendarCompanyId);
+        } else if (h.rightTab === 'calendar') {
+          h.fetchCalendarData(h.calendarCompanyId, { visible: true });
         }
+        h.fetchClosedReservationDates();
+        h.fetchPendingReservations();
         if (h.showTodayReservationsModal) h.fetchTodayReservations();
       }, 500);
     };
@@ -2268,7 +2337,7 @@ export default function App() {
       pendingCalendarScrollMonthRef.current = savedReservationMonth;
       setRightTab('calendar');
       setCalendarViewMode('calendar');
-      await fetchCalendarData();
+      await fetchCalendarData(calendarCompanyId, { refresh: true, monthKey: savedReservationMonth });
       scheduleCalendarScrollToMonth(savedReservationMonth);
       // patients テーブルへの自動同期（患者IDがある場合のみ）
       if (formData.id) {
@@ -2382,7 +2451,7 @@ export default function App() {
         setFormData(previous => ({ ...previous, date, dayOfWeek: patch.day_of_week, age }));
         setEditingPendingInfo(null);
       }
-      await fetchCalendarData(calendarCompanyId);
+      await fetchCalendarData(calendarCompanyId, { refresh: true, visible: true });
       if (calendarViewMode === 'list') await fetchCalendarListData(calendarCompanyId, { force: true });
     } catch (error) {
       setPendingActionError(`元の予約日に戻せませんでした。${error.message}`);
@@ -2439,7 +2508,7 @@ export default function App() {
         setSaveStatus('');
         setSaveErrorMessage('');
       }
-      await fetchCalendarData(calendarCompanyId);
+      await fetchCalendarData(calendarCompanyId, { refresh: true, visible: true });
       if (calendarViewMode === 'list') await fetchCalendarListData(calendarCompanyId, { force: true });
     } catch (error) {
       setPendingActionError(deleted
@@ -2767,20 +2836,67 @@ export default function App() {
     }
   }, [rightTab, calendarViewMode]);
 
-  // 月セルの描画完了後（読み込み完了後）に当月へ1回だけスクロール
+  // 月セルの描画後、初期表示や保存先の月へ1回だけスクロールする。
   // ※ scrollIntoView はページ等の外側コンテナも巻き込みヘッダーが切れるため、
   //   カレンダーのスクロール枠のみを動かし、stickyバーの高さ分オフセットする
   useEffect(() => {
     if (!pendingCalendarScrollRef.current) return;
-    if (rightTab !== 'calendar' || calendarViewMode !== 'calendar' || calendarLoading) return;
-    requestAnimationFrame(() => {
+    if (!sessionUserId || rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
+    const frame = requestAnimationFrame(() => {
       const targetMonth = pendingCalendarScrollMonthRef.current;
       if (doScrollCalendarToMonth(targetMonth) || doScrollCalendarToCurrentMonth()) {
         pendingCalendarScrollRef.current = false;
         pendingCalendarScrollMonthRef.current = '';
       }
     });
-  }, [rightTab, calendarViewMode, calendarLoading, calendarData]);
+    return () => cancelAnimationFrame(frame);
+  }, [sessionUserId, rightTab, calendarViewMode, calendarCompanyId, calendarPurpose, calendarMonthState]);
+
+  useEffect(() => {
+    if (!sessionUserId || calendarReadyUserId !== sessionUserId || rightTab !== 'calendar' || calendarViewMode !== 'calendar') return;
+    const wrapper = calendarScrollRef.current;
+    if (!wrapper) return;
+    const visible = visibleCalendarMonthsRef.current;
+    const months = [...wrapper.querySelectorAll('[data-calendar-month]')];
+    const loadVisible = () => {
+      if (document.visibilityState !== 'visible' || pendingCalendarScrollRef.current) return;
+      for (const month of visible) realtimeHandlersRef.current.fetchCalendarMonth(month, calendarCompanyId);
+    };
+    let observer;
+    const onScroll = () => {
+      const bounds = wrapper.getBoundingClientRect();
+      const header = wrapper.querySelector('.company-list-print-hide')?.offsetHeight || 0;
+      visible.clear();
+      for (const month of months) {
+        const rect = month.getBoundingClientRect();
+        if (rect.bottom > bounds.top + header && rect.top < bounds.bottom) visible.add(month.dataset.calendarMonth);
+      }
+      loadVisible();
+    };
+    const frame = requestAnimationFrame(() => {
+      if (typeof IntersectionObserver === 'undefined') {
+        wrapper.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        return;
+      }
+      const header = wrapper.querySelector('.company-list-print-hide')?.offsetHeight || 0;
+      observer = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          const month = entry.target.dataset.calendarMonth;
+          if (entry.isIntersecting && entry.intersectionRatio > 0) visible.add(month);
+          else visible.delete(month);
+        }
+        loadVisible();
+      }, { root: wrapper, rootMargin: `-${header}px 0px 0px 0px` });
+      months.forEach(month => observer.observe(month));
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      wrapper.removeEventListener('scroll', onScroll);
+      visible.clear();
+    };
+  }, [sessionUserId, calendarReadyUserId, rightTab, calendarViewMode, calendarCompanyId]);
 
   // ブラウザの別タブから戻った際、カレンダーが先頭（1年前）へ戻るのを防ぐ
   useEffect(() => {
@@ -3381,17 +3497,6 @@ export default function App() {
       console.error('予約の削除に失敗:', error);
       showNotice(`削除に失敗しました。\n${formatSupabaseError(error)}`);
     } else {
-      setCalendarData(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(date => {
-          updated[date] = updated[date].filter(r => r.id !== reservationId);
-          if (updated[date].length === 0) delete updated[date];
-        });
-        if (!updated[selectedCalendarDate] || updated[selectedCalendarDate].length === 0) {
-          setSelectedCalendarDate(null);
-        }
-        return updated;
-      });
       setCalendarDetailData(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(date => {
@@ -3407,7 +3512,7 @@ export default function App() {
       setCalendarViewMode('calendar');
       pendingCalendarScrollRef.current = true;
       pendingCalendarScrollMonthRef.current = getLocalIsoDate().slice(0, 7);
-      await fetchCalendarData(calendarCompanyId);
+      await fetchCalendarData(calendarCompanyId, { refresh: true });
     }
   };
 
@@ -4898,7 +5003,7 @@ export default function App() {
               >▼</button>
             </div>
           )}
-          <div className="absolute right-2 top-0 z-20 flex items-center gap-2 print-hide">
+          <div className="relative z-20 mb-2 flex flex-wrap items-center justify-end gap-2 print-hide lg:absolute lg:right-2 lg:top-0 lg:mb-0">
             <button
               onClick={handleQuickBackup}
               disabled={quickBackupBusy}
@@ -4924,8 +5029,8 @@ export default function App() {
             </button>
           </div>
           <div className="lg:flex lg:flex-col lg:h-full lg:min-h-0">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 pr-[246px] print-hide lg:shrink-0">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4 px-2 print-hide lg:shrink-0 lg:pr-[246px]">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {/* 予約表示の切替 */}
                 <div className="flex gap-1.5 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-sm">
                     <button
@@ -4939,7 +5044,7 @@ export default function App() {
                       <ListTodo size={12} /> 予約プレビュー
                     </button>
                     <button
-                      onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); fetchCalendarData(calendarCompanyId); }}
+                      onClick={() => { setRightTab('calendar'); setLeftTab('reservation'); if (calendarViewMode === 'calendar') fetchCalendarData(calendarCompanyId); }}
                       className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-black transition-all duration-200 ${rightTab === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}
                     >
                       <Calendar size={12} /> 予約カレンダー
@@ -4964,7 +5069,7 @@ export default function App() {
               </div>
             </div>
 
-            <div ref={calendarScrollRef} className="lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper">
+            <div ref={calendarScrollRef} className={`lg:flex-1 lg:overflow-y-auto lg:min-h-0 kenshin-scroll-wrapper ${rightTab === 'calendar' && calendarViewMode === 'calendar' ? 'max-h-[75dvh] overflow-y-auto lg:max-h-none' : ''}`}>
 
             {/* カレンダービュー */}
             {rightTab === 'calendar' && (
@@ -4977,12 +5082,7 @@ export default function App() {
                         type="button"
                         onClick={() => {
                           setCalendarViewMode('calendar');
-                          if (
-                            calendarDataStaleRef.current
-                            || calendarDataCompanyIdRef.current !== String(calendarCompanyId || '')
-                          ) {
-                            fetchCalendarData(calendarCompanyId);
-                          }
+                          fetchCalendarData(calendarCompanyId);
                         }}
                         className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${calendarViewMode === 'calendar' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
                       >
@@ -4998,10 +5098,12 @@ export default function App() {
                     </div>
                     <div className="shrink-0 min-w-[42px] text-left text-sm font-black text-indigo-600 whitespace-nowrap">
                       {calendarViewMode === 'list'
-                        ? getFilteredCalendarListData().length
-                        : Object.values(calendarData).reduce((sum, reservations) => sum + reservations.filter(matchesCalendarFilters).length, 0)}件
+                        ? `${getFilteredCalendarListData().length}件`
+                        : `読込済み ${Object.values(calendarMonths).reduce((sum, entry) => entry.status === 'ready'
+                          ? sum + Object.values(entry.days).reduce((count, rows) => count + rows.filter(matchesCalendarFilters).length, 0)
+                          : sum, 0)}件`}
                     </div>
-                    <div className="ml-auto flex shrink-0 items-center gap-2">
+                    <div className="ml-auto flex max-w-full flex-wrap items-center gap-2">
                       {calendarViewMode === 'calendar' && (
                         <button
                           type="button"
@@ -5159,9 +5261,7 @@ export default function App() {
                   </div>
                 </div>
                 {closedDatesError && <p role="alert" className="text-sm font-bold text-rose-700">{closedDatesError}</p>}
-                {calendarViewMode === 'calendar' ? (calendarLoading && !calendarHasLoaded ? (
-                  <div className="text-center text-slate-400 py-10">読み込み中...</div>
-                ) : (
+                {calendarViewMode === 'calendar' ? (
                   <div className="space-y-6">
                     {Array.from({ length: 25 }, (_, idx) => {
                       const i = idx - 12; // 過去12ヶ月 〜 先12ヶ月
@@ -5181,9 +5281,18 @@ export default function App() {
                       }
                       const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
                       const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+                      const monthEntry = calendarMonths[monthKey];
+                      const monthReady = monthEntry?.status === 'ready';
                       return (
-                        <div key={`${year}-${month}`} ref={isCurrentMonth ? currentMonthRef : null} data-calendar-month={monthKey}>
-                          <div className="text-sm font-black text-indigo-700 mb-2">{year}年{month + 1}月</div>
+                        <div key={`${year}-${month}`} ref={isCurrentMonth ? currentMonthRef : null} data-calendar-month={monthKey} aria-busy={monthEntry?.status === 'loading'}>
+                          <div className="mb-2 flex min-h-6 items-center gap-2 text-sm font-black text-indigo-700">
+                            <span>{year}年{month + 1}月</span>
+                            {monthEntry?.status === 'error' ? (
+                              <button type="button" onClick={() => fetchCalendarData(calendarCompanyId, { monthKey })} className="inline-flex items-center gap-1 rounded border border-rose-200 px-2 py-0.5 text-[11px] text-rose-700 hover:bg-rose-50"><RefreshCw size={11} />取得失敗・再試行</button>
+                            ) : !monthReady && (
+                              <span className="text-[11px] font-bold text-slate-500">{monthEntry?.status === 'loading' ? '読み込み中...' : monthEntry?.status === 'stale' ? '更新待ち' : '未読み込み'}</span>
+                            )}
+                          </div>
                           <div className="grid grid-cols-7 text-center text-[10px] font-bold mb-1">
                             {['日','月','火','水','木','金','土'].map((d, i) => (
                               <div key={d} className={i === 0 ? 'text-rose-500' : i === 6 ? 'text-sky-500' : 'text-slate-500'}>{d}</div>
@@ -5192,7 +5301,7 @@ export default function App() {
                           <div className="grid grid-cols-7 gap-px bg-slate-400 border border-slate-400 rounded-lg overflow-hidden">
                             {weeks.flat().map((day, idx) => {
                               const dateStr = day ? `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
-                              const reservations = dateStr ? (calendarData[dateStr] || []).filter(matchesCalendarFilters) : [];
+                              const reservations = dateStr ? (monthEntry?.days?.[dateStr] || []).filter(matchesCalendarFilters) : [];
                               const now = new Date();
                               const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
                               const isToday = dateStr === todayStr;
@@ -5206,12 +5315,12 @@ export default function App() {
                                 <div
                                   key={idx}
                                   onClick={() => {
-                                    if (!day || isDisabled || isClosed || isFull) return;
+                                    if (!day || !monthReady || isDisabled || isClosed || isFull) return;
                                     handleReset();
                                     setFormData(prev => ({ ...prev, date: dateStr }));
                                     setLeftTab('reservation');
                                   }}
-                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isClosed || isFull ? 'bg-violet-100 cursor-not-allowed' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
+                                  className={`min-h-[52px] p-1 text-[10px] ${!day ? 'bg-slate-50' : isClosed || isFull ? 'bg-violet-100 cursor-not-allowed' : isDisabled ? 'bg-rose-50 cursor-not-allowed' : !monthReady ? 'bg-slate-50 cursor-not-allowed' : isToday ? 'bg-orange-50 cursor-pointer hover:bg-orange-100' : isPast ? 'bg-slate-100 cursor-pointer hover:bg-slate-200' : 'bg-white cursor-pointer hover:bg-sky-50'} ${isToday ? 'ring-2 ring-inset ring-orange-500' : ''} ${dateStr === formData.date ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
                                 >
                                   {day && (
                                     <>
@@ -5262,7 +5371,7 @@ export default function App() {
                       );
                     })}
                   </div>
-                )) : (
+                ) : (
                   <div className="company-list-print-area space-y-3">
                     {calendarListLoading ? (
                       <div className="text-center text-slate-400 py-10">一覧を読み込み中...</div>
